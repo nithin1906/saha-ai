@@ -1,1 +1,17 @@
-Virtual Environmentvenv/Database filedb.sqlite3*.sqlite3Python cachepycache/*.pycAI Model File (can be large)*.joblibIDE config files.vscode/.idea/
+Virtual Environment
+venv/
+
+Database file
+db.sqlite3
+*.sqlite3
+
+Python cache
+pycache/
+*.pyc
+
+AI Model File (can be large)
+*.joblib
+
+IDE config files
+.vscode/
+.idea/
