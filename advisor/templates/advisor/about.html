@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 dark:bg-black text-gray-800 dark:text-gray-200">
+    <header class="bg-white dark:bg-gray-900 shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+                <h1 class="text-2xl font-bold">SAHA-AI</h1>
+            </div>
+            <a href="{% url 'home' %}" class="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition">&larr; Back to Chat</a>
+        </nav>
+    </header>
+    <main class="container mx-auto px-6 py-12">
+        <div class="max-w-4xl mx-auto bg-white dark:bg-gray-900 p-8 rounded-lg shadow-lg">
+            <h2 class="text-4xl font-bold text-center">About SAHA-AI</h2>
+            <p class="mt-4 text-lg text-gray-600 dark:text-gray-400 text-center">
+                An AI-powered investment assistant designed to empower retail investors with clear, personalized, and data-driven insights.
+            </p>
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <h3 class="text-2xl font-bold">Project Objective</h3>
+                <p class="mt-4 text-gray-700 dark:text-gray-300">
+                    The primary goal of SAHA-AI is to address the challenges faced by beginner and common investors. We aim to replace opaque, generic financial advice with a transparent, conversational, and deeply personalized experience. By combining machine learning with a user's portfolio context, SAHA-AI serves as an educational co-pilot, helping users understand the 'why' behind every recommendation.
+                </p>
+            </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <h3 class="text-2xl font-bold">Our Team</h3>
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="text-center">
+                        <h4 class="text-xl font-semibold">Dr. Shiju George</h4>
+                        <p class="text-md text-gray-600 dark:text-gray-400">Advisor</p>
+                    </div>
+                    <div class="text-center">
+                        <h4 class="text-xl font-semibold">Nithin N</h4>
+                        <p class="text-md text-gray-600 dark:text-gray-400">Head Developer</p>
+                    </div>
+                    <div class="text-center">
+                        <h4 class="text-xl font-semibold">Akshit Malik</h4>
+                        <p class="text-md text-gray-600 dark:text-gray-400">Analyst & Co-Developer</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="mt-12 py-6">
+        <div class="container mx-auto text-center">
+            <p class="text-sm text-gray-500">&copy; {% now "Y" %} SAHA-AI Project. All Rights Reserved.</p>
+        </div>
+    </footer>
+     <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Profile - SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 dark:bg-black text-gray-800 dark:text-gray-200">
+    <header class="bg-white dark:bg-gray-900 shadow-md">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+                <h1 class="text-2xl font-bold">SAHA-AI</h1>
+            </div>
+            <a href="{% url 'home' %}" class="px-4 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition">&larr; Back to Chat</a>
+        </nav>
+    </header>
+    <main class="container mx-auto px-6 py-12">
+        <div class="max-w-2xl mx-auto bg-white dark:bg-gray-900 p-8 rounded-lg shadow-lg">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-4xl mb-4">
+                    {% if user.first_name %}{{ user.first_name|first|upper }}{% else %}{{ user.username|first|upper }}{% endif %}
+                </div>
+                <h2 class="text-3xl font-bold">{% if user.first_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}</h2>
+                <p class="text-md text-gray-500 dark:text-gray-400">@{{ user.username }}</p>
+            </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-6">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email address</dt>
+                        <dd class="mt-1 text-sm">{{ user.email }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date Joined</dt>
+                        <dd class="mt-1 text-sm">{{ user.date_joined|date:"F j, Y" }}</dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Holdings</dt>
+                        <dd class="mt-1 text-sm">{{ user.portfolio.holdings.count }} unique stocks in portfolio</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </main>
+     <script>
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</body>
+</html>
+
