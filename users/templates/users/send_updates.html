@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Updates - SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900">
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <!-- Header with back button -->
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Send Updates to All Users</h1>
+                <a href="{% url 'admin_dashboard' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    ← Back to Dashboard
+                </a>
+            </div>
+            
+            <div class="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800 mb-6">
+                <h3 class="text-lg font-semibold text-yellow-900 dark:text-yellow-100 mb-2">⚠️ Important Notice</h3>
+                <p class="text-yellow-800 dark:text-yellow-200">
+                    This will send update emails to ALL approved users. Make sure you want to do this before proceeding.
+                </p>
+            </div>
+            
+            <div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800 mb-6">
+                <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">📧 Email Preview</h3>
+                <p class="text-blue-800 dark:text-blue-200 mb-2">
+                    The email will include:
+                </p>
+                <ul class="list-disc list-inside text-blue-800 dark:text-blue-200 space-y-1">
+                    <li>New features announcement</li>
+                    <li>Market insights</li>
+                    <li>Coming soon features</li>
+                    <li>Direct login link</li>
+                </ul>
+            </div>
+            
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                <div class="flex justify-center">
+                    <button type="submit" 
+                            class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+                            onclick="return confirm('Are you sure you want to send update emails to all approved users?')">
+                        📧 Send Updates to All Users
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-8 text-center">
+                <p class="text-gray-600 dark:text-gray-400">
+                    Emails will be sent to all users with approved accounts.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

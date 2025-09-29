@@ -1,30 +1,35 @@
-# users/forms.py
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth.models import User
 from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from .models import InviteCode
 
-class SignUpForm(UserCreationForm):
-    first_name = forms.CharField(max_length=30, required=True, help_text='Required.')
-    last_name = forms.CharField(max_length=150, required=True, help_text='Required.')
-    email = forms.EmailField(max_length=254, required=True, help_text='Required.')
-
-    class Meta(UserCreationForm.Meta):
+class UserRegistrationForm(UserCreationForm):
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=30, required=True)
+    last_name = forms.CharField(max_length=30, required=True)
+    
+    class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email')
-
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2')
+    
     def save(self, commit=True):
-        # First, run the default save method to create the user with a username and password
-        user = super(SignUpForm, self).save(commit=False)
-        
-        # Now, add the extra information from the form
-        user.first_name = self.cleaned_data["first_name"]
-        user.last_name = self.cleaned_data["last_name"]
-        user.email = self.cleaned_data["email"]
-        
+        user = super().save(commit=False)
+        user.email = self.cleaned_data['email']
+        user.first_name = self.cleaned_data['first_name']
+        user.last_name = self.cleaned_data['last_name']
         if commit:
             user.save()
-            
         return user
 
-class LoginForm(AuthenticationForm):
-    pass
+class InviteCodeForm(forms.ModelForm):
+    class Meta:
+        model = InviteCode
+        fields = ['max_uses']
+        widgets = {
+            'max_uses': forms.NumberInput(attrs={'min': 1, 'max': 10, 'value': 1})
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['max_uses'].label = 'Maximum Uses'
+        self.fields['max_uses'].help_text = 'How many people can use this invite code?'

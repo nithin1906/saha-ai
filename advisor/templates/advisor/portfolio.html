@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Portfolio - SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        html.dark { color-scheme: dark; }
+        body { font-family: 'Inter', sans-serif; }
+        .card { 
+            background-color: #ffffff; 
+            border: 1px solid #e5e7eb; 
+            color: #111827;
+        }
+        html.dark .card { 
+            background-color: #1f2937; 
+            border-color: #374151; 
+            color: #f9fafb;
+        }
+        .badge { padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+        .profit-text { color: #059669; }
+        html.dark .profit-text { color: #10b981; }
+        .loss-text { color: #dc2626; }
+        html.dark .loss-text { color: #ef4444; }
+        .profit-bg { background-color: #dcfce7; color: #166534; }
+        html.dark .profit-bg { background-color: #064e3b; color: #6ee7b7; }
+        .loss-bg { background-color: #fef2f2; color: #991b1b; }
+        html.dark .loss-bg { background-color: #7f1d1d; color: #fca5a5; }
+
+        /* Full-page loading overlay */
+        #loading-overlay { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(17,24,39,0.6); backdrop-filter: blur(2px); z-index: 50; }
+        .loader {
+            width: 64px; height: 64px; border-radius: 50%; border: 6px solid rgba(255,255,255,0.25); border-top-color: #3b82f6; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+<div id="loading-overlay">
+    <div class="text-center">
+        <div class="loader mx-auto"></div>
+        <p class="mt-3 text-white text-sm">Loading your portfolio...</p>
+    </div>
+</div>
+<header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <nav class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+            <h1 class="text-2xl font-bold">SAHA-AI</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <svg id="theme-toggle-light-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            </button>
+            <a href="{% url 'home' %}" class="px-4 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition">&larr; Back to Chat</a>
+        </div>
+    </nav>
+</header>
+
+<main class="max-w-6xl mx-auto px-6 py-8">
+    <div class="grid md:grid-cols-3 gap-6 mb-6">
+        <div class="card rounded-xl p-5" id="sk-total-current">
+            <p class="text-sm text-gray-600 dark:text-gray-300">Total Current Value</p>
+            <p id="total-current" class="text-3xl font-bold mt-1">
+                <span class="inline-block h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+            </p>
+        </div>
+        <div class="card rounded-xl p-5" id="sk-total-invested">
+            <p class="text-sm text-gray-600 dark:text-gray-300">Total Invested</p>
+            <p id="total-invested" class="text-3xl font-bold mt-1">
+                <span class="inline-block h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+            </p>
+        </div>
+        <div class="card rounded-xl p-5" id="sk-total-pl">
+            <p class="text-sm text-gray-600 dark:text-gray-300">Net P/L</p>
+            <p id="total-pl" class="text-3xl font-bold mt-1">
+                <span class="inline-block h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></span>
+            </p>
+        </div>
+    </div>
+
+    <div class="card rounded-xl p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-bold">My Holdings</h2>
+            <span id="last-updated" class="text-xs text-gray-600 dark:text-gray-300"></span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                <thead class="bg-gray-200 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">Ticker</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">Shares</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">Avg Buy</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">Current</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">Current Value</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">P/L</th>
+                    </tr>
+                </thead>
+                <tbody id="portfolio-table-body" class="divide-y divide-gray-200 dark:divide-gray-800">
+                    <tr>
+                        <td colspan="6" class="p-6">
+                            <div class="space-y-3">
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script>
+// Lightweight live-reload for portfolio page
+(function(){
+    let lastVersion = null;
+    async function check(){
+        try{
+            const r = await fetch('/api/dev/version/');
+            const d = await r.json();
+            if(lastVersion === null){ lastVersion = d.version; }
+            else if(d.version !== lastVersion){ location.reload(); }
+        }catch(e){ }
+    }
+    setInterval(check, 3000);
+    check();
+})();
+    function fmt(n){ return '₹' + Number(n||0).toFixed(2); }
+    document.addEventListener('DOMContentLoaded', async function(){
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display = 'flex';
+        const body = document.getElementById('portfolio-table-body');
+        try{
+            const r = await fetch('/api/portfolio/details/');
+            const data = await r.json();
+            const holdings = data.holdings || [];
+            body.innerHTML = '';
+            let totInvested=0, totCurrent=0, totPL=0;
+            if(holdings.length===0){
+                body.innerHTML = '<tr><td colspan="6" class="text-center p-6">Your portfolio is empty.</td></tr>';
+            }
+            holdings.forEach((h, idx)=>{
+                const invested = Number(h.average_buy_price) * Number(h.quantity);
+                const currentVal = Number(h.current_price||0) * Number(h.quantity);
+                const pl = Number(h.net_profit|| (currentVal - invested));
+                totInvested += invested; totCurrent += currentVal; totPL += pl;
+                const isGain = pl >= 0;
+                const badgeClass = isGain ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+                const rowBg = idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800';
+                body.innerHTML += `
+                    <tr class="${rowBg} hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                        <td class="px-6 py-3 font-semibold text-gray-900 dark:text-gray-100">${h.ticker}</td>
+                        <td class="px-6 py-3 text-gray-800 dark:text-gray-200">${h.quantity}</td>
+                        <td class="px-6 py-3 text-gray-800 dark:text-gray-200">${fmt(h.average_buy_price)}</td>
+                        <td class="px-6 py-3 text-gray-800 dark:text-gray-200">${fmt(h.current_price)}</td>
+                        <td class="px-6 py-3 text-gray-800 dark:text-gray-200">${fmt(currentVal)}</td>
+                        <td class="px-6 py-3"><span class="badge ${badgeClass}">${isGain?'+':''}${fmt(pl)}</span></td>
+                    </tr>`;
+            });
+            document.getElementById('total-current').textContent = fmt(totCurrent);
+            document.getElementById('total-invested').textContent = fmt(totInvested);
+            
+            // Color-code the Net P/L
+            const totalPL = document.getElementById('total-pl');
+            totalPL.textContent = (totPL>=0?'+':'') + fmt(totPL);
+            totalPL.className = 'text-3xl font-bold mt-1 ' + (totPL >= 0 ? 'profit-text' : 'loss-text');
+            
+            document.getElementById('last-updated').textContent = 'Updated: ' + new Date().toLocaleString();
+        }catch(e){
+            body.innerHTML = '<tr><td colspan="6" class="text-center p-6 text-red-500">Could not load portfolio data.</td></tr>';
+        }
+        overlay.style.display = 'none';
+    });
+
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('theme-toggle');
+    const darkIcon = document.getElementById('theme-toggle-dark-icon');
+    const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+    // Initialize theme based on localStorage or system preference
+    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        if (lightIcon) lightIcon.classList.remove('hidden');
+    } else {
+        if (darkIcon) darkIcon.classList.remove('hidden');
+    }
+
+    // Theme toggle event listener
+    themeToggle && themeToggle.addEventListener('click', () => {
+        darkIcon && darkIcon.classList.toggle('hidden');
+        lightIcon && lightIcon.classList.toggle('hidden');
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+</script>
+</body>
+</html>
+

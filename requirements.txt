@@ -1,61 +1,19 @@
-beautifulsoup4==4.12.3Django==5.0.6djangorestframework==3.15.1django-cors-headers==4.3.1gnews==0.2.6joblib==1.4.2nltk==3.8.1numpy==1.26.4pandas==2.2.2pandas-ta==0.3.14b0requests==2.31.0scikit-learn==1.4.2setuptools==69.5.1yfinance==0.2.38
-Now, let's get started.
-
----
-### **Step 1: Create a New Repository on GitHub**
-
-1.  Go to [GitHub.com](https://github.com) and log in.
-2.  In the top-right corner, click the **+** icon and select **"New repository"**.
-3.  Give your repository a name, for example, `SAHA-AI-Assistant`.
-4.  **Very Important:** Leave all the checkboxes (for README, .gitignore, etc.) **unchecked**. We want to start with a completely empty repository. 
-5.  Click the green **"Create repository"** button.
-
-On the next page, you will see a URL under the "HTTPS" option. **Keep this page open**, as we will need to copy that URL in a moment.
-
----
-### **Step 2: Prepare Your Local Project**
-
-Now, let's get your code ready on your computer.
-
-1.  Open your terminal (like Command Prompt or PowerShell).
-2.  Navigate to your project folder by running this command:
-    ```bash
-    cd D:\Chatbot_Stock_Market
-    ```
-3.  Now, initialize Git in this folder by running:
-    ```bash
-    git init
-    ```
-    You should see a message saying `Initialized empty Git repository...`
-
----
-### **Step 3: Make Your First "Commit"**
-
-A commit is like a snapshot of your project's progress.
-
-1.  First, we need to tell Git to track all your project files. Run this command:
-    ```bash
-    git add .
-    ```
-2.  Now, let's save this snapshot with a descriptive message. Run:
-    ```bash
-    git commit -m "Initial commit of SAHA-AI project"
-    ```
-
----
-### **Step 4: Connect and Push to GitHub**
-
-This is the final step where we upload your code.
-
-1.  First, it's good practice to make sure your main branch is called `main`. Run:
-    ```bash
-    git branch -M main
-    ```
-2.  Now, go back to that GitHub page you kept open and **copy the HTTPS URL**.
-3.  In your terminal, run the following command, but **replace the URL** with the one you just copied:
-    ```bash
-    git remote add origin https://github.com/YourUsername/YourRepositoryName.git
-    ```
-4.  Finally, push your code to GitHub by running:
-    ```bash
-    git push -u origin main
+beautifulsoup4==4.12.3
+Django==5.0.6
+djangorestframework==3.15.1
+django-cors-headers==4.3.1
+gnews==0.2.6
+joblib==1.4.2
+nltk==3.8.1
+numpy==1.26.4
+pandas==2.2.2
+pandas-ta==0.3.14b0
+requests==2.31.0
+scikit-learn==1.4.2
+setuptools==69.5.1
+yfinance==0.2.38
+gunicorn==21.2.0
+whitenoise==6.6.0
+psycopg2-binary==2.9.9
+python-decouple==3.8
+dj-database-url==2.1.0

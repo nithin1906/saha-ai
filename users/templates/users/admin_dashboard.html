@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900">
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <!-- Header with logout button -->
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+                <div class="flex space-x-4">
+                    <a href="{% url 'home' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        View App
+                    </a>
+                    <a href="{% url 'logout' %}" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        Logout
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100">Total Users</h3>
+                    <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ total_users }}</p>
+                </div>
+                <div class="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-yellow-900 dark:text-yellow-100">Pending Approval</h3>
+                    <p class="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{{ pending_users }}</p>
+                </div>
+                <div class="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg">
+                    <h3 class="text-lg font-semibold text-green-900 dark:text-green-100">Active Invites</h3>
+                    <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ active_invites }}</p>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <a href="{% url 'manage_invites' %}" class="bg-blue-600 hover:bg-blue-700 text-white p-6 rounded-lg text-center transition-colors">
+                    <h3 class="text-xl font-semibold mb-2">Manage Invite Codes</h3>
+                    <p class="text-blue-100">Create and manage invitation codes</p>
+                </a>
+                <a href="{% url 'manage_users' %}" class="bg-green-600 hover:bg-green-700 text-white p-6 rounded-lg text-center transition-colors">
+                    <h3 class="text-xl font-semibold mb-2">Manage Users</h3>
+                    <p class="text-green-100">Approve or reject user registrations</p>
+                </a>
+                <a href="{% url 'send_updates' %}" class="bg-purple-600 hover:bg-purple-700 text-white p-6 rounded-lg text-center transition-colors">
+                    <h3 class="text-xl font-semibold mb-2">Send Updates</h3>
+                    <p class="text-purple-100">Email all users about new features</p>
+                </a>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg">
+                <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+                <div class="space-y-2">
+                    {% for log in recent_logs %}
+                    <div class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-600">
+                        <div>
+                            <span class="font-medium text-gray-900 dark:text-white">{{ log.user.username }}</span>
+                            <span class="text-gray-600 dark:text-gray-400">{{ log.action }}</span>
+                        </div>
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            {{ log.accessed_at|date:"M d, Y H:i" }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 dark:text-gray-400">No recent activity</p>
+                    {% endfor %}
+                </div>
+                <div class="mt-4">
+                    <a href="{% url 'access_logs' %}" class="text-blue-600 dark:text-blue-400 hover:underline">View All Logs</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

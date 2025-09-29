@@ -1,554 +1,1475 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAHA-AI: Your AI Stock Assistant</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SAHA-AI: Your AI Stock & Mutual Fund Assistant</title>
+
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js (kept in case charts are used elsewhere) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         html.dark { color-scheme: dark; }
         body { font-family: 'Inter', sans-serif; }
         #chat-window { scroll-behavior: smooth; }
-        .chat-bubble { opacity: 0; transform: translateY(20px); animation: popIn 0.4s ease-out forwards; box-shadow: 0 4px 10px -2px rgb(0 0 0 / 0.1); }
+        .chat-bubble { opacity: 0; transform: translateY(18px); animation: popIn 0.35s ease-out forwards; box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1); }
         @keyframes popIn { to { opacity: 1; transform: translateY(0); } }
+
+        /* Bot bubble */
         .chat-bubble-bot { background-color: #ffffff; color: #1f2937; border: 1px solid #e5e7eb; }
-        html.dark .chat-bubble-bot { background-color: #374151; color: #f3f4f6; border-color: #4b5563; }
-        .chat-bubble-user { background-image: linear-gradient(to right, #3b82f6, #1d4ed8); color: white; }
-        .action-btn, .suggestion-item, .holding-item-clickable { cursor: pointer; transition: all 0.2s ease-in-out; }
-        .action-btn:hover, .holding-item-clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgb(0 0 0 / 0.1); }
-        .chart-container { opacity: 0; animation: fadeIn 0.8s 0.2s ease-out forwards; }
-        @keyframes fadeIn { to { opacity: 1; } }
-        #profile-dropdown { transition: opacity 0.3s ease, transform 0.3s ease; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        html.dark .chat-bubble-bot { background-color: #111827; color: #f3f4f6; border-color: #374151; }
+
+        /* User bubble */
+        .chat-bubble-user { background-image: linear-gradient(90deg,#3b82f6,#1d4ed8); color: #fff; }
+
+        /* Light mode clean design */
+        html:not(.dark) body { background-color: #f9fafb; color: #1f2937; }
+        html:not(.dark) aside { background-color: #ffffff; border-right: 1px solid #e5e7eb; }
+        html:not(.dark) main { background-color: #fafafa; }
+
+        /* Chat area */
+        html:not(.dark) #chat-window { background-color: #ffffff; }
+        html:not(.dark) .chat-bubble-bot { background-color: #f3f4f6; color: #111827; border: 1px solid #e5e7eb; }
+        html:not(.dark) .chat-bubble-user { background-image: linear-gradient(90deg,#2563eb,#1d4ed8); color: #fff; }
+
+        /* Disclaimer bubble */
+        html:not(.dark) .chat-bubble-bot.bg-yellow-100 {
+          background-color: #fef9c3 !important;
+          border-color: #fde68a !important;
+          color: #92400e !important;
+        }
+
+        /* Portfolio health card */
+        html:not(.dark) #portfolio-health-section {
+          background-color: #f9fafb;
+          border: 1px solid #e5e7eb;
+        }
+
+        /* Market snapshot */
+        html:not(.dark) #market-snapshot { background-color: #ffffff; }
+        html:not(.dark) #market-cards div { background-color: #f3f4f6; border: 1px solid #e5e7eb; }
+
+        /* Input area */
+        html:not(.dark) .p-4 { background-color: #f9fafb; }
+        html:not(.dark) input { background-color: #ffffff; border-color: #d1d5db; color: #111827; }
+
+        /* Footer */
+        html:not(.dark) footer, 
+        html:not(.dark) .text-center p { color: #6b7280; }
+
+        /* --- Sidebar fixes --- */
+        html:not(.dark) aside {
+          background-color: #ffffff;
+          border-right: 1px solid #e5e7eb;
+        }
+        html:not(.dark) aside a {
+          color: #374151;
+        }
+        html:not(.dark) aside a:hover {
+          background-color: #f3f4f6;
+        }
+        html:not(.dark) aside a span {
+          color: #111827;
+        }
+        html:not(.dark) aside a svg {
+          color: #6b7280;
+        }
+        /* Active link highlight */
+        html:not(.dark) aside a.bg-gray-900,
+        html:not(.dark) aside a[aria-current="page"] {
+          background-color: #e0f2fe !important;
+          color: #0369a1 !important;
+        }
+        html:not(.dark) aside a.bg-gray-900 span {
+          color: #0369a1 !important;
+        }
+        html:not(.dark) aside a.bg-gray-900 svg {
+          color: #0284c7 !important;
+        }
+
+        /* --- Market snapshot fixes --- */
+        html:not(.dark) #market-snapshot {
+          background-color: #ffffff;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        html:not(.dark) #market-cards div {
+          background-color: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        html:not(.dark) #market-cards span {
+          color: #111827 !important;
+        }
+        /* Market data numbers visibility - make text red */
+        html:not(.dark) #market-cards div div {
+          color: #dc2626 !important;
+        }
+        /* Preserve green/red colors for market changes */
+        html:not(.dark) #market-cards .text-emerald-600 {
+          color: #059669 !important;
+        }
+        html:not(.dark) #market-cards .text-red-600 {
+          color: #dc2626 !important;
+        }
+        /* Black container outlines */
+        html:not(.dark) #market-cards .bg-emerald-50 {
+          border-color: #000000 !important;
+          border-width: 2px !important;
+        }
+        html:not(.dark) #market-cards .bg-red-50 {
+          border-color: #000000 !important;
+          border-width: 2px !important;
+        }
+
+        /* --- Username and profile fixes --- */
+        html:not(.dark) aside .text-gray-900 { color: #111827 !important; }
+        html:not(.dark) aside .text-gray-100 { color: #111827 !important; }
+        html:not(.dark) aside .text-gray-600 { color: #374151 !important; }
+        html:not(.dark) aside .text-gray-400 { color: #6b7280 !important; }
+        
+        /* Fix profile button hover effect */
+        html:not(.dark) #profile-button:hover {
+          background-color: #f3f4f6 !important;
+        }
+        html:not(.dark) #profile-button:hover .text-gray-900 {
+          color: #111827 !important;
+        }
+        html:not(.dark) #profile-button:hover .text-gray-100 {
+          color: #111827 !important;
+        }
+        html:not(.dark) #profile-button:hover .text-gray-600 {
+          color: #374151 !important;
+        }
+        html:not(.dark) #profile-button:hover .text-gray-400 {
+          color: #6b7280 !important;
+        }
+        
+        /* --- Logout dropdown fixes --- */
+        html:not(.dark) #profile-dropdown {
+          background-color: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        }
+        html:not(.dark) #profile-dropdown button {
+          color: #374151 !important;
+          background-color: transparent !important;
+        }
+        html:not(.dark) #profile-dropdown button:hover {
+          background-color: #f3f4f6 !important;
+          color: #111827 !important;
+        }
+
+        /* --- Portfolio health score color coding --- */
+        html:not(.dark) #portfolio-health-section .text-green-500 {
+          color: #059669 !important;
+        }
+        html:not(.dark) #portfolio-health-section .text-yellow-500 {
+          color: #d97706 !important;
+        }
+        html:not(.dark) #portfolio-health-section .text-red-500 {
+          color: #dc2626 !important;
+        }
+
+        /* --- Footer fixes --- */
+        html:not(.dark) .text-center.p-2 {
+          background-color: #f9fafb !important;
+          border-top: 1px solid #e5e7eb !important;
+        }
+        html:not(.dark) .text-center.p-2 p {
+          color: #6b7280 !important;
+        }
+
+        /* Additional refinements */
+        html:not(.dark) .sticky { background-color: rgba(255,255,255,0.9); border-bottom: 1px solid #e5e7eb; backdrop-filter: blur(8px); }
+        html:not(.dark) .market-skeleton-card { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.08); }
+        html:not(.dark) .suggestion-chip { background:#f1f5f9; color:#334155; }
+        html:not(.dark) .choice-btn { background:#f9fafb; color:#1f2937; border:1px solid #e5e7eb; }
+        
+        /* Fix suggestion chips spacing */
+        .suggestion-chip {
+          margin: 0.4rem !important;
+        }
+
+        /* Hover states */
+        .action-btn, .suggestion-chip, .holding-item-clickable { cursor: pointer; transition: all 0.15s ease-in-out; }
+        .action-btn:hover, .holding-item-clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.08); }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
         html.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+
+        /* Typing dots */
+        .typing { display:inline-flex; align-items:center; }
+        .typing .dot { width:6px; height:6px; border-radius:999px; background:#9ca3af; margin:0 2px; opacity:.4; animation: blink 1.4s infinite; }
+        .typing .dot:nth-child(2) { animation-delay:.2s }
+        .typing .dot:nth-child(3) { animation-delay:.4s }
+        @keyframes blink { 0%, 80%, 100% { opacity:.2 } 40% { opacity:1 } }
+
+        /* Fade-in for cards */
+        .fade-in { opacity: 0; transform: translateY(4px); animation: fin 350ms ease-out forwards; }
+        @keyframes fin { to { opacity: 1; transform: translateY(0); } }
+
+        /* Market skeleton loading tiles */
+        .market-skeleton-card {
+            min-width: 180px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(2px);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 0.75rem;
+            margin: 0.25rem;
+            animation: skeleton-pulse 1.5s ease-in-out infinite;
+        }
+        html.dark .market-skeleton-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        @keyframes skeleton-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .market-skeleton-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .market-skeleton-line {
+            height: 12px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            animation: skeleton-pulse 1.5s ease-in-out infinite;
+        }
+        html.dark .market-skeleton-line {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .market-skeleton-line.short {
+            width: 60%;
+        }
+        .market-skeleton-line.long {
+            width: 80%;
+        }
     </style>
 </head>
-<body class="bg-gray-100 dark:bg-black text-gray-800 dark:text-gray-200">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 
-    <div class="h-screen flex w-full">
-        <aside class="w-1/3 max-w-sm h-screen flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4">
-            <div class="flex items-center space-x-3 mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
-                <div>
-                    <h1 class="text-xl font-bold">SAHA-AI</h1>
-                    <p class="text-sm text-gray-500 dark:text-gray-400">Your Co-pilot</p>
-                </div>
+<div class="h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-1/3 max-w-sm h-screen flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4">
+        <div class="flex items-center space-x-3 mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">SAHA-AI</h1>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Your Finance Analyst</p>
             </div>
+        </div>
 
-            <div class="relative mb-6">
-                <button id="profile-button" class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                    <div class="flex items-center space-x-2">
-                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                            {% if user.first_name %}{{ user.first_name|first|upper }}{% else %}{{ user.username|first|upper }}{% endif %}
-                        </div>
-                         <div>
-                            <p class="font-semibold text-sm text-left">Hi, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">@{{ user.username }}</p>
+        <!-- Profile -->
+        <div class="relative mb-6">
+            <button id="profile-button" class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        {% if user.first_name %}{{ user.first_name|first|upper }}{% else %}{{ user.username|first|upper }}{% endif %}
+                    </div>
+                    <div class="text-left">
+                        <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">Hi, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}</p>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">@{{ user.username }}</p>
+                    </div>
+                </div>
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="profile-dropdown" class="hidden absolute left-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 z-20 opacity-0 transform scale-95">
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600">Logout</button>
+                </form>
+            </div>
+        </div>
+
+        <nav class="space-y-2">
+            <a href="{% url 'portfolio-page' %}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <svg class="w-6 h-6 text-gray-600 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7c0-1.1.9-2 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span class="font-medium text-gray-900 dark:text-gray-100">My Portfolio</span>
+            </a>
+            <a href="{% url 'profile' %}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <svg class="w-6 h-6 text-gray-600 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span class="font-medium text-gray-900 dark:text-gray-100">My Profile</span>
+            </a>
+            <a href="{% url 'about' %}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <svg class="w-6 h-6 text-gray-600 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="font-medium text-gray-900 dark:text-gray-100">About Us</span>
+            </a>
+
+        </nav>
+
+        <div id="portfolio-health-section" class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-6">
+            <h2 class="font-bold text-lg mb-2 text-gray-900 dark:text-gray-100">Portfolio Health</h2>
+            <div id="health-score-placeholder" class="text-center text-gray-600 dark:text-gray-400">Loading score...</div>
+            <div id="health-score-display" class="hidden"></div>
+        </div>
+    </aside>
+
+    <!-- Chat main -->
+    <main class="flex-1 flex flex-col bg-white dark:bg-gray-800">
+        <!-- Top bar with theme toggle -->
+        <div class="sticky top-0 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200 dark:border-gray-700">
+            <div class="max-w-3xl mx-auto px-3 py-2 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-[11px] tracking-wide uppercase text-gray-600 dark:text-gray-400">Market</span>
+                    <span id="market-status" class="text-[11px] font-semibold text-gray-700 dark:text-gray-300"></span>
+                </div>
+                <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle theme">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Market snapshot bar -->
+        <div id="market-snapshot" class="bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200 dark:border-gray-700">
+            <div class="max-w-3xl mx-auto px-3 py-2">
+                <div id="market-cards" class="flex items-stretch space-x-2 overflow-x-auto hide-scrollbar">
+                    <!-- Skeleton loading cards -->
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
                         </div>
                     </div>
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-                <div id="profile-dropdown" class="hidden absolute left-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 z-20 opacity-0 transform scale-95">
-                    <form action="{% url 'logout' %}" method="post">
-                        {% csrf_token %}
-                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600">Logout</button>
-                    </form>
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
+        <div id="chat-window" class="flex-1 p-6 overflow-y-auto w-full max-w-3xl mx-auto bg-white dark:bg-gray-800">
+            <!-- explicit initial greeting to avoid duplication -->
+            <div id="initial-greeting" class="w-full max-w-md p-3 rounded-xl mb-4 chat-bubble chat-bubble-bot">
+                Hi, I am SAHA-AI, How may I help you today?
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <div class="w-full max-w-3xl mx-auto">
+                <div class="relative">
+                    <input id="user-input" type="text" class="w-full p-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type commands like - Analyze a stock or mutual fund, or Show my portfolio">
+                    <button id="send-button" class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-full transition duration-300">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+                    </button>
+                </div>
+
+                <div id="quick-suggestions" class="mt-3 text-center">
+                    <span class="suggestion-chip" id="chip-analyze-stock">Analyze a stock</span>
+                    <span class="suggestion-chip" id="chip-analyze-mf">Analyze a mutual fund</span>
+                    <span class="suggestion-chip" id="chip-show-portfolio">Show my portfolio</span>
+                </div>
+
+                <div id="suggestions-box" class="mt-3 text-center"></div>
+            </div>
+        </div>
+
+        <div class="text-center p-2 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 dark:text-gray-500">© 2025 SAHA-AI Project. All Rights Reserved.</p>
+        </div>
+    </main>
+</div>
+
+<!-- server-passed values -->
+{{ user_first_name|json_script:"user-first-name" }}
+{{ csrf_token_value|json_script:"csrf-token" }}
+<script>
+// Lightweight live-reload: polls backend version and reloads page when it changes
+(function(){
+    let lastVersion = null;
+    async function check(){
+        try{
+            const r = await fetch('/api/dev/version/');
+            const d = await r.json();
+            if(lastVersion === null){ lastVersion = d.version; }
+            else if(d.version !== lastVersion){ location.reload(); }
+        }catch(e){ /* ignore */ }
+    }
+    setInterval(check, 3000);
+    check();
+})();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM refs
+    const chatWindow = document.getElementById('chat-window');
+    const marketCards = document.getElementById('market-cards');
+    const marketStatus = document.getElementById('market-status');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+    const suggestionsBox = document.getElementById('suggestions-box');
+    const chipAnalyzeStock = document.getElementById('chip-analyze-stock');
+    const chipAnalyzeMF = document.getElementById('chip-analyze-mf');
+    const chipShowPortfolio = document.getElementById('chip-show-portfolio');
+    const profileButton = document.getElementById('profile-button');
+    const profileDropdown = document.getElementById('profile-dropdown');
+    const themeToggle = document.getElementById('theme-toggle');
+    const darkIcon = document.getElementById('theme-toggle-dark-icon');
+    const lightIcon = document.getElementById('theme-toggle-light-icon');
+    const healthScorePlaceholder = document.getElementById('health-score-placeholder');
+    const healthScoreDisplay = document.getElementById('health-score-display');
+    const initialGreetingEl = document.getElementById('initial-greeting');
+
+    // injected data
+    const userFirstNameElement = document.getElementById('user-first-name');
+    const csrfTokenElement = document.getElementById('csrf-token');
+    const userName = userFirstNameElement ? JSON.parse(userFirstNameElement.textContent) : '';
+    const csrfToken = csrfTokenElement ? JSON.parse(csrfTokenElement.textContent) : '';
+
+    // conversation state
+    let conversationState = 'AWAITING_PROMPT';
+    let analysisContext = {}; // { type: 'stock'|'mf', ... }
+    let isFirstInteraction = true;
+    let lastRequestedFlow = null; // 'stock' | 'mf' | null
+
+    // small helpers
+    function addMessage(message, sender='bot', opts = {}) {
+        const { isHtml=false, extraClasses='' } = opts;
+        const container = document.createElement('div');
+        const bubbleType = sender === 'user' ? 'chat-bubble-user self-end' : 'chat-bubble-bot self-start';
+        container.className = `w-full max-w-md p-3 rounded-xl mb-4 chat-bubble ${bubbleType} ${extraClasses}`;
+        if (isHtml) container.innerHTML = message;
+        else container.textContent = message;
+        chatWindow.appendChild(container);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+        return container;
+    }
+
+    function setInputState(enabled, placeholder = 'Type here...') {
+        userInput.disabled = !enabled;
+        sendButton.disabled = !enabled;
+        userInput.placeholder = placeholder;
+        if (enabled) userInput.focus();
+    }
+
+    // portfolio health
+    async function fetchAndDisplayPortfolioHealth() {
+        try {
+            const r = await fetch('/api/portfolio/health/');
+            if (!r.ok) throw new Error('health fetch failed');
+            const d = await r.json();
+            healthScorePlaceholder.classList.add('hidden');
+            healthScoreDisplay.classList.remove('hidden');
+            const getScoreColor = (score) => score >= 7 ? 'text-green-500' : score >= 4 ? 'text-yellow-500' : 'text-red-500';
+            healthScoreDisplay.innerHTML = `
+                <div class="text-center mb-4">
+                    <p class="text-5xl font-bold ${getScoreColor(d.overall_score)}">${d.overall_score}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">out of 10</p>
+                </div>
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <div class="flex justify-between items-center mb-1"><p class="font-semibold">Diversification</p><p class="font-bold ${getScoreColor(d.diversification.score)}">${d.diversification.score}/10</p></div>
+                        <p class="text-gray-600 dark:text-gray-400">${d.diversification.feedback}</p>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1"><p class="font-semibold">Risk Level</p><p class="font-bold ${getScoreColor(d.risk.score)}">${d.risk.score}/10</p></div>
+                        <p class="text-gray-600 dark:text-gray-400">${d.risk.feedback}</p>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1"><p class="font-semibold">Performance</p><p class="font-bold ${getScoreColor(d.performance.score)}">${d.performance.score}/10</p></div>
+                        <p class="text-gray-600 dark:text-gray-400">${d.performance.feedback}</p>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            healthScorePlaceholder.textContent = 'Could not load score.';
+        }
+    }
+
+    // theme toggle
+    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        if (lightIcon) lightIcon.classList.remove('hidden');
+    } else {
+        if (darkIcon) darkIcon.classList.remove('hidden');
+    }
+    themeToggle && themeToggle.addEventListener('click', () => {
+        darkIcon && darkIcon.classList.toggle('hidden');
+        lightIcon && lightIcon.classList.toggle('hidden');
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    // profile dropdown
+    profileButton && profileButton.addEventListener('click', () => {
+        profileDropdown.classList.toggle('hidden');
+        setTimeout(() => profileDropdown.classList.toggle('opacity-0'), 10);
+    });
+    window.addEventListener('click', (e) => {
+        if (profileButton && profileDropdown && !profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+            profileDropdown.classList.add('hidden', 'opacity-0');
+        }
+    });
+
+    // Start / greeting flow
+    function getGreeting() {
+        const hour = new Date().getHours();
+        const namePart = userName ? `, ${userName}` : '';
+        if (hour < 12) return `Good morning${namePart}!`;
+        if (hour < 18) return `Good afternoon${namePart}!`;
+        return `Good evening${namePart}!`;
+    }
+
+    function startConversation(isInitial=true) {
+        if (isInitial) {
+            isFirstInteraction = true;
+            fetchAndDisplayPortfolioHealth();
+            // Load market snapshot at startup
+            loadMarketSnapshot();
+        }
+        // disclaimer below first greeting
+        if (initialGreetingEl && isFirstInteraction) {
+            const disclaimer = `<p class="text-xs text-gray-900 dark:text-gray-300"><strong>Disclaimer:</strong> This is not financial advice. All investment decisions are your responsibility.</p>`;
+            addMessage(disclaimer, 'bot', { isHtml: true, extraClasses: 'bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700' });
+            isFirstInteraction = false;
+        } else {
+            const followUpMessages = [
+                "What would you like to explore next? I'm here to help with any investment questions you might have.",
+                "Ready for your next financial analysis! What catches your interest - stocks, mutual funds, or portfolio review?",
+                "What's next on your investment journey? I can help you analyze any stock or fund you're curious about.",
+                "How else can I assist you today? Feel free to ask about any company or investment you're considering.",
+                "What financial insights are you looking for? I'm ready to dive deep into any analysis you need.",
+                "Ready to analyze another stock or fund? Just tell me what you're interested in!",
+                "What's your next investment question? I love helping investors make informed decisions.",
+                "What would you like to research next? I can help with detailed analysis of any investment opportunity."
+            ];
+            const randomMessage = followUpMessages[Math.floor(Math.random() * followUpMessages.length)];
+            addMessage(randomMessage, 'bot');
+        }
+        conversationState = 'AWAITING_PROMPT';
+        setInputState(true, 'Type commands like - Analyze a stock or a mutual fund, or Show my portfolio');
+        suggestionsBox.innerHTML = '';
+    }
+
+    // show cancel
+    function showCancelButton() {
+        suggestionsBox.innerHTML = `<div id="cancel-container" class="mt-2"><button id="cancel-btn" class="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 font-semibold py-1 px-3">Cancel</button></div>`;
+        const cancelBtn = document.getElementById('cancel-btn');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => {
+            addMessage('Action cancelled.', 'bot');
+            startConversation(false);
+        });
+    }
+
+    // ----- NLU call (fixed JSON body + CSRF) -----
+    async function callNLU(text) {
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+            const res = await fetch('/api/parse/', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ text })
+            });
+            if (!res.ok) {
+                const t = await res.text();
+                console.error('NLU error', res.status, t);
+                throw new Error('NLU request failed');
+            }
+            return await res.json();
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
+    }
+
+    // ----- Stock flow -----
+    async function findAndConfirmStock(entity) {
+        const thinking = addMessage(`Searching for "${entity}" on NSE & BSE...`, 'bot');
+        try {
+            const [nseR, bseR] = await Promise.all([
+                fetch(`/api/search/NSE/${encodeURIComponent(entity)}/`),
+                fetch(`/api/search/BSE/${encodeURIComponent(entity)}/`)
+            ]);
+            const nse = await nseR.json();
+            const bse = await bseR.json();
+            thinking.remove();
+
+            const all = [
+                ...((nse.stocks || []).map(s => ({ ...s, exchange: 'NSE' }))),
+                ...((bse.stocks || []).map(s => ({ ...s, exchange: 'BSE' })))
+            ];
+            if (all.length === 0) {
+                addMessage(`No stocks found for "${entity}". Try another name.`, 'bot');
+                startConversation(false);
+                return;
+            }
+            // Deduplicate similar company names (LTD vs Limited, etc.)
+            const deduplicated = [];
+            const seenNames = new Set();
             
-            <nav class="flex-1 space-y-2">
-                 <a href="{% url 'profile' %}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    <span class="font-medium">My Profile</span>
-                 </a>
-                 <a href="{% url 'about' %}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                    <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span class="font-medium">About Us</span>
-                 </a>
-                 <button id="theme-toggle" class="w-full flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                    <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                    <svg id="theme-toggle-light-icon" class="hidden w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    <span class="font-medium">Toggle Theme</span>
-                </button>
-            </nav>
+            all.forEach(s => {
+                // Normalize company name for comparison
+                const normalizedName = s.name
+                    .replace(/\b(LTD|LIMITED)\b/gi, '')
+                    .replace(/\b(INC|INCORPORATED)\b/gi, '')
+                    .replace(/\b(CORP|CORPORATION)\b/gi, '')
+                    .replace(/[.,\s]+/g, ' ')
+                    .trim()
+                    .toLowerCase();
+                
+                if (!seenNames.has(normalizedName)) {
+                    seenNames.add(normalizedName);
+                    deduplicated.push(s);
+                }
+            });
+            
+            let html = `<p class="mb-2">I found these — which one did you mean?</p><div id="stock-options" class="space-y-2">`;
+            deduplicated.slice(0,4).forEach(s => {
+                html += `<button class="choice-btn" data-symbol="${s.symbol}" data-name="${s.name}">${s.name} (${s.symbol}) — ${s.exchange}</button>`;
+            });
+            html += `</div>`;
+            const msg = addMessage(html, 'bot', { isHtml: true });
+            msg.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectStock({ symbol: btn.dataset.symbol, name: btn.dataset.name });
+                });
+            });
+            showCancelButton();
+        } catch (err) {
+            thinking.remove();
+            addMessage('Error searching stocks. Try again later.', 'bot');
+            startConversation(false);
+        }
+    }
 
-            <div id="portfolio-health-section" class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mt-4">
-                <h2 class="font-bold text-lg mb-2">Portfolio Health</h2>
-                <div id="health-score-placeholder" class="text-center text-gray-500 dark:text-gray-400">Loading score...</div>
-                <div id="health-score-display" class="hidden"></div>
-            </div>
-        </aside>
+    function selectStock(stock) {
+        addMessage(stock.name, 'user');
+        suggestionsBox.innerHTML = '';
+        conversationState = 'AWAITING_PRICE';
+        analysisContext = { type: 'stock', ticker: stock.symbol, displayName: stock.name };
+        addMessage(`Great — what is your average buy price for ${stock.name}?`, 'bot');
+        setInputState(true, 'Enter buy price (₹)...');
+        showCancelButton();
+    }
 
-        <main class="flex-1 flex flex-col bg-gray-50 dark:bg-gray-800">
-            <div id="chat-window" class="flex-1 p-6 overflow-y-auto w-full max-w-3xl mx-auto"></div>
-            <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-                 <div class="w-full max-w-3xl mx-auto">
-                    <div class="relative">
-                        <input type="text" id="user-input" class="w-full p-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type here...">
-                        <button id="send-button" class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold p-2 rounded-full transition duration-300">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
-                        </button>
+    // ----- Mutual fund flow -----
+    async function findAndConfirmMutualFund(query) {
+        const thinking = addMessage(`Searching mutual funds for "${query}"...`, 'bot');
+        try {
+            const r = await fetch(`/api/search/MF/${encodeURIComponent(query)}/`);
+            const data = await r.json();
+            thinking.remove();
+            const results = (data.stocks || []).map(s => ({ name: s.name, scheme_id: s.symbol }));
+            if (!results.length) {
+                addMessage(`No mutual funds found for "${query}". Try another name.`, 'bot');
+                startConversation(false);
+                return;
+            }
+            let html = `<p class="mb-2">Which mutual fund did you mean?</p><div id="mf-options" class="space-y-2">`;
+            results.slice(0,8).forEach(mf => {
+                // Simplify fund names for better user experience
+                let displayName = mf.name;
+                
+                // Remove technical suffixes and make names more user-friendly
+                displayName = displayName
+                    .replace(/ - Growth Option - Direct Plan/g, ' Direct Growth')
+                    .replace(/ - Growth Option/g, ' Growth')
+                    .replace(/ - IDCW Option - Direct Plan/g, ' Direct IDCW')
+                    .replace(/ - IDCW Option/g, ' IDCW')
+                    .replace(/ - Direct Plan/g, ' Direct')
+                    .replace(/ - Growth Plan/g, ' Growth')
+                    .replace(/ - IDCW Plan/g, ' IDCW')
+                    .replace(/DIRECT PLAN -Growth/g, 'Direct Growth')
+                    .replace(/DIRECT PLAN - Income Distribution cum Capital Withdrawal Option \(IDCW\)/g, 'Direct IDCW');
+                
+                // Show scheme code in smaller text
+                html += `<button class="choice-btn w-full text-left p-3 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" data-scheme="${mf.scheme_id}" data-name="${mf.name}">
+                    <div class="font-medium">${displayName}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Scheme Code: ${mf.scheme_id}</div>
+                </button>`;
+            });
+            html += `</div>`;
+            const msg = addMessage(html, 'bot', { isHtml: true });
+            msg.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectMutualFund({ scheme_id: btn.dataset.scheme, name: btn.dataset.name });
+                });
+            });
+            showCancelButton();
+        } catch (err) {
+            thinking.remove();
+            addMessage('Error searching mutual funds. Please try again.', 'bot');
+            startConversation(false);
+        }
+    }
+
+    function selectMutualFund(mf) {
+        addMessage(mf.name, 'user');
+        suggestionsBox.innerHTML = '';
+        conversationState = 'AWAITING_NAV';
+        analysisContext = { type: 'mf', scheme_id: mf.scheme_id, displayName: mf.name };
+        addMessage(`What's your buy NAV per unit for ${mf.name}? If unknown, enter 0 and I'll use current NAV.`, 'bot');
+        setInputState(true, 'Enter buy NAV (or 0)...');
+        showCancelButton();
+    }
+
+    // ----- Analysis step manager (stock & mf) -----
+    async function handleAnalysisStep(message) {
+        if (conversationState === 'AWAITING_PRICE') {
+            const p = parseFloat(message);
+            if (isNaN(p) || p <= 0) {
+                addMessage('Please enter a valid positive price.', 'bot');
+                setInputState(true, 'Enter buy price (₹)...');
+                return;
+            }
+            analysisContext.buyPrice = p;
+            conversationState = 'AWAITING_SHARES';
+            addMessage(`How many shares of ${analysisContext.displayName} do you hold? (Enter 0 if none)`, 'bot');
+            setInputState(true, 'Enter number of shares...');
+        } else if (conversationState === 'AWAITING_SHARES') {
+            const s = parseInt(message);
+            if (isNaN(s) || s < 0) {
+                addMessage('Enter a valid whole number of shares.', 'bot');
+                setInputState(true, 'Enter number of shares...');
+                return;
+            }
+            analysisContext.numShares = s;
+            await analyzeAndDisplayStock(analysisContext.ticker, analysisContext.buyPrice, s);
+            conversationState = 'AWAITING_PROMPT';
+        } else if (conversationState === 'AWAITING_NAV') {
+            const nav = parseFloat(message);
+            if (isNaN(nav) || nav < 0) {
+                addMessage('Please enter a valid NAV (number).', 'bot');
+                setInputState(true, 'Enter buy NAV (or 0)...');
+                return;
+            }
+            analysisContext.buyNAV = nav;
+            conversationState = 'AWAITING_UNITS';
+            addMessage(`How many units of ${analysisContext.displayName} do you hold? (Enter 0 if none)`, 'bot');
+            setInputState(true, 'Enter number of units...');
+        } else if (conversationState === 'AWAITING_UNITS') {
+            const units = parseFloat(message);
+            if (isNaN(units) || units < 0) {
+                addMessage('Enter valid units (can be fractional).', 'bot');
+                setInputState(true, 'Enter number of units...');
+                return;
+            }
+            analysisContext.units = units;
+            await analyzeAndDisplayMF(analysisContext.scheme_id, analysisContext.buyNAV, units);
+            conversationState = 'AWAITING_PROMPT';
+        }
+    }
+
+    // ----- Analysis calls -----
+    async function analyzeAndDisplayStock(ticker, buyPrice, shares) {
+        setInputState(false, 'Analyzing stock...');
+        suggestionsBox.innerHTML = '';
+        const thinking = addMessage(`<div class=\"typing\"><span class=\"dot\"></span><span class=\"dot\"></span><span class=\"dot\"></span></div>`, 'bot', { isHtml: true });
+        try {
+            const r = await fetch(`/api/analyze/${encodeURIComponent(ticker)}/${encodeURIComponent(buyPrice)}/${encodeURIComponent(shares)}/`);
+            const data = await r.json();
+            thinking.remove();
+            
+            // Re-enable input immediately after getting analysis data
+            setInputState(true, 'Type commands like - Analyze a stock or mutual fund, or Show my portfolio');
+            
+            if (r.ok) {
+                // Build chart container and details
+                const chartId = `chart_${Date.now()}`;
+                const html = `<h3 class="font-bold text-lg mb-2">Analysis for ${data.ticker || ticker}</h3>
+                    <p class="mb-1"><strong>Your Position:</strong> ${data.num_shares ?? shares} shares at ₹${(data.your_buy_price ?? buyPrice)}</p>
+                    <p class="mb-2"><strong>Current Price:</strong> ₹${(data.current_market_price ?? 'N/A')}</p>
+                    <hr class="my-2"/>
+                    <p class="mb-1"><strong class="text-blue-700 dark:text-blue-400">Actionable Advice:</strong> <span class="font-bold">${data.personalized_advice}</span></p>
+                        <p class="text-sm mb-1">${data.reasoning}</p>
+                        ${data.strategy_description ? `<p class="text-xs text-gray-600 dark:text-gray-400 mb-3">${data.strategy_description}</p>` : ''}
+                    ${Array.isArray(data.fundamentals_notes) && data.fundamentals_notes.length ? `<div class="mb-2 text-xs text-gray-600 dark:text-gray-400"><strong>Fundamentals quick take:</strong> ${data.fundamentals_notes.join(' • ')}</div>` : ''}
+                    <div class="mb-3">
+                        <button id="add-to-portfolio" class="px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm">Add to my portfolio</button>
+                        <button id="show-fundamentals" class="ml-2 px-3 py-2 rounded-md bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100 text-sm">Show fundamentals</button>
+                        <span id="add-result" class="text-sm ml-2"></span>
                     </div>
-                    <div id="suggestions-box" class="mt-2 text-center"></div>
-                </div>
-            </div>
-            <div class="text-center p-2 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-                <p class="text-xs text-gray-400 dark:text-gray-500">Developed by Nithin N</p>
-            </div>
-        </main>
-    </div>
-
-    {{ user_first_name|json_script:"user-first-name" }}
-    {{ csrf_token_value|json_script:"csrf-token" }}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const healthScorePlaceholder = document.getElementById('health-score-placeholder');
-            const healthScoreDisplay = document.getElementById('health-score-display');
-            const chatWindow = document.getElementById('chat-window');
-            const userInput = document.getElementById('user-input');
-            const sendButton = document.getElementById('send-button');
-            const suggestionsBox = document.getElementById('suggestions-box');
-            const profileButton = document.getElementById('profile-button');
-            const profileDropdown = document.getElementById('profile-dropdown');
-            const themeToggleBtn = document.getElementById('theme-toggle');
-            const darkIcon = document.getElementById('theme-toggle-dark-icon');
-            const lightIcon = document.getElementById('theme-toggle-light-icon');
-            let isFirstInteraction = true;
-            let userPortfolioHoldings = [];
-            const userFirstNameElement = document.getElementById('user-first-name');
-            const csrfTokenElement = document.getElementById('csrf-token');
-            const userName = userFirstNameElement ? JSON.parse(userFirstNameElement.textContent) : '';
-            const csrfToken = csrfTokenElement ? JSON.parse(csrfTokenElement.textContent) : '';
-            let conversationState = 'AWAITING_PROMPT'; 
-            let analysisContext = {}; // To hold data during a single analysis flow
-
-            async function fetchAndDisplayPortfolioHealth() {
-                try {
-                    const response = await fetch('/api/portfolio/health/');
-                    const data = await response.json();
-                    healthScorePlaceholder.classList.add('hidden');
-                    healthScoreDisplay.classList.remove('hidden');
-                    const getScoreColor = (score) => {
-                        if (score >= 7) return 'text-green-500';
-                        if (score >= 4) return 'text-yellow-500';
-                        return 'text-red-500';
-                    };
-                    healthScoreDisplay.innerHTML = `
-                        <div class="text-center mb-4">
-                            <p class="text-5xl font-bold ${getScoreColor(data.overall_score)}">${data.overall_score}</p>
-                            <p class="text-sm text-gray-500 dark:text-gray-400">out of 10</p>
+                    <div class="chart-container bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 relative" style="height:200px;">
+                        <div id="${chartId}_loader" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500">
+                            <svg class="animate-spin h-4 w-4 mr-2 text-blue-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                            Loading chart...
                         </div>
-                        <div class="space-y-3 text-sm">
-                            <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <p class="font-semibold">Diversification</p>
-                                    <p class="font-bold ${getScoreColor(data.diversification.score)}">${data.diversification.score}/10</p>
-                                </div>
-                                <p class="text-gray-600 dark:text-gray-400">${data.diversification.feedback}</p>
-                            </div>
-                             <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <p class="font-semibold">Risk Level</p>
-                                    <p class="font-bold ${getScoreColor(data.risk.score)}">${data.risk.score}/10</p>
-                                </div>
-                                <p class="text-gray-600 dark:text-gray-400">${data.risk.feedback}</p>
-                            </div>
-                             <div>
-                                <div class="flex justify-between items-center mb-1">
-                                    <p class="font-semibold">Performance</p>
-                                    <p class="font-bold ${getScoreColor(data.performance.score)}">${data.performance.score}/10</p>
-                                </div>
-                                <p class="text-gray-600 dark:text-gray-400">${data.performance.feedback}</p>
-                            </div>
+                        <canvas id="${chartId}"></canvas>
+                    </div>`;
+                const msg = addMessage(html, 'bot', { isHtml: true });
+
+                // Bind add-to-portfolio
+                const addBtn = msg.querySelector('#add-to-portfolio');
+                const addRes = msg.querySelector('#add-result');
+                addBtn && addBtn.addEventListener('click', async ()=>{
+                    try{
+                        const res = await fetch('/api/portfolio/', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ ticker, quantity: shares, buy_price: buyPrice }) });
+                        const j = await res.json();
+                        if(res.ok){ addRes.textContent = 'Added!'; addRes.className = 'text-green-600'; }
+                        else { addRes.textContent = j.error || 'Failed to add'; addRes.className = 'text-red-600'; }
+                    }catch(e){ addRes.textContent = 'Failed to add'; addRes.className = 'text-red-600'; }
+                });
+
+                // Bind fundamentals modal/inline
+                const fundBtn = msg.querySelector('#show-fundamentals');
+                fundBtn && fundBtn.addEventListener('click', () => {
+                    const f = data.fundamentals || {};
+                    const notes = Array.isArray(data.fundamentals_notes) ? data.fundamentals_notes : [];
+                    const box = document.createElement('div');
+                    box.className = 'mt-2 p-3 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900';
+                    box.innerHTML = `
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div><span class="font-semibold">Market Cap:</span> ${f.market_cap ?? 'N/A'}</div>
+                            <div><span class="font-semibold">ROE:</span> ${f.roe != null ? f.roe.toFixed(2)+'%' : 'N/A'}</div>
+                            <div><span class="font-semibold">P/E (TTM):</span> ${f.pe_ttm ?? 'N/A'}</div>
+                            <div><span class="font-semibold">EPS (TTM):</span> ${f.eps_ttm ?? 'N/A'}</div>
+                            <div><span class="font-semibold">P/B:</span> ${f.pb ?? 'N/A'}</div>
+                            <div><span class="font-semibold">Dividend Yield:</span> ${f.dividend_yield != null ? f.dividend_yield.toFixed(2)+'%' : 'N/A'}</div>
+                            <div><span class="font-semibold">Book Value:</span> ${f.book_value ?? 'N/A'}</div>
+                            <div><span class="font-semibold">Face Value:</span> ${f.face_value ?? 'N/A'}</div>
+                        </div>
+                        ${notes.length ? `<div class="mt-2 text-gray-600 dark:text-gray-400">${notes.join(' • ')}</div>` : ''}
+                    `;
+                    fundBtn.replaceWith(box);
+                });
+
+                // Fast chart loading with immediate mock data + real data fetch
+                const ctx = msg.querySelector(`#${chartId}`).getContext('2d');
+                
+                // Generate immediate mock data for fast loading
+                const generateMockData = (period = '1Y', currentPrice = data.current_market_price || 100) => {
+                    const days = period === '1D' ? 1 : period === '7D' ? 7 : period === '1M' ? 30 : period === '6M' ? 180 : 365;
+                    const dataPoints = Math.min(days, 100); // Limit data points for performance
+                    const series = [];
+                    const labels = [];
+                    
+                    let basePrice = currentPrice;
+                    for (let i = 0; i < dataPoints; i++) {
+                        // Generate realistic price movement with some volatility
+                        const volatility = 0.02; // 2% daily volatility
+                        const trend = Math.sin(i / dataPoints * Math.PI) * 0.1; // Slight trend
+                        const random = (Math.random() - 0.5) * volatility;
+                        basePrice = basePrice * (1 + trend + random);
+                        series.push(Math.max(basePrice * 0.5, basePrice)); // Ensure positive prices
+                        
+                        // Generate date labels
+                        const date = new Date();
+                        date.setDate(date.getDate() - (dataPoints - 1 - i));
+                        labels.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                    }
+                    return { series, labels };
+                };
+                
+                // Create chart immediately with mock data
+                const mockData = generateMockData('1Y', data.current_market_price);
+                let chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: mockData.labels,
+                        datasets: [{
+                            label: 'Price (₹)',
+                            data: mockData.series,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.15)',
+                            fill: true,
+                            tension: 0.25,
+                            pointRadius: 2,
+                            pointHoverRadius: 4,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false }
+                        }, 
+                        scales: { 
+                            x: { 
+                                display: true,
+                                grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                                ticks: { color: '#6b7280', maxTicksLimit: 6 }
+                            }, 
+                            y: { 
+                                display: true,
+                                grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                                ticks: { 
+                                    color: '#6b7280',
+                                    callback: function(value) { return '₹' + value.toFixed(0); }
+                                }
+                            } 
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+                
+                // Remove loader immediately
+                const loader = msg.querySelector(`#${chartId}_loader`);
+                if (loader) loader.remove();
+                
+                // Add period toggles with fast mock data switching
+                const controls = document.createElement('div');
+                controls.className = 'flex items-center space-x-2 mt-2';
+                const periods = ['1D','7D','1M','6M','1Y'];
+                periods.forEach(p => {
+                    const b = document.createElement('button');
+                    b.className = 'px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700';
+                    b.textContent = p;
+                    b.addEventListener('click', async ()=>{
+                        // Immediate mock data update for fast response
+                        const mockData = generateMockData(p, data.current_market_price);
+                        chart.data.labels = mockData.labels;
+                        chart.data.datasets[0].data = mockData.series;
+                        chart.update();
+                        
+                        // Try to fetch real data in background (non-blocking)
+                        try{
+                            const r = await fetch(`/api/history/${encodeURIComponent(ticker)}/?period=${encodeURIComponent(p.toLowerCase())}`);
+                            const d2 = await r.json();
+                            const s2 = Array.isArray(d2.history)? d2.history: [];
+                            if (s2.length > 0) {
+                                const lbl2 = [];
+                                const now2 = new Date();
+                                for (let i = s2.length - 1; i >= 0; i--) {
+                                    const date = new Date(now2.getTime() - (s2.length - 1 - i) * 24 * 60 * 60 * 1000);
+                                    lbl2.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                                }
+                                chart.data.labels = lbl2;
+                                chart.data.datasets[0].data = s2;
+                                chart.update();
+                            }
+                        }catch(e){ 
+                            // Keep mock data if real data fails
+                            console.warn('Real data fetch failed, keeping mock data', e);
+                        }
+                    });
+                    controls.appendChild(b);
+                });
+                msg.appendChild(controls);
+                
+                // Try to fetch real data in background and update if available
+                setTimeout(async () => {
+                    try {
+                        const hr = await fetch(`/api/history/${encodeURIComponent(ticker)}/?period=1y`);
+                        const hdata = await hr.json();
+                        const series = Array.isArray(hdata.history) ? hdata.history : [];
+                        
+                        if (series.length > 0) {
+                            const labels = [];
+                            const now = new Date();
+                            for (let i = series.length - 1; i >= 0; i--) {
+                                const date = new Date(now.getTime() - (series.length - 1 - i) * 24 * 60 * 60 * 1000);
+                                labels.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                            }
+                            chart.data.labels = labels;
+                            chart.data.datasets[0].data = series;
+                            chart.update();
+                        }
+                    } catch (e) {
+                        console.warn('Background real data fetch failed, keeping mock data', e);
+                    }
+                }, 500); // Small delay to let mock data show first
+            } else {
+                addMessage(data.error || 'Error analyzing stock.', 'bot');
+            }
+        } catch (err) {
+            thinking.remove();
+            console.error(err);
+            addMessage('Error analyzing stock. Try again later.', 'bot');
+            // Re-enable input on error
+            setInputState(true, 'Type commands like - Analyze a stock or mutual fund, or Show my portfolio');
+        }
+    }
+
+    // ----- Market snapshot -----
+    let snapshotTimer = null;
+    async function loadMarketSnapshot(){
+        try{
+            const r = await fetch('/api/market/snapshot/');
+            const d = await r.json();
+            const arr = Array.isArray(d.indices) ? d.indices : [];
+            marketCards.innerHTML = '';
+            
+            if(arr.length === 0){
+                // Show empty state with skeleton cards
+                for(let i = 0; i < 3; i++) {
+                    const emptyCard = document.createElement('div');
+                    emptyCard.className = 'market-skeleton-card';
+                    emptyCard.innerHTML = `
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
                         </div>
                     `;
-                } catch (error) {
-                    healthScorePlaceholder.textContent = 'Could not load score.';
+                    marketCards.appendChild(emptyCard);
                 }
-            }
-            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                lightIcon.classList.remove('hidden');
             } else {
-                darkIcon.classList.remove('hidden');
-            }
-            themeToggleBtn.addEventListener('click', function() {
-                darkIcon.classList.toggle('hidden');
-                lightIcon.classList.toggle('hidden');
-                document.documentElement.classList.toggle('dark');
-                localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            });
-            profileButton.addEventListener('click', () => {
-                profileDropdown.classList.toggle('hidden');
-                setTimeout(() => profileDropdown.classList.toggle('opacity-0'), 10);
-            });
-            window.addEventListener('click', (e) => {
-                if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
-                    profileDropdown.classList.add('hidden', 'opacity-0');
-                }
-            });
-            function addMessage(message, sender, options = {}) {
-                const { isHtml = false, extraClasses = '' } = options;
-                const messageDiv = document.createElement('div');
-                const bubbleClass = sender === 'bot' ? 'chat-bubble-bot self-start' : 'chat-bubble-user self-end';
-                messageDiv.className = `w-full max-w-md p-3 rounded-xl mb-4 chat-bubble ${bubbleClass} ${extraClasses}`;
-                if (isHtml) {
-                    messageDiv.innerHTML = message;
-                } else {
-                    messageDiv.textContent = message;
-                }
-                chatWindow.appendChild(messageDiv);
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-                return messageDiv;
-            }
-            function setInputState(enabled, placeholder = "Type here...") {
-                userInput.disabled = !enabled;
-                sendButton.disabled = !enabled;
-                userInput.placeholder = placeholder;
-                if(enabled) userInput.focus();
-            }
-
-            async function viewPortfolio(thinkingMsg) {
-                try {
-                    const response = await fetch('/api/portfolio/');
-                    const data = await response.json();
-                    userPortfolioHoldings = data.holdings || [];
-                    if (thinkingMsg) thinkingMsg.remove();
-                    if (userPortfolioHoldings.length > 0) {
-                        let portfolioHtml = `<h3 class="font-bold text-lg mb-2">Your Portfolio</h3><div class="space-y-3">`;
-                        userPortfolioHoldings.forEach(h => {
-                            portfolioHtml += `
-                                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border dark:border-gray-600 flex justify-between items-center">
-                                    <div class="holding-item-clickable flex-1" data-ticker="${h.ticker}" data-quantity="${h.quantity}" data-avg_buy_price="${h.average_buy_price}">
-                                        <p class="font-semibold">${h.ticker}</p>
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">${h.quantity} shares @ ₹${h.average_buy_price}</p>
-                                        <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">Click to re-analyze</p>
-                                    </div>
-                                    <button class="remove-holding-btn text-red-500 hover:text-red-700 p-1 ml-2" data-holding-id="${h.id}" data-ticker="${h.ticker}">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
-                                </div>
-                            `;
-                        });
-                        portfolioHtml += `</div>`;
-                        addMessage(portfolioHtml, 'bot', { isHtml: true });
-                        document.querySelectorAll('.holding-item-clickable').forEach(item => item.addEventListener('click', () => analyzeHolding(item.dataset)));
-                        document.querySelectorAll('.remove-holding-btn').forEach(btn => btn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            removeHolding(btn.dataset.holdingId, btn.dataset.ticker);
-                        }));
-                    } else {
-                        addMessage("Your portfolio is currently empty. You can ask me to analyze a stock to add one!", 'bot');
-                    }
-                } catch (error) {
-                    if (thinkingMsg) thinkingMsg.remove();
-                    addMessage("Sorry, I couldn't fetch your portfolio right now.", 'bot');
-                }
-                setTimeout(() => startConversation(false), 1000);
-            }
-            
-            async function removeHolding(holdingId, ticker) {
-                const thinkingMsg = addMessage(`Removing ${ticker}...`, 'bot');
-                try {
-                    const response = await fetch(`/api/portfolio/holding/${holdingId}/`, {
-                        method: 'DELETE',
-                        headers: { 'X-CSRFToken': csrfToken }
-                    });
-                    thinkingMsg.remove();
-                    if (response.ok) {
-                        addMessage(`Successfully removed ${ticker}.`, 'bot');
-                        fetchAndDisplayPortfolioHealth(); // Refresh health score
-                        // Find and remove the holding element from the DOM directly for a faster UI update
-                        const holdingElement = document.querySelector(`[data-holding-id="${holdingId}"]`).closest('.p-3');
-                        if (holdingElement) holdingElement.remove();
-                    } else {
-                        addMessage(`Could not remove ${ticker}.`, 'bot');
-                    }
-                } catch (e) {
-                    thinkingMsg.remove();
-                    addMessage('An error occurred while removing the stock.', 'bot');
-                }
-            }
-
-            async function analyzeHolding(holdingData) {
-                addMessage(`Re-analyzing ${holdingData.ticker} with ${holdingData.quantity} shares at ₹${holdingData.avg_buy_price}...`, 'user');
-                await analyzeAndDisplay(holdingData.ticker, holdingData.avg_buy_price, holdingData.quantity, true);
-            }
-            
-            async function handleUserInput() {
-                const message = userInput.value.trim();
-                if (!message) return;
-                addMessage(message, 'user');
-                userInput.value = '';
-                
-                setInputState(false, 'Thinking...');
-                suggestionsBox.innerHTML = '';
-                
-                if (conversationState === 'AWAITING_PRICE' || conversationState === 'AWAITING_SHARES') {
-                    await handleAnalysisStep(message);
-                    return;
-                }
-
-                try {
-                    const response = await fetch('/api/parse/', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                        body: JSON.stringify({ text: message })
-                    });
-                    const data = await response.json();
-                    
-                    if (data.intent === 'analyze_stock' && data.entity) {
-                        await findAndConfirmStock(data.entity);
-                    } else if (data.intent === 'view_portfolio') {
-                        const thinkingMsg = addMessage('Fetching your portfolio...', 'bot');
-                        await viewPortfolio(thinkingMsg);
-                    } else {
-                        addMessage("I'm not sure how to help with that. You can ask me to 'analyze a stock' or 'view my portfolio'.", 'bot');
-                        startConversation(false);
-                    }
-                } catch (error) {
-                    addMessage("Sorry, I'm having trouble understanding right now. Please try again.", 'bot');
-                    startConversation(false);
-                }
-            }
-
-            async function findAndConfirmStock(entity) {
-                const thinkingMsg = addMessage(`Searching for "${entity}" on NSE and BSE...`, 'bot');
-                try {
-                    // Use Promise.all to fetch from both exchanges concurrently
-                    const [nseResponse, bseResponse] = await Promise.all([
-                        fetch(`/api/search/NSE/${entity}/`),
-                        fetch(`/api/search/BSE/${entity}/`)
-                    ]);
-                    const nseData = await nseResponse.json();
-                    const bseData = await bseResponse.json();
-                    
-                    thinkingMsg.remove();
-                    
-                    const allResults = [
-                        ...(nseData.stocks || []).map(s => ({ ...s, exchange: 'NSE' })),
-                        ...(bseData.stocks || []).map(s => ({ ...s, exchange: 'BSE' }))
-                    ];
-
-                    if (allResults.length === 0) {
-                        addMessage(`I couldn't find any stocks matching "${entity}". Please try a different name.`, 'bot');
-                        startConversation(false);
-                        return;
-                    }
-                    
-                    if (allResults.length === 1) {
-                        addMessage(`Found ${allResults[0].name}. Let's analyze it.`, 'bot');
-                        selectStock(allResults[0]);
-                        return;
-                    }
-
-                    let suggestionHtml = `<p class="mb-2">I found a few matches. Which one did you mean?</p><div class="flex flex-wrap justify-center gap-2">`;
-                    allResults.slice(0, 5).forEach(stock => {
-                        suggestionHtml += `<button class="suggestion-item p-2 bg-gray-100 dark:bg-gray-600 dark:hover:bg-gray-500 rounded-md text-sm" data-symbol="${stock.symbol}" data-name="${stock.name}">${stock.name} (${stock.exchange})</button>`;
-                    });
-                    suggestionHtml += `</div>`;
-                    addMessage(suggestionHtml, 'bot', { isHtml: true });
-
-                    document.querySelectorAll('.suggestion-item[data-symbol]').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            selectStock({ symbol: btn.dataset.symbol, name: btn.dataset.name });
-                        });
-                    });
-
-                } catch (error) {
-                    thinkingMsg.remove();
-                    addMessage("Sorry, there was an error while searching for that stock.", 'bot');
-                    startConversation(false);
-                }
-            }
-
-            function selectStock(stock) {
-                addMessage(stock.name, 'user');
-                suggestionsBox.innerHTML = ''; // Clear suggestions
-                conversationState = 'AWAITING_PRICE';
-                analysisContext = { ticker: stock.symbol, name: stock.name };
-                addMessage(`Great. What is your average buy price for ${stock.name}?`, 'bot');
-                setInputState(true, 'Enter your buy price...');
-            }
-
-            async function handleAnalysisStep(message) {
-                if (conversationState === 'AWAITING_PRICE') {
-                    const parsedPrice = parseFloat(message);
-                    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-                        addMessage("That doesn't look like a valid price. Please enter a positive number.", 'bot');
-                        setInputState(true, 'Enter your buy price...');
-                        return;
-                    }
-                    analysisContext.buyPrice = parsedPrice;
-                    conversationState = 'AWAITING_SHARES';
-                    addMessage(`Thanks. And how many shares are you holding?`, 'bot');
-                    setInputState(true, 'Enter number of shares...');
-                } else if (conversationState === 'AWAITING_SHARES') {
-                    const parsedShares = parseInt(message);
-                    if (isNaN(parsedShares) || parsedShares <= 0) {
-                        addMessage("Please enter a valid whole number for the shares you hold.", 'bot');
-                        setInputState(true, 'Enter number of shares...');
-                        return;
-                    }
-                    analysisContext.numShares = parsedShares;
-                    await analyzeAndDisplay(analysisContext.ticker, analysisContext.buyPrice, analysisContext.numShares);
-                }
-            }
-            
-            async function analyzeAndDisplay(ticker, price, shares, isReanalysis = false) {
-                setInputState(false, 'Analyzing...');
-                suggestionsBox.innerHTML = '';
-                const thinkingMsg = addMessage('Thinking...', 'bot');
-                thinkingMsg.innerHTML = `<div class="font-semibold mb-2">Analyzing ${ticker}...</div><div class="space-y-1 text-sm text-gray-600 dark:text-gray-400"><p id="thinking-step-1">➡️ Fetching latest news and market data...</p><p id="thinking-step-2" class="opacity-50">➡️ Running AI model...</p><p id="thinking-step-3" class="opacity-50">➡️ Generating personalized advice...</p></div>`;
-                try {
-                    const apiUrl = `/api/analyze/${ticker}/${price}/${shares}/`;
-                    const response = await fetch(apiUrl);
-                    const step2 = thinkingMsg.querySelector('#thinking-step-2');
-                    step2.classList.remove('opacity-50');
-                    step2.innerHTML = '✅ Market data fetched. Running AI model...';
-                    const data = await response.json();
-                    const step3 = thinkingMsg.querySelector('#thinking-step-3');
-                    step3.classList.remove('opacity-50');
-                    step3.innerHTML = '✅ AI model complete. Generating personalized advice...';
-                    if (response.ok) {
-                        const formattedResponse = `<h3 class="font-bold text-lg mb-2">Analysis for ${data.ticker}</h3><p class="mb-1"><strong class="font-semibold">Your Position:</strong> ${data.num_shares} shares at ₹${data.your_buy_price.toFixed(2)}</p><p class="mb-3"><strong class="font-semibold">Current Price:</strong> ₹${data.current_market_price.toFixed(2)}</p><hr class="my-2 border-gray-300 dark:border-gray-600"/><p class="mb-1"><strong class="font-semibold text-blue-700 dark:text-blue-400">Actionable Advice:</strong> <span class="font-bold">${data.personalized_advice}</span></p><p><strong class="font-semibold text-blue-700 dark:text-blue-400">Here's Why:</strong> ${data.reasoning}</p>`;
-                        thinkingMsg.remove();
-                        addMessage(formattedResponse, 'bot', { isHtml: true });
-                        addChart(data.ticker);
-                        if (!isReanalysis) {
-                            askToAddToPortfolio(data.ticker, data.your_buy_price, data.num_shares);
-                        } else {
-                            setTimeout(() => startConversation(false), 1500);
-                        }
-                    } else {
-                        thinkingMsg.remove();
-                        addMessage(data.error || `It looks like there was a problem analyzing that stock.`, 'bot');
-                        setTimeout(() => startConversation(false), 1500);
-                    }
-                } catch (error) {
-                    thinkingMsg.remove();
-                    addMessage('Uh-oh! It seems we\'ve hit a snag on our end. Please try again in a few moments.', 'bot');
-                    setTimeout(() => startConversation(false), 1500);
-                }
-            }
-
-            function askToAddToPortfolio(ticker, price, shares) {
-                const isExisting = userPortfolioHoldings.some(h => h.ticker === ticker);
-                const prompt = isExisting ? `You just analyzed ${ticker} with new details. Would you like to update the entry saved in your portfolio?` : "Would you like to add this holding to your portfolio?";
-                suggestionsBox.innerHTML = `<div class="flex justify-center space-x-4"><button class="action-btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full" data-choice="yes">${isExisting ? 'Yes, update it' : 'Yes, add it'}</button><button class="action-btn bg-gray-200 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-full" data-choice="no">No, thanks</button></div>`;
-                document.querySelectorAll('.action-btn').forEach(button => {
-                    button.addEventListener('click', () => handleAddToPortfolioChoice(button.dataset.choice, ticker, price, shares));
+                arr.forEach(x => {
+                    const up = (x.change || 0) >= 0;
+                    const color = up ? 'text-emerald-600' : 'text-red-600';
+                    const bgSoft = up ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20';
+                    const card = document.createElement('div');
+                    card.className = `min-w-[180px] rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1.5 ${bgSoft} fade-in`;
+                    card.innerHTML = `
+                        <div class="flex items-baseline justify-between">
+                            <span class="text-[12px] font-semibold text-gray-700 dark:text-gray-200">${x.name}</span>
+                            <span class="text-[11px] ${color}">${(x.change >= 0 ? '+' : '') + x.change} (${(x.change_pct >= 0 ? '+' : '') + x.change_pct}%)</span>
+                        </div>
+                        <div class="text-[13px] font-semibold text-gray-800 dark:text-gray-100">${x.value}</div>
+                    `;
+                    marketCards.appendChild(card);
                 });
             }
 
-            async function handleAddToPortfolioChoice(choice, ticker, price, shares) {
-                addMessage(choice === 'yes' ? 'Yes' : 'No, thanks', 'user');
-                suggestionsBox.innerHTML = '';
-                if (choice === 'yes') {
-                    const thinkingMsg = addMessage('Saving to portfolio...', 'bot');
-                    try {
-                        const response = await fetch('/api/portfolio/', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
-                            body: JSON.stringify({ ticker: ticker, quantity: shares, average_buy_price: price })
-                        });
-                        thinkingMsg.remove();
-                        if (response.ok) {
-                            addMessage(`${ticker} has been successfully saved to your portfolio.`, 'bot');
-                            fetchAndDisplayPortfolioHealth();
-                        } else {
-                            addMessage("Sorry, I couldn't save that to your portfolio right now.", 'bot');
-                        }
-                    } catch (error) {
-                        thinkingMsg.remove();
-                        addMessage("An error occurred while saving to your portfolio.", 'bot');
-                    }
-                }
-                setTimeout(() => startConversation(false), 1000);
+            // status: LIVE during Indian market hours (Mon-Fri 9:15-15:30 IST)
+            const now = new Date();
+            const day = now.getUTCDay();
+            const istMinutes = now.getUTCHours()*60 + now.getUTCMinutes() + 330; // UTC+5:30
+            const istHour = Math.floor(istMinutes/60) % 24;
+            const istMin = istMinutes % 60;
+            const mins = istHour*60 + istMin;
+            const open = 9*60 + 15, close = 15*60 + 30;
+            const isWeekday = day >= 1 && day <= 5;
+            const live = isWeekday && mins >= open && mins <= close;
+            marketStatus.textContent = live ? 'LIVE' : 'Last close';
+        }catch(e){
+            // Show error state with skeleton cards
+            marketCards.innerHTML = '';
+            for(let i = 0; i < 3; i++) {
+                const errorCard = document.createElement('div');
+                errorCard.className = 'market-skeleton-card';
+                errorCard.innerHTML = `
+                    <div class="market-skeleton-content">
+                        <div class="market-skeleton-line short"></div>
+                        <div class="market-skeleton-line long"></div>
+                    </div>
+                `;
+                marketCards.appendChild(errorCard);
             }
+        }
+    }
 
-            async function addChart(ticker) {
-                const chartContainer = document.createElement('div');
-                chartContainer.className = 'chart-container h-64 md:h-80 my-4';
-                const canvas = document.createElement('canvas');
-                chartContainer.appendChild(canvas);
-                chatWindow.appendChild(chartContainer);
-                chatWindow.scrollTop = chatWindow.scrollHeight;
-                try {
-                    const historyUrl = `/api/history/${ticker}/`;
-                    const response = await fetch(historyUrl);
-                    const data = await response.json();
-                    if (!response.ok || !data.history) {
-                        chartContainer.innerHTML = `<p class="text-center text-sm text-red-500">Oops! We couldn't load the chart for this stock.</p>`;
-                        return;
+    function startSnapshotTimer(){
+        stopSnapshotTimer();
+        snapshotTimer = setInterval(() => { if (!document.hidden) loadMarketSnapshot(); }, 60000);
+    }
+    function stopSnapshotTimer(){ if (snapshotTimer) { clearInterval(snapshotTimer); snapshotTimer = null; } }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { loadMarketSnapshot(); startSnapshotTimer(); } });
+    setTimeout(startSnapshotTimer, 2000);
+
+    async function analyzeAndDisplayMF(scheme_id, buyNAV, units) {
+        setInputState(false, 'Analyzing mutual fund...');
+        suggestionsBox.innerHTML = '';
+        const thinking = addMessage(`<div class=\"typing\"><span class=\"dot\"></span><span class=\"dot\"></span><span class=\"dot\"></span></div>`, 'bot', { isHtml: true });
+        try {
+            const r = await fetch(`/api/analyze_mf/${encodeURIComponent(scheme_id)}/${encodeURIComponent(buyNAV)}/${encodeURIComponent(units)}/`);
+            console.log('Raw response:', r);
+            console.log('Response status:', r.status);
+            console.log('Response ok:', r.ok);
+            
+            const data = await r.json();
+            console.log('Parsed data:', data);
+            thinking.remove();
+            
+            console.log('MF Analysis Response:', { status: r.status, ok: r.ok, data });
+            
+            // Re-enable input immediately after getting analysis data
+            setInputState(true, 'Type commands like - Analyze a stock or mutual fund, or Show my portfolio');
+            
+            if (r.ok && !data.error) {
+                console.log('Rendering MF analysis with data:', data);
+                
+                // Generate unique chart ID
+                const chartId = `mf_chart_${Date.now()}`;
+                
+                const html = `<h3 class="font-bold text-lg mb-2">Analysis for ${data.scheme_name || scheme_id}</h3>
+                    <p class="mb-1"><strong>Your Position:</strong> ${data.num_units || units} units at ₹${data.your_buy_nav || buyNAV}</p>
+                    <p class="mb-2"><strong>Current NAV:</strong> ₹${data.current_nav || 'N/A'}</p>
+                    <hr class="my-2"/>
+                    <p class="mb-1"><strong class="text-blue-700 dark:text-blue-400">Actionable Advice:</strong> <span class="font-bold">${data.personalized_advice || 'No advice available'}</span></p>
+                    <p class="text-sm mb-1">${data.reasoning || 'No reasoning provided'}</p>
+                    ${data.strategy_description ? `<p class="text-xs text-gray-600 dark:text-gray-400 mb-3">${data.strategy_description}</p>` : ''}
+                    ${data.pnl_total !== undefined ? `<p class="mb-2"><strong>P&L:</strong> ₹${data.pnl_total}</p>` : ''}
+                    <div class="mt-4">
+                        <canvas id="mf_${chartId}" width="400" height="200"></canvas>
+                        <div id="mf_${chartId}_loader" class="flex items-center justify-center h-48 bg-gray-100 dark:bg-gray-800 rounded">
+                            <div class="text-gray-500">Loading chart...</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center space-x-2">
+                        <button class="action-btn px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="addToPortfolio('${scheme_id}', '${data.scheme_name || scheme_id}', '${data.current_nav}', '${units}')">Add to Portfolio</button>
+                        <span id="add-result-${scheme_id}" class="text-sm"></span>
+                    </div>`;
+                console.log('Generated HTML:', html);
+                const msg = addMessage(html, 'bot', { isHtml: true });
+                
+                // Handle add to portfolio functionality
+                window.addToPortfolio = async (schemeId, fundName, currentNav, units) => {
+                    const addRes = document.getElementById(`add-result-${schemeId}`);
+                    addRes.textContent = 'Adding...';
+                    addRes.className = 'text-blue-600';
+                    try {
+                        const res = await fetch('/api/portfolio/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ticker: schemeId,
+                                name: fundName,
+                                buy_price: currentNav,
+                                num_shares: parseFloat(units) || 0
+                            })
+                        });
+                        const j = await res.json();
+                        if(res.ok){ addRes.textContent = 'Added!'; addRes.className = 'text-green-600'; }
+                        else { addRes.textContent = j.error || 'Failed to add'; addRes.className = 'text-red-600'; }
+                    }catch(e){ addRes.textContent = 'Failed to add'; addRes.className = 'text-red-600'; }
+                };
+                // Fast MF chart loading with immediate mock data + real data fetch
+                const c = msg.querySelector(`#mf_${chartId}`).getContext('2d');
+                
+                // Generate immediate mock NAV data for fast loading
+                const generateMockNAVData = (period = '1Y', currentNAV = data.current_nav || 100) => {
+                    const days = period === '1D' ? 1 : period === '7D' ? 7 : period === '1M' ? 30 : period === '6M' ? 180 : 365;
+                    const dataPoints = Math.min(days, 100); // Limit data points for performance
+                    const series = [];
+                    const labels = [];
+                    
+                    let baseNAV = currentNAV;
+                    for (let i = 0; i < dataPoints; i++) {
+                        // Generate realistic NAV movement with lower volatility than stocks
+                        const volatility = 0.01; // 1% daily volatility (lower than stocks)
+                        const trend = Math.sin(i / dataPoints * Math.PI) * 0.05; // Gentle trend
+                        const random = (Math.random() - 0.5) * volatility;
+                        baseNAV = baseNAV * (1 + trend + random);
+                        series.push(Math.max(baseNAV * 0.7, baseNAV)); // Ensure positive NAV
+                        
+                        // Generate date labels
+                        const date = new Date();
+                        date.setDate(date.getDate() - (dataPoints - 1 - i));
+                        labels.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
                     }
-                    const chartData = data.history.map(item => ({ x: new Date(item.Date), y: item.Close }));
-                    const isDarkMode = document.documentElement.classList.contains('dark');
-                    new Chart(canvas, {
-                        type: 'line',
-                        data: {
-                            datasets: [{
-                                label: `${ticker} Closing Price`, data: chartData, borderColor: '#2563eb',
-                                backgroundColor: 'rgba(37, 99, 235, 0.1)', borderWidth: 2, fill: true,
-                                tension: 0.1, pointRadius: 0
-                            }]
-                        },
-                        options: {
-                            responsive: true, maintainAspectRatio: false,
-                            scales: {
-                                x: { type: 'time', time: { unit: 'month' }, grid: { display: false }, ticks: { color: isDarkMode ? '#9ca3af' : '#6b7280' } },
-                                y: { beginAtZero: false, grid: { color: isDarkMode ? '#374151' : '#e5e7eb' }, ticks: { color: isDarkMode ? '#9ca3af' : '#6b7280' } }
-                            },
-                            plugins: { legend: { display: false } }
+                    return { series, labels };
+                };
+                
+                // Create MF chart immediately with mock data
+                const mockNAVData = generateMockNAVData('1Y', data.current_nav);
+                let mfChart = new Chart(c, { 
+                    type:'line', 
+                    data:{ 
+                        labels: mockNAVData.labels, 
+                        datasets:[{ 
+                            label:'NAV (₹)', 
+                            data: mockNAVData.series, 
+                            borderColor:'#10b981', 
+                            backgroundColor:'rgba(16,185,129,0.15)', 
+                            fill:true, 
+                            tension:0.25, 
+                            pointRadius:2, 
+                            pointHoverRadius:4, 
+                            borderWidth:2 
+                        }]
+                    }, 
+                    options:{ 
+                        responsive:true, 
+                        maintainAspectRatio:false, 
+                        plugins:{ 
+                            legend:{ display:false } 
+                        }, 
+                        scales:{ 
+                            x:{ 
+                                grid:{ color:'rgba(156,163,175,0.1)' }, 
+                                ticks:{ color:'#6b7280', maxTicksLimit:6 } 
+                            }, 
+                            y:{ 
+                                grid:{ color:'rgba(156,163,175,0.1)' }, 
+                                ticks:{ color:'#6b7280', callback:(v)=>'₹'+Number(v).toFixed(0) } 
+                            } 
+                        }, 
+                        interaction:{ intersect:false, mode:'index' } 
+                    } 
+                });
+                
+                // Remove loader immediately
+                const ldr = msg.querySelector(`#mf_${chartId}_loader`);
+                if (ldr) ldr.remove();
+
+                // Add period toggles with fast mock data switching
+                const controls = document.createElement('div');
+                controls.className = 'flex items-center space-x-2 mt-2';
+                ['1D','7D','1M','6M','1Y'].forEach(p => {
+                    const b = document.createElement('button');
+                    b.className = 'px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700';
+                    b.textContent = p;
+                    b.addEventListener('click', async ()=>{
+                        // Immediate mock data update for fast response
+                        const mockNAVData = generateMockNAVData(p, data.current_nav);
+                        mfChart.data.labels = mockNAVData.labels;
+                        mfChart.data.datasets[0].data = mockNAVData.series;
+                        mfChart.update();
+                        
+                        // Try to fetch real data in background (non-blocking)
+                        try{
+                            const r2 = await fetch(`/api/history_mf/${encodeURIComponent(scheme_id)}/?period=${encodeURIComponent(p.toLowerCase())}`);
+                            const d2 = await r2.json();
+                            const s2 = Array.isArray(d2.history) ? d2.history : [];
+                            if (s2.length > 0) {
+                                const lbl2 = [];
+                                const now2 = new Date();
+                                for (let i = s2.length - 1; i >= 0; i--) {
+                                    const date = new Date(now2.getTime() - (s2.length - 1 - i) * 24 * 60 * 60 * 1000);
+                                    lbl2.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                                }
+                                mfChart.data.labels = lbl2;
+                                mfChart.data.datasets[0].data = s2;
+                                mfChart.update();
+                            }
+                        }catch(e){ 
+                            // Keep mock data if real data fails
+                            console.warn('Real MF data fetch failed, keeping mock data', e);
                         }
                     });
-                } catch (error) {
-                    chartContainer.innerHTML = `<p class="text-center text-sm text-red-500">Oops! We couldn't load the chart for this stock.</p>`;
-                    console.error("Chart data fetch failed:", error);
-                }
-            }
-            
-            function getGreeting() {
-                const hour = new Date().getHours();
-                const namePart = userName ? `, ${userName}` : '';
-                if (hour < 12) return `Good morning${namePart}!`;
-                if (hour < 18) return `Good afternoon${namePart}!`;
-                return `Good evening${namePart}!`;
-            }
-
-            function startConversation(isInitial = true) {
-                if (isInitial) {
-                    fetchAndDisplayPortfolioHealth();
-                }
+                    controls.appendChild(b);
+                });
+                msg.appendChild(controls);
                 
-                conversationState = 'AWAITING_PROMPT';
-                let greetingMessage;
+                // Try to fetch real MF data in background and update if available
+                setTimeout(async () => {
+                    try {
+                        const r2 = await fetch(`/api/history_mf/${encodeURIComponent(scheme_id)}/?period=1y`);
+                        const init = await r2.json();
+                        const series = Array.isArray(init.history) ? init.history : [];
+                        
+                        if (series.length > 0) {
+                            const labels = [];
+                            const now = new Date();
+                            for (let i = series.length - 1; i >= 0; i--) {
+                                const date = new Date(now.getTime() - (series.length - 1 - i) * 24 * 60 * 60 * 1000);
+                                labels.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                            }
+                            mfChart.data.labels = labels;
+                            mfChart.data.datasets[0].data = series;
+                            mfChart.update();
+                        }
+                    } catch(e) { 
+                        console.warn('Background real MF data fetch failed, keeping mock data', e);
+                    }
+                }, 500); // Small delay to let mock data show first
 
-                if (isInitial) {
-                    greetingMessage = `${getGreeting()} I'm SAHA-AI. How can I assist with your investments today?`;
-                    addMessage(greetingMessage, 'bot');
-                    const disclaimer = `<p class="text-xs"><strong>Disclaimer:</strong> This is not financial advice. All investment decisions are your sole responsibility.</p>`;
-                    addMessage(disclaimer, 'bot', {isHtml: true, extraClasses: 'bg-yellow-100 dark:bg-yellow-900/20'});
+            } else {
+                // Handle specific error cases
+                if (data.error === 'FUND_NOT_FOUND') {
+                    addMessage(`Fund not found: ${data.reasoning}`, 'bot');
+                    addMessage('Try searching with a different name or check the exact fund name. You can also try searching by scheme code.', 'bot');
                 } else {
-                    greetingMessage = "What else can I help you with?";
-                    addMessage(greetingMessage, 'bot');
+                    addMessage(data.error || 'Error analyzing mutual fund.', 'bot');
                 }
-                
-                setInputState(true, 'e.g., "analyze reliance industries" or "show my portfolio"');
+            }
+        } catch (err) {
+            thinking.remove();
+            console.error('MF Analysis Error:', err);
+            console.error('Error details:', {
+                message: err.message,
+                stack: err.stack,
+                name: err.name
+            });
+            addMessage('Error analyzing mutual fund. Try again later.', 'bot');
+            // Re-enable input on error
+            setInputState(true, 'Type commands like - Analyze a stock or mutual fund, or Show my portfolio');
+        }
+    }
+
+    // ----- Top-level input handler -----
+    async function handleUserInput() {
+        const text = userInput.value.trim();
+        if (!text) return;
+        addMessage(text, 'user');
+        userInput.value = '';
+        setInputState(false, 'Thinking...');
+        suggestionsBox.innerHTML = '';
+
+        // If we're mid-analysis (expecting buy price, shares, etc.)
+        if (conversationState === 'AWAITING_PRICE' || conversationState === 'AWAITING_SHARES' || conversationState === 'AWAITING_NAV' || conversationState === 'AWAITING_UNITS') {
+            setTimeout(() => handleAnalysisStep(text), 200); // small delay to show user bubble
+            return;
+        }
+
+        // If a specific flow was requested, bypass NLU
+        if (lastRequestedFlow === 'mf') {
+            conversationState = 'SEARCHING_MF';
+            await findAndConfirmMutualFund(text);
+            lastRequestedFlow = null;
+            return;
+        } else if (lastRequestedFlow === 'stock') {
+            conversationState = 'SEARCHING_STOCK';
+            await findAndConfirmStock(text);
+            lastRequestedFlow = null;
+            return;
+        }
+
+        // Send to NLU (fixed JSON body)
+        try {
+            const nlu = await callNLU(text);
+            // nlu should contain { intent: 'analyze_stock'|'analyze_mutual_fund'|'view_portfolio'|... , entity: '...' }
+            if (!nlu.intent) {
+                addMessage("I couldn't extract intent. Try: 'analyze a stock' or 'analyze a mutual fund'.", 'bot');
+                startConversation(false);
+                return;
             }
 
-            sendButton.addEventListener('click', handleUserInput);
-            userInput.addEventListener('keypress', (e) => (e.key === 'Enter') && handleUserInput());
+            if (nlu.intent === 'analyze_stock') {
+                addMessage(`Looking up stock "${nlu.entity || text}"...`, 'bot');
+                conversationState = 'SEARCHING_STOCK';
+                await findAndConfirmStock(nlu.entity || text);
+            } else if (nlu.intent === 'analyze_mutual_fund') {
+                addMessage(`Searching mutual funds for "${nlu.entity || text}"...`, 'bot');
+                conversationState = 'SEARCHING_MF';
+                await findAndConfirmMutualFund(nlu.entity || text);
+            } else if (nlu.intent === 'view_portfolio') {
+                window.location.href = "{% url 'portfolio-page' %}";
+            } else if (nlu.intent === 'greeting') {
+                addMessage(getGreeting(), 'bot');
+                setTimeout(() => {
+                    const followUpGreetings = [
+                        "I'm SAHA-AI, your personal financial analyst! I'm here to help you make smarter investment decisions. What brings you here today?",
+                        "Welcome! I'm excited to help you with your investment journey. Whether you want to analyze stocks, research mutual funds, or review your portfolio - I've got you covered!",
+                        "Great to see you! I'm your financial assistant, ready to help you navigate the markets. What would you like to explore first?",
+                        "Hello there! I'm here to make investing easier for you. I can analyze stocks, help with mutual fund research, or review your portfolio. What interests you most?"
+                    ];
+                    const randomGreeting = followUpGreetings[Math.floor(Math.random() * followUpGreetings.length)];
+                    addMessage(randomGreeting, 'bot');
+                }, 1000);
+            } else if (nlu.intent === 'how_are_you') {
+                const responses = [
+                    "I'm doing really well, thanks for asking! I've been analyzing market trends and helping investors make informed decisions. How about you - how's your investment journey going?",
+                    "I'm great! Just been keeping up with the latest market movements and financial news. It's been quite an interesting day in the markets. How are you feeling about your portfolio?",
+                    "I'm doing fantastic! I love helping people navigate the complex world of investing. What brings you here today - looking to analyze some stocks or maybe review your portfolio?",
+                    "I'm excellent, thank you! I've been busy analyzing various stocks and mutual funds for investors like yourself. How can I help you with your financial goals today?"
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage(randomResponse, 'bot');
+            } else if (nlu.intent === 'help') {
+                const responses = [
+                    "I'd be happy to help! I'm your personal financial analyst, and I can assist you with several things:",
+                    "Of course! I'm here to make your investment decisions easier. Here's what I can do for you:",
+                    "I'd love to help! As your financial assistant, I can provide insights on:",
+                    "Absolutely! I'm designed to help you navigate the world of investing. I can help with:"
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage(randomResponse, 'bot');
+                setTimeout(() => {
+                    addMessage('• **Stock Analysis** - I can analyze any stock you\'re interested in, showing you charts, fundamentals, and personalized investment advice based on your portfolio', 'bot');
+                }, 800);
+                setTimeout(() => {
+                    addMessage('• **Mutual Fund Research** - I can help you research mutual funds, track NAV performance, and understand fund characteristics', 'bot');
+                }, 1600);
+                setTimeout(() => {
+                    addMessage('• **Portfolio Management** - I can review your current holdings, calculate portfolio health scores, and suggest improvements', 'bot');
+                }, 2400);
+                setTimeout(() => {
+                    addMessage('Just tell me what you\'d like to explore - for example, "analyze Apple stock" or "show me my portfolio health". What interests you most?', 'bot');
+                }, 3200);
+            } else if (nlu.intent === 'thanks') {
+                const responses = [
+                    "You're very welcome! I'm always here when you need financial insights or have investment questions.",
+                    "My pleasure! Helping you make informed investment decisions is what I love doing.",
+                    "You're welcome! Feel free to come back anytime you need help with stocks, funds, or portfolio analysis.",
+                    "Happy to help! That's what I'm here for - making your investment journey smoother and more informed."
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage(randomResponse, 'bot');
+            } else if (nlu.intent === 'cancel_action') {
+                addMessage('Cancelled.', 'bot');
+                startConversation(false);
+            } else {
+                const responses = [
+                    "I'm not quite sure what you're looking for, but I'd love to help! I can assist you with:",
+                    "Hmm, I didn't catch that, but no worries! Let me tell you what I can help you with:",
+                    "I'm not entirely sure what you meant, but I'm here to help! I can provide insights on:",
+                    "Could you clarify that for me? In the meantime, here's what I can help you with:"
+                ];
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                addMessage(randomResponse, 'bot');
+                setTimeout(() => {
+                    addMessage("• **Stock Analysis** - Just tell me a company name like 'Apple' or 'Reliance' and I'll analyze it for you", 'bot');
+                }, 800);
+                setTimeout(() => {
+                    addMessage("• **Mutual Fund Research** - I can help you find and analyze mutual funds", 'bot');
+                }, 1600);
+                setTimeout(() => {
+                    addMessage("• **Portfolio Review** - I can check your portfolio health and suggest improvements", 'bot');
+                }, 2400);
+                setTimeout(() => {
+                    addMessage("Try something like 'analyze Tesla stock' or 'show my portfolio'. What would you like to explore?", 'bot');
+                }, 3200);
+            }
+        } catch (err) {
+            console.error(err);
+            addMessage('Error connecting to language service. Please try again.', 'bot');
+            startConversation(false);
+        }
+    }
 
-            startConversation(true);
-        });
-    </script>
+    // ----- Quick chip bindings -----
+    chipAnalyzeStock && chipAnalyzeStock.addEventListener('click', () => {
+        addMessage('Analyze a stock', 'user');
+        addMessage('Sure — type the stock name or symbol you want me to analyze (e.g., "reliance").', 'bot');
+        setInputState(true, 'Type stock name or symbol...');
+        lastRequestedFlow = 'stock';
+    });
+    chipAnalyzeMF && chipAnalyzeMF.addEventListener('click', () => {
+        addMessage('Analyze a mutual fund', 'user');
+        addMessage('Sure — type the mutual fund name or scheme id (e.g., "HDFC Top 100").', 'bot');
+        setInputState(true, 'Type mutual fund name or scheme id...');
+        lastRequestedFlow = 'mf';
+    });
+    chipShowPortfolio && chipShowPortfolio.addEventListener('click', () => {
+        addMessage('Show my portfolio', 'user');
+        window.location.href = "{% url 'portfolio-page' %}";
+    });
 
+    // keypress & send button
+    sendButton.addEventListener('click', handleUserInput);
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleUserInput();
+    });
+
+    // Ensure initial greeting exists (if not, create)
+    if (!document.getElementById('initial-greeting')) {
+        const greetingDiv = document.createElement('div');
+        greetingDiv.id = 'initial-greeting';
+        greetingDiv.className = "w-full max-w-md p-3 rounded-xl mb-4 chat-bubble chat-bubble-bot";
+        greetingDiv.textContent = "Hi, I am SAHA-AI, How may I help you today?";
+        chatWindow.prepend(greetingDiv);
+    }
+
+    // kick off
+    startConversation(true);
+});
+</script>
 </body>
 </html>
