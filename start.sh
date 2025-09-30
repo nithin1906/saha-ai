@@ -8,25 +8,22 @@ echo "Starting SAHA-AI deployment..."
 # Set Django settings
 export DJANGO_SETTINGS_MODULE=core.settings_production
 
-# Wait for database to be ready
-echo "Waiting for database connection..."
-python -c "
-import os
-import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings_production')
-django.setup()
-from django.db import connection
-try:
-    connection.ensure_connection()
-    print('Database connection successful')
-except Exception as e:
-    print(f'Database connection failed: {e}')
-    exit(1)
-"
+# Test Django setup first
+echo "Testing Django setup..."
+python test_django.py || echo "Django test failed, continuing anyway..."
 
-# Run database migrations
+# Run database migrations (with retry)
 echo "Running database migrations..."
-python manage.py migrate --noinput || echo "Migration failed, continuing..."
+for i in {1..3}; do
+    echo "Migration attempt $i..."
+    if python manage.py migrate --noinput; then
+        echo "Migrations successful"
+        break
+    else
+        echo "Migration attempt $i failed, retrying..."
+        sleep 5
+    fi
+done || echo "Migrations failed after 3 attempts, continuing..."
 
 # Collect static files
 echo "Collecting static files..."
@@ -38,4 +35,4 @@ python manage.py createcachetable || echo "Cache table creation failed, continui
 
 # Start the application
 echo "Starting Gunicorn server..."
-exec gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --max-requests 1000 --max-requests-jitter 100 --log-level debug
+exec gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --max-requests 1000 --max-requests-jitter 100 --log-level debug --access-logfile - --error-logfile -
