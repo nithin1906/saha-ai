@@ -1,8 +1,38 @@
 # advisor/data_service.py
 import yfinance as yf
 import pandas as pd
-import pandas_ta as ta
+import numpy as np
+import requests
 from gnews import GNews # New import
+
+def calculate_sma(data, window):
+    """Calculate Simple Moving Average"""
+    return data.rolling(window=window).mean()
+
+def calculate_rsi(data, window=14):
+    """Calculate Relative Strength Index"""
+    delta = data.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+def calculate_macd(data, fast=12, slow=26, signal=9):
+    """Calculate MACD"""
+    ema_fast = data.ewm(span=fast).mean()
+    ema_slow = data.ewm(span=slow).mean()
+    macd_line = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal).mean()
+    histogram = macd_line - signal_line
+    return macd_line, signal_line, histogram
+
+def calculate_bollinger_bands(data, window=20, std_dev=2):
+    """Calculate Bollinger Bands"""
+    sma = data.rolling(window=window).mean()
+    std = data.rolling(window=window).std()
+    upper_band = sma + (std * std_dev)
+    lower_band = sma - (std * std_dev)
+    return upper_band, sma, lower_band
 
 def get_stock_data(ticker, period="1y"):
     # ... (this function remains exactly the same)
@@ -24,19 +54,29 @@ def get_stock_data(ticker, period="1y"):
         for key, value in fundamentals.items():
             data[key] = value if value is not None else 0
 
-        MyStrategy = ta.Strategy(
-            name="SAHA_AI_Core_Strategy",
-            ta=[
-                {"kind": "sma", "length": 20},
-                {"kind": "sma", "length": 50},
-                {"kind": "sma", "length": 200},
-                {"kind": "rsi"},
-                {"kind": "macd"},
-                {"kind": "bbands", "length": 5, "std": 2.0},
-            ]
-        )
+        # Calculate technical indicators manually
+        close_prices = data['Close']
         
-        data.ta.strategy(MyStrategy)
+        # Simple Moving Averages
+        data['SMA_20'] = calculate_sma(close_prices, 20)
+        data['SMA_50'] = calculate_sma(close_prices, 50)
+        data['SMA_200'] = calculate_sma(close_prices, 200)
+        
+        # RSI
+        data['RSI_14'] = calculate_rsi(close_prices, 14)
+        
+        # MACD
+        macd_line, signal_line, histogram = calculate_macd(close_prices)
+        data['MACD'] = macd_line
+        data['MACD_signal'] = signal_line
+        data['MACD_histogram'] = histogram
+        
+        # Bollinger Bands
+        bb_upper, bb_middle, bb_lower = calculate_bollinger_bands(close_prices, 20, 2)
+        data['BB_upper'] = bb_upper
+        data['BB_middle'] = bb_middle
+        data['BB_lower'] = bb_lower
+        
         return data
     except Exception as e:
         print(f"An error occurred in data_service: {e}")
