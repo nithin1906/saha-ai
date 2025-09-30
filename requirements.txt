@@ -15,7 +15,7 @@ joblib==1.4.2
 
 # Web scraping and API packages
 requests==2.31.0
-beautifulsoup4==4.12.3
+beautifulsoup4>=4.9.3,<4.13.0
 gnews==0.2.6
 yfinance==0.2.38
 
