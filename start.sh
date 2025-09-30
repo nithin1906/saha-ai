@@ -1,38 +1,39 @@
 #!/bin/bash
 
-# Exit on any error
-set -e
-
-echo "Starting SAHA-AI deployment..."
+echo "=== SAHA-AI STARTUP SCRIPT ==="
+echo "Starting at: $(date)"
+echo "Working directory: $(pwd)"
+echo "Python version: $(python --version)"
+echo "Django settings: $DJANGO_SETTINGS_MODULE"
 
 # Set Django settings
 export DJANGO_SETTINGS_MODULE=core.settings_production
 
-# Test Django setup first
-echo "Testing Django setup..."
-python test_django.py || echo "Django test failed, continuing anyway..."
+echo "=== Testing Django ==="
+python -c "
+import os
+import sys
+print('Python path:', sys.path)
+print('Django settings:', os.environ.get('DJANGO_SETTINGS_MODULE'))
+try:
+    import django
+    print('Django imported successfully')
+    django.setup()
+    print('Django setup completed')
+except Exception as e:
+    print('Django error:', str(e))
+    import traceback
+    traceback.print_exc()
+"
 
-# Run database migrations (with retry)
-echo "Running database migrations..."
-for i in {1..3}; do
-    echo "Migration attempt $i..."
-    if python manage.py migrate --noinput; then
-        echo "Migrations successful"
-        break
-    else
-        echo "Migration attempt $i failed, retrying..."
-        sleep 5
-    fi
-done || echo "Migrations failed after 3 attempts, continuing..."
+echo "=== Running Migrations ==="
+python manage.py migrate --noinput || echo "Migrations failed, continuing..."
 
-# Collect static files
-echo "Collecting static files..."
+echo "=== Collecting Static Files ==="
 python manage.py collectstatic --noinput || echo "Static collection failed, continuing..."
 
-# Create cache table if using database cache
-echo "Creating cache table..."
-python manage.py createcachetable || echo "Cache table creation failed, continuing..."
+echo "=== Starting Gunicorn ==="
+echo "Port: $PORT"
+echo "Starting Gunicorn with debug logging..."
 
-# Start the application
-echo "Starting Gunicorn server..."
-exec gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --max-requests 1000 --max-requests-jitter 100 --log-level debug --access-logfile - --error-logfile -
+exec gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --log-level debug --access-logfile - --error-logfile -
