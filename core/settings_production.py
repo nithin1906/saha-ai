@@ -17,7 +17,7 @@ if os.environ.get('RAILWAY_STATIC_URL'):
 if os.environ.get('RAILWAY_PUBLIC_DOMAIN'):
     ALLOWED_HOSTS.append(os.environ.get('RAILWAY_PUBLIC_DOMAIN'))
 # Allow Railway's dynamic domains and health check service
-ALLOWED_HOSTS.extend(['*.up.railway.app', '*.railway.app', 'healthcheck.railway.app', 'web-production-db25.up.railway.app'])
+ALLOWED_HOSTS.extend(['*.up.railway.app', '*.railway.app', 'healthcheck.railway.app', 'web-production-db25.up.railway.app', 'saha-ai.up.railway.app'])
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -54,6 +54,7 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
     'https://web-production-db25.up.railway.app',
+    'https://saha-ai.up.railway.app',
     'https://*.up.railway.app',
 ]
 
