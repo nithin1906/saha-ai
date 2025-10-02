@@ -9,6 +9,16 @@ echo "Django settings: $DJANGO_SETTINGS_MODULE"
 # Set Django settings
 export DJANGO_SETTINGS_MODULE=core.settings_production
 
+# Check if DATABASE_URL is set
+if [ -z "$DATABASE_URL" ]; then
+    echo "ERROR: DATABASE_URL is not set!"
+    echo "Available environment variables:"
+    env | grep -i database || echo "No DATABASE variables found"
+    exit 1
+else
+    echo "DATABASE_URL is set (length: ${#DATABASE_URL} chars)"
+fi
+
 echo "=== Testing Django ==="
 python -c "
 import os
@@ -27,7 +37,30 @@ except Exception as e:
 "
 
 echo "=== Running Migrations ==="
-python manage.py migrate --noinput || echo "Migrations failed, continuing..."
+if python manage.py migrate --noinput; then
+    echo "Migrations completed successfully"
+else
+    echo "ERROR: Migrations failed!"
+    echo "Attempting to diagnose database connection..."
+    python -c "
+import os
+import sys
+import django
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings_production')
+django.setup()
+from django.db import connection
+try:
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT 1')
+    print('Database connection successful!')
+except Exception as e:
+    print(f'Database connection failed: {e}')
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
+"
+    exit 1
+fi
 
 echo "=== Collecting Static Files ==="
 python manage.py collectstatic --noinput || echo "Static collection failed, continuing..."

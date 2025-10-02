@@ -13,11 +13,12 @@ class InviteOnlyMiddleware(MiddlewareMixin):
     """Middleware to enforce invite-only access"""
     
     def process_request(self, request):
-        # Skip middleware for static files, admin, and auth pages
+        # Skip middleware for static files, admin, auth pages, and health check
         if (request.path.startswith('/static/') or 
             request.path.startswith('/admin/') or
             request.path.startswith('/users/') or
-            request.path == '/favicon.ico'):
+            request.path == '/favicon.ico' or
+            request.path == '/health/'):
             return None
         
         # Allow unauthenticated users to access login/register pages
@@ -58,6 +59,10 @@ class SecurityLoggingMiddleware(MiddlewareMixin):
     """Middleware to log all requests for security monitoring"""
     
     def process_request(self, request):
+        # Skip logging for health check endpoint
+        if request.path == '/health/':
+            return None
+            
         if request.user.is_authenticated:
             # Log access
             AccessLog.objects.create(

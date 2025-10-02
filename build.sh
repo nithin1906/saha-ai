@@ -1,13 +1,14 @@
 #!/bin/bash
-# Build script for Render deployment
+# Build script for Railway deployment
 
-# Install Python 3.12
-pyenv install 3.12.4
-pyenv local 3.12.4
+echo "=== BUILD PHASE ==="
+echo "Python version: $(python --version)"
 
 # Install dependencies
+echo "Installing dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Collect static files
-python manage.py collectstatic --noinput
+# Note: We do NOT run migrations or collectstatic here
+# These will be done in start.sh when the app starts
+echo "Build phase complete. Migrations and static files will be handled at runtime."
