@@ -65,6 +65,9 @@ fi
 echo "=== Collecting Static Files ==="
 python manage.py collectstatic --noinput || echo "Static collection failed, continuing..."
 
+echo "=== Setting up Admin User ==="
+python manage.py setup_admin --username admin --password admin123 || echo "Admin setup failed, continuing..."
+
 echo "=== Starting Gunicorn ==="
 echo "Port: $PORT"
 echo "Starting Gunicorn with debug logging..."
