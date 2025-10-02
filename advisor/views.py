@@ -202,16 +202,17 @@ class MarketSnapshotView(View):
     def get(self, request):
         print("=== MarketSnapshotView: Starting market data fetch ===")
         
-        # Define symbols with multiple fallback options
-        symbols = {
-            "NIFTY": ["NSEI.NS", "^NSEI", "NIFTY_50.NS"],
-            "SENSEX": ["BSESN.BO", "^BSESN", "SENSEX.BO"],
-            "BANKNIFTY": ["NSEBANK.NS", "^NSEBANK", "BANKNIFTY.NS"],
-            "MIDCPNIFTY": ["NSEMDCP50.NS", "^NSEMDCP50", "MIDCAP_50.NS"],
-            "FINNIFTY": ["NSEFIN.NS", "^NSEFIN", "FINANCIAL_SERVICES.NS"]
-        }
-        
-        data = []
+        try:
+            # Define symbols with multiple fallback options
+            symbols = {
+                "NIFTY": ["NSEI.NS", "^NSEI", "NIFTY_50.NS"],
+                "SENSEX": ["BSESN.BO", "^BSESN", "SENSEX.BO"],
+                "BANKNIFTY": ["NSEBANK.NS", "^NSEBANK", "BANKNIFTY.NS"],
+                "MIDCPNIFTY": ["NSEMDCP50.NS", "^NSEMDCP50", "MIDCAP_50.NS"],
+                "FINNIFTY": ["NSEFIN.NS", "^NSEFIN", "FINANCIAL_SERVICES.NS"]
+            }
+            
+            data = []
         
         # Method 1: Try Yahoo Finance API with multiple symbol formats
         for method_name, symbol_list in symbols.items():
@@ -479,8 +480,13 @@ class MarketSnapshotView(View):
                 "change_pct": 0.0 if not isinstance(chgpct, (int, float)) else round(float(chgpct), 2)
             })
         
-        print(f"Returning {len(resp)} indices")
-        return JsonResponse({"indices": resp})
+            print(f"Returning {len(resp)} indices")
+            return JsonResponse({"indices": resp})
+            
+        except Exception as e:
+            print(f"MarketSnapshotView error: {e}")
+            # Return empty data on error - frontend will show loading state
+            return JsonResponse({"indices": []})
 
 # =====================
 # Natural Language Understanding (NLU)
@@ -1151,108 +1157,127 @@ class PortfolioHealthView(View):
         print(f"PortfolioHealthView: User authenticated: {request.user.is_authenticated}")
         print(f"PortfolioHealthView: User: {request.user}")
         
-        if not request.user.is_authenticated:
-            print("PortfolioHealthView: User not authenticated, returning 401")
-            return JsonResponse({"error": "Authentication required"}, status=401)
+        try:
+            if not request.user.is_authenticated:
+                print("PortfolioHealthView: User not authenticated, returning 401")
+                return JsonResponse({"error": "Authentication required"}, status=401)
+            
+            holdings = Holding.objects.filter(portfolio__user=request.user)
+            print(f"PortfolioHealthView: Found {holdings.count()} holdings for user {request.user}")
+            
+            if not holdings.exists():
+                print("PortfolioHealthView: No holdings found, returning empty portfolio response")
+                return JsonResponse({
+                    "overall_score": 0,
+                    "diversification": {
+                        "score": 0,
+                        "feedback": "No holdings found. Add stocks to get health analysis."
+                    },
+                    "risk": {
+                        "score": 5,
+                        "feedback": "Cannot assess risk without holdings."
+                    },
+                    "performance": {
+                        "score": 0,
+                        "feedback": "No performance data available."
+                    }
+                })
+            
+            # Calculate basic portfolio metrics with real-time prices
+            total_invested = sum(h.quantity * h.average_buy_price for h in holdings)
+            total_current_value = 0
+            num_holdings = holdings.count()
+            
+            # Fetch current prices and calculate performance
+            for h in holdings:
+                current_price = self._fetch_current_price(h.ticker)
+                total_current_value += h.quantity * current_price
+            
+            # Calculate overall performance
+            total_profit_loss = total_current_value - total_invested
+            performance_percentage = (total_profit_loss / total_invested * 100) if total_invested > 0 else 0
+            
+            # Diversification scoring (0-10)
+            if num_holdings >= 5:
+                diversification_score = 8
+                diversification_feedback = "Good diversification across multiple stocks."
+            elif num_holdings >= 3:
+                diversification_score = 6
+                diversification_feedback = "Moderate diversification. Consider adding more stocks."
+            else:
+                diversification_score = 3
+                diversification_feedback = "Low diversification. Add more stocks to reduce risk."
+            
+            # Risk scoring (0-10) based on volatility and concentration
+            if num_holdings == 1:
+                risk_score = 2
+                risk_feedback = "High risk - single stock concentration."
+            elif num_holdings <= 2:
+                risk_score = 4
+                risk_feedback = "High risk - limited diversification."
+            elif num_holdings <= 4:
+                risk_score = 6
+                risk_feedback = "Moderate risk level. Monitor your investments regularly."
+            else:
+                risk_score = 8
+                risk_feedback = "Well-diversified portfolio with lower risk."
+            
+            # Performance scoring (0-10) based on actual returns
+            if performance_percentage >= 20:
+                performance_score = 9
+                performance_feedback = f"Excellent performance! +{performance_percentage:.1f}% returns."
+            elif performance_percentage >= 10:
+                performance_score = 8
+                performance_feedback = f"Good performance with +{performance_percentage:.1f}% returns."
+            elif performance_percentage >= 0:
+                performance_score = 6
+                performance_feedback = f"Positive performance with +{performance_percentage:.1f}% returns."
+            elif performance_percentage >= -10:
+                performance_score = 4
+                performance_feedback = f"Underperforming with {performance_percentage:.1f}% returns."
+            else:
+                performance_score = 2
+                performance_feedback = f"Poor performance with {performance_percentage:.1f}% returns."
+            
+            # Overall score (average of all scores)
+            overall_score = round((diversification_score + risk_score + performance_score) / 3, 1)
+            
+            response_data = {
+                "overall_score": overall_score,
+                "diversification": {
+                    "score": diversification_score,
+                    "feedback": diversification_feedback
+                },
+                "risk": {
+                    "score": risk_score,
+                    "feedback": risk_feedback
+                },
+                "performance": {
+                    "score": performance_score,
+                    "feedback": performance_feedback
+                }
+            }
         
-        holdings = Holding.objects.filter(portfolio__user=request.user)
-        print(f"PortfolioHealthView: Found {holdings.count()} holdings for user {request.user}")
-        
-        if not holdings.exists():
-            print("PortfolioHealthView: No holdings found, returning empty portfolio response")
+            print(f"PortfolioHealthView: Returning response: {response_data}")
+            return JsonResponse(response_data)
+            
+        except Exception as e:
+            print(f"PortfolioHealthView error: {e}")
             return JsonResponse({
                 "overall_score": 0,
                 "diversification": {
                     "score": 0,
-                    "feedback": "No holdings found. Add stocks to get health analysis."
+                    "feedback": "Error loading portfolio health data."
                 },
                 "risk": {
                     "score": 5,
-                    "feedback": "Cannot assess risk without holdings."
+                    "feedback": "Unable to assess risk due to data error."
                 },
                 "performance": {
                     "score": 0,
-                    "feedback": "No performance data available."
+                    "feedback": "Unable to calculate performance due to data error."
                 }
-            })
-        
-        # Calculate basic portfolio metrics with real-time prices
-        total_invested = sum(h.quantity * h.average_buy_price for h in holdings)
-        total_current_value = 0
-        num_holdings = holdings.count()
-        
-        # Fetch current prices and calculate performance
-        for h in holdings:
-            current_price = self._fetch_current_price(h.ticker)
-            total_current_value += h.quantity * current_price
-        
-        # Calculate overall performance
-        total_profit_loss = total_current_value - total_invested
-        performance_percentage = (total_profit_loss / total_invested * 100) if total_invested > 0 else 0
-        
-        # Diversification scoring (0-10)
-        if num_holdings >= 5:
-            diversification_score = 8
-            diversification_feedback = "Good diversification across multiple stocks."
-        elif num_holdings >= 3:
-            diversification_score = 6
-            diversification_feedback = "Moderate diversification. Consider adding more stocks."
-        else:
-            diversification_score = 3
-            diversification_feedback = "Low diversification. Add more stocks to reduce risk."
-        
-        # Risk scoring (0-10) based on volatility and concentration
-        if num_holdings == 1:
-            risk_score = 2
-            risk_feedback = "High risk - single stock concentration."
-        elif num_holdings <= 2:
-            risk_score = 4
-            risk_feedback = "High risk - limited diversification."
-        elif num_holdings <= 4:
-            risk_score = 6
-            risk_feedback = "Moderate risk level. Monitor your investments regularly."
-        else:
-            risk_score = 8
-            risk_feedback = "Well-diversified portfolio with lower risk."
-        
-        # Performance scoring (0-10) based on actual returns
-        if performance_percentage >= 20:
-            performance_score = 9
-            performance_feedback = f"Excellent performance! +{performance_percentage:.1f}% returns."
-        elif performance_percentage >= 10:
-            performance_score = 8
-            performance_feedback = f"Good performance with +{performance_percentage:.1f}% returns."
-        elif performance_percentage >= 0:
-            performance_score = 6
-            performance_feedback = f"Positive performance with +{performance_percentage:.1f}% returns."
-        elif performance_percentage >= -10:
-            performance_score = 4
-            performance_feedback = f"Underperforming with {performance_percentage:.1f}% returns."
-        else:
-            performance_score = 2
-            performance_feedback = f"Poor performance with {performance_percentage:.1f}% returns."
-        
-        # Overall score (average of all scores)
-        overall_score = round((diversification_score + risk_score + performance_score) / 3, 1)
-        
-        response_data = {
-            "overall_score": overall_score,
-            "diversification": {
-                "score": diversification_score,
-                "feedback": diversification_feedback
-            },
-            "risk": {
-                "score": risk_score,
-                "feedback": risk_feedback
-            },
-            "performance": {
-                "score": performance_score,
-                "feedback": performance_feedback
-            }
-        }
-        
-        print(f"PortfolioHealthView: Returning response: {response_data}")
-        return JsonResponse(response_data)
+            }, status=500)
     
     def _fetch_current_price(self, ticker):
         """Fetch current price for a ticker"""
