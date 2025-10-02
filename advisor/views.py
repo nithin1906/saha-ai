@@ -559,3 +559,29 @@ def portfolio_page(request):
 def about_page(request):
     """About page"""
     return render(request, 'advisor/about.html')
+
+# =====================
+# Missing View Functions for URL Configuration
+# =====================
+
+def chat_view(request):
+    """Main chat interface view"""
+    return render(request, 'advisor/index.html')
+
+def profile_view(request):
+    """User profile view"""
+    return render(request, 'advisor/profile.html')
+
+def about_view(request):
+    """About page view"""
+    return render(request, 'advisor/about.html')
+
+def portfolio_page_view(request):
+    """Portfolio page view"""
+    holdings = Holding.objects.filter(user=request.user)
+    total_value = sum(h.quantity * h.buy_price for h in holdings)
+    
+    return render(request, 'advisor/portfolio.html', {
+        'holdings': holdings,
+        'total_value': total_value
+    })
