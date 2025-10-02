@@ -673,7 +673,77 @@ class StockAnalysisView(View):
             "face_value": 10.0
         }
         
-        # Try to get real fundamentals from yfinance
+        # Try to get real fundamentals from multiple sources
+        try:
+            # Method 1: Try Yahoo Finance API directly
+            fundamentals = self._fetch_fundamentals_yahoo_api(ticker)
+            if fundamentals:
+                print(f"StockAnalysisView: Got real fundamentals from Yahoo API for {ticker}")
+            else:
+                # Method 2: Try yfinance as fallback
+                fundamentals = self._fetch_fundamentals_yfinance(ticker)
+                if fundamentals:
+                    print(f"StockAnalysisView: Got real fundamentals from yfinance for {ticker}")
+                else:
+                    # Method 3: Try Alpha Vantage for fundamentals
+                    fundamentals = self._fetch_fundamentals_alpha_vantage(ticker)
+                    if fundamentals:
+                        print(f"StockAnalysisView: Got real fundamentals from Alpha Vantage for {ticker}")
+                    else:
+                        print(f"StockAnalysisView: Using fallback fundamentals for {ticker}")
+        except Exception as e:
+            print(f"StockAnalysisView: Error getting fundamentals: {e}")
+    
+    def _fetch_fundamentals_yahoo_api(self, ticker):
+        """Fetch fundamentals from Yahoo Finance API"""
+        try:
+            import requests
+            
+            symbol_variants = [f"{ticker}.NS", f"{ticker}.BO", ticker]
+            
+            for symbol in symbol_variants:
+                try:
+                    url = "https://query1.finance.yahoo.com/v10/finance/quoteSummary/"
+                    params = {
+                        "symbol": symbol,
+                        "modules": "defaultKeyStatistics,financialData,summaryDetail"
+                    }
+                    headers = {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                        "Accept": "application/json",
+                        "Referer": "https://finance.yahoo.com/"
+                    }
+                    
+                    response = requests.get(url, params=params, headers=headers, timeout=10)
+                    if response.status_code == 200:
+                        data = response.json()
+                        result = data.get("quoteSummary", {}).get("result", [])
+                        if result:
+                            summary = result[0]
+                            financial_data = summary.get("financialData", {})
+                            key_stats = summary.get("defaultKeyStatistics", {})
+                            summary_detail = summary.get("summaryDetail", {})
+                            
+                            if financial_data or key_stats:
+                                return {
+                                    "market_cap": self._format_market_cap(key_stats.get('marketCap')),
+                                    "roe": financial_data.get('returnOnEquity', {}).get('raw', 15.0) * 100 if financial_data.get('returnOnEquity', {}).get('raw') else 15.0,
+                                    "pe_ttm": key_stats.get('trailingPE', {}).get('raw', 20.0) if key_stats.get('trailingPE', {}).get('raw') else 20.0,
+                                    "eps_ttm": key_stats.get('trailingEps', {}).get('raw', 5.0) if key_stats.get('trailingEps', {}).get('raw') else 5.0,
+                                    "pb": key_stats.get('priceToBook', {}).get('raw', 2.0) if key_stats.get('priceToBook', {}).get('raw') else 2.0,
+                                    "dividend_yield": summary_detail.get('dividendYield', {}).get('raw', 2.0) * 100 if summary_detail.get('dividendYield', {}).get('raw') else 2.0,
+                                    "book_value": key_stats.get('bookValue', {}).get('raw', 50.0) if key_stats.get('bookValue', {}).get('raw') else 50.0,
+                                    "face_value": key_stats.get('faceValue', {}).get('raw', 10.0) if key_stats.get('faceValue', {}).get('raw') else 10.0
+                                }
+                except Exception as e:
+                    print(f"Yahoo API fundamentals error for {symbol}: {e}")
+                    continue
+        except Exception as e:
+            print(f"Yahoo API fundamentals error: {e}")
+        return None
+    
+    def _fetch_fundamentals_yfinance(self, ticker):
+        """Fetch fundamentals from yfinance"""
         try:
             import yfinance as yf
             symbol_variants = [f"{ticker}.NS", f"{ticker}.BO", ticker]
@@ -683,8 +753,8 @@ class StockAnalysisView(View):
                     stock = yf.Ticker(symbol)
                     info = stock.info
                     
-                    if info:
-                        fundamentals = {
+                    if info and len(info) > 10:  # Ensure we got real data
+                        return {
                             "market_cap": self._format_market_cap(info.get('marketCap')),
                             "roe": info.get('returnOnEquity', 15.0) * 100 if info.get('returnOnEquity') else 15.0,
                             "pe_ttm": info.get('trailingPE', 20.0),
@@ -694,15 +764,56 @@ class StockAnalysisView(View):
                             "book_value": info.get('bookValue', 50.0),
                             "face_value": info.get('faceValue', 10.0)
                         }
-                        print(f"StockAnalysisView: Got real fundamentals for {ticker}")
-                        break
                 except Exception as e:
-                    print(f"StockAnalysisView: yfinance fundamentals error for {symbol}: {e}")
+                    print(f"yfinance fundamentals error for {symbol}: {e}")
                     continue
         except ImportError:
-            print("StockAnalysisView: yfinance not available for fundamentals")
+            print("yfinance not available for fundamentals")
         except Exception as e:
-            print(f"StockAnalysisView: Error getting fundamentals: {e}")
+            print(f"yfinance fundamentals error: {e}")
+        return None
+    
+    def _fetch_fundamentals_alpha_vantage(self, ticker):
+        """Fetch fundamentals from Alpha Vantage"""
+        try:
+            import requests
+            import os
+            
+            api_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+            if not api_key or api_key == 'demo':
+                return None
+            
+            symbol_variants = [f"{ticker}.BSE", f"{ticker}.NSE", ticker]
+            
+            for symbol in symbol_variants:
+                try:
+                    url = "https://www.alphavantage.co/query"
+                    params = {
+                        'function': 'OVERVIEW',
+                        'symbol': symbol,
+                        'apikey': api_key
+                    }
+                    
+                    response = requests.get(url, params=params, timeout=10)
+                    if response.status_code == 200:
+                        data = response.json()
+                        if 'Symbol' in data and data['Symbol']:
+                            return {
+                                "market_cap": self._format_market_cap(data.get('MarketCapitalization')),
+                                "roe": float(data.get('ReturnOnEquityTTM', 15.0)) if data.get('ReturnOnEquityTTM') else 15.0,
+                                "pe_ttm": float(data.get('PERatio', 20.0)) if data.get('PERatio') else 20.0,
+                                "eps_ttm": float(data.get('EPS', 5.0)) if data.get('EPS') else 5.0,
+                                "pb": float(data.get('PriceToBookRatio', 2.0)) if data.get('PriceToBookRatio') else 2.0,
+                                "dividend_yield": float(data.get('DividendYield', 2.0)) * 100 if data.get('DividendYield') else 2.0,
+                                "book_value": float(data.get('BookValue', 50.0)) if data.get('BookValue') else 50.0,
+                                "face_value": float(data.get('FaceValue', 10.0)) if data.get('FaceValue') else 10.0
+                            }
+                except Exception as e:
+                    print(f"Alpha Vantage fundamentals error for {symbol}: {e}")
+                    continue
+        except Exception as e:
+            print(f"Alpha Vantage fundamentals error: {e}")
+        return None
         
         print(f"StockAnalysisView: Returning price {current_price} and fundamentals for {ticker}")
         return current_price, fundamentals

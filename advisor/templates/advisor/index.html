@@ -1195,7 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = await fetch(`/api/search/MF/${encodeURIComponent(query)}/`);
             const data = await r.json();
             thinking.remove();
-            const results = (data.stocks || []).map(s => ({ name: s.name, scheme_id: s.symbol }));
+            const results = (data.funds || []).map(s => ({ name: s.name, scheme_id: s.symbol }));
             if (!results.length) {
                 addMessage(`No mutual funds found for "${query}". Try another name.`, 'bot');
                 startConversation(false);
@@ -1355,6 +1355,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(res.ok){ 
                             addRes.textContent = 'Added!'; 
                             addRes.className = 'text-green-600'; 
+                            
+                            // Refresh portfolio health automatically
+                            setTimeout(() => {
+                                loadPortfolioHealth();
+                            }, 1000);
                         } else { 
                             addRes.textContent = j.error || 'Failed to add'; 
                             addRes.className = 'text-red-600'; 
