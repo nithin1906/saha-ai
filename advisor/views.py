@@ -163,7 +163,7 @@ class MarketSnapshotView(View):
             indices_data = stock_data_service.get_market_indices()
             
             # Convert to the expected format
-        resp = []
+            resp = []
             for index_name, data in indices_data.items():
                 resp.append({
                     "name": index_name,
