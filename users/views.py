@@ -154,6 +154,14 @@ def manage_users(request):
             user_profile = get_object_or_404(UserProfile, user_id=user_id)
             user_profile.user.delete()
             messages.success(request, f'User {user_profile.user.username} rejected and deleted!')
+        elif action == 'remove':
+            user_profile = get_object_or_404(UserProfile, user_id=user_id)
+            if user_profile.user.is_superuser:
+                messages.error(request, f'Cannot remove superuser {user_profile.user.username}.')
+            else:
+                username = user_profile.user.username
+                user_profile.user.delete()
+                messages.success(request, f'User {username} has been removed successfully.')
     
     return render(request, 'users/manage_users.html', {
         'pending_users': pending_users,

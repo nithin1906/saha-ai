@@ -477,6 +477,15 @@ class StockSearchView(View):
                     {'symbol': 'NTPC', 'name': 'NTPC Limited'},
                     {'symbol': 'GREENPANEL', 'name': 'Greenpanel Industries Limited'},
                     {'symbol': 'GREENPANELIND', 'name': 'Greenpanel Industries Limited'},
+                    {'symbol': 'TATAMOTORS', 'name': 'Tata Motors Limited'},
+                    {'symbol': 'TATAMTRDVR', 'name': 'Tata Motors Limited DVR'},
+                    {'symbol': 'TATACHEM', 'name': 'Tata Chemicals Limited'},
+                    {'symbol': 'TATACOMM', 'name': 'Tata Communications Limited'},
+                    {'symbol': 'TATAELXSI', 'name': 'Tata Elxsi Limited'},
+                    {'symbol': 'TATAPOWER', 'name': 'Tata Power Company Limited'},
+                    {'symbol': 'TATASTEEL', 'name': 'Tata Steel Limited'},
+                    {'symbol': 'TATACONSUM', 'name': 'Tata Consumer Products Limited'},
+                    {'symbol': 'TATACOFFEE', 'name': 'Tata Coffee Limited'},
                 ],
                 'BSE': [
                     {'symbol': '500325', 'name': 'Reliance Industries Limited'},
@@ -500,6 +509,15 @@ class StockSearchView(View):
                     {'symbol': '532898', 'name': 'Power Grid Corporation of India Limited'},
                     {'symbol': '532555', 'name': 'NTPC Limited'},
                     {'symbol': '542008', 'name': 'Greenpanel Industries Limited'},
+                    {'symbol': '500570', 'name': 'Tata Motors Limited'},
+                    {'symbol': '500570', 'name': 'Tata Motors Limited DVR'},
+                    {'symbol': '500770', 'name': 'Tata Chemicals Limited'},
+                    {'symbol': '532453', 'name': 'Tata Communications Limited'},
+                    {'symbol': '500408', 'name': 'Tata Elxsi Limited'},
+                    {'symbol': '500400', 'name': 'Tata Power Company Limited'},
+                    {'symbol': '500470', 'name': 'Tata Steel Limited'},
+                    {'symbol': '500800', 'name': 'Tata Consumer Products Limited'},
+                    {'symbol': '532301', 'name': 'Tata Coffee Limited'},
                 ]
             }
             
