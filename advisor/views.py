@@ -163,7 +163,7 @@ class MarketSnapshotView(View):
             indices_data = stock_data_service.get_market_indices()
             
             # Convert to the expected format
-            resp = []
+        resp = []
             for index_name, data in indices_data.items():
                 resp.append({
                     "name": index_name,
@@ -173,7 +173,7 @@ class MarketSnapshotView(View):
                 })
             
             print(f"MarketSnapshotView: Successfully fetched {len(resp)} indices")
-            return JsonResponse({"indices": resp})
+        return JsonResponse({"indices": resp})
             
         except Exception as e:
             print(f"MarketSnapshotView: Error in get method: {e}")
@@ -545,6 +545,8 @@ class MutualFundSearchView(View):
                 {'symbol': 'UTILARGE', 'name': 'UTI Mastershare Fund', 'nav': 123.45, 'category': 'Large Cap'},
                 {'symbol': 'SBIMID', 'name': 'SBI Magnum Midcap Fund', 'nav': 45.67, 'category': 'Mid Cap'},
                 {'symbol': 'HDFCMID', 'name': 'HDFC Mid-Cap Opportunities Fund', 'nav': 78.45, 'category': 'Mid Cap'},
+                {'symbol': 'HDFCMIDDIRECT', 'name': 'HDFC Mid Cap Fund Direct', 'nav': 85.23, 'category': 'Mid Cap'},
+                {'symbol': 'HDFCMIDCAPDIRECT', 'name': 'HDFC Mid Cap Fund Direct Plan', 'nav': 82.15, 'category': 'Mid Cap'},
                 {'symbol': 'ICICIMID', 'name': 'ICICI Prudential Midcap Fund', 'nav': 123.89, 'category': 'Mid Cap'},
                 {'symbol': 'AXISMID', 'name': 'Axis Midcap Fund', 'nav': 67.23, 'category': 'Mid Cap'},
                 {'symbol': 'FRANKLINMID', 'name': 'Franklin India Prima Fund', 'nav': 89.12, 'category': 'Mid Cap'},

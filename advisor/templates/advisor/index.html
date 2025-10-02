@@ -1586,9 +1586,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.innerHTML = `
                         <div class="flex items-baseline justify-between">
                             <span class="text-[12px] font-semibold text-gray-700 dark:text-gray-200">${x.name}</span>
-                            <span class="text-[11px] ${color}">${(x.change >= 0 ? '+' : '') + x.change} (${(x.change_pct >= 0 ? '+' : '') + x.change_pct}%)</span>
+                            <span class="text-[11px] ${color}">${(x.change >= 0 ? '+' : '') + (x.change || 0)} (${(x.change_percent >= 0 ? '+' : '') + (x.change_percent || 0)}%)</span>
                         </div>
-                        <div class="text-[13px] font-semibold text-gray-800 dark:text-gray-100">${x.value}</div>
+                        <div class="text-[13px] font-semibold text-gray-800 dark:text-gray-100">${x.price || x.value || 'N/A'}</div>
                     `;
                     marketCards.appendChild(card);
                     
@@ -1600,11 +1600,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="flex items-center justify-between">
                                 <div>
                                     <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">${x.name}</div>
-                                    <div class="text-lg font-bold text-gray-800 dark:text-gray-100">${x.value}</div>
+                                    <div class="text-lg font-bold text-gray-800 dark:text-gray-100">${x.price || x.value || 'N/A'}</div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-sm ${color}">${(x.change >= 0 ? '+' : '') + x.change}</div>
-                                    <div class="text-xs ${color}">${(x.change_pct >= 0 ? '+' : '') + x.change_pct}%</div>
+                                    <div class="text-sm ${color}">${(x.change >= 0 ? '+' : '') + (x.change || 0)}</div>
+                                    <div class="text-xs ${color}">${(x.change_percent >= 0 ? '+' : '') + (x.change_percent || 0)}%</div>
                                 </div>
                             </div>
                         `;

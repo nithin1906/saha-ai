@@ -104,6 +104,20 @@ class StockDataService:
             logger.info(f"BSE Official success for {clean_symbol}: {price}")
             return price
         
+        # Method 6: IndianAPI.in
+        price = self._fetch_indian_api(clean_symbol)
+        if price:
+            cache.set(cache_key, price, self.cache_timeout)
+            logger.info(f"IndianAPI success for {clean_symbol}: {price}")
+            return price
+        
+        # Method 7: Moneycontrol scraping
+        price = self._fetch_moneycontrol(clean_symbol)
+        if price:
+            cache.set(cache_key, price, self.cache_timeout)
+            logger.info(f"Moneycontrol success for {clean_symbol}: {price}")
+            return price
+        
         # Final fallback
         fallback_price = self.fallback_prices.get(clean_symbol, 100.0)
         logger.warning(f"All APIs failed for {clean_symbol}, using fallback: {fallback_price}")
@@ -155,8 +169,8 @@ class StockDataService:
                         return price_float
         except Exception as e:
             logger.error(f"IEX Cloud error for {symbol}: {e}")
-        return None
-    
+            return None
+
     def _fetch_yahoo_finance_api(self, symbol):
         """Fetch from Yahoo Finance API (more reliable)"""
         try:
@@ -235,8 +249,76 @@ class StockDataService:
                             price_float = float(latest['close'])
                             if self._validate_price(price_float, symbol):
                                 return price_float
-        except Exception as e:
+    except Exception as e:
             logger.error(f"BSE Official error for {symbol}: {e}")
+        return None
+
+    def _fetch_indian_api(self, symbol):
+        """Fetch from IndianAPI.in - Free Indian stock API"""
+        try:
+            # IndianAPI.in free endpoint
+            url = f"https://indianapi.in/api/stock/{symbol}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'application/json',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                # Try different possible price fields
+                price = (data.get('price') or 
+                        data.get('lastPrice') or 
+                        data.get('currentPrice') or
+                        data.get('close') or
+                        data.get('ltp'))
+                if price:
+                    price_float = float(price)
+                    if self._validate_price(price_float, symbol):
+                        print(f"IndianAPI: Got price {price_float} for {symbol}")
+                        return price_float
+    except Exception as e:
+            print(f"IndianAPI error for {symbol}: {e}")
+        return None
+    
+    def _fetch_moneycontrol(self, symbol):
+        """Fetch from Moneycontrol scraping"""
+        try:
+            # Moneycontrol stock page
+            url = f"https://www.moneycontrol.com/india/stockpricequote/{symbol.lower()}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for price in various selectors
+                price_selectors = [
+                    '.pcnsb div:nth-child(1) .lastprice',
+                    '.lastprice',
+                    '.pcnsb .lastprice',
+                    '[class*="lastprice"]',
+                    '.price'
+                ]
+                
+                for selector in price_selectors:
+                    price_elem = soup.select_one(selector)
+                    if price_elem:
+                        price_text = price_elem.get_text().strip()
+                        # Extract numeric value
+                        import re
+                        price_match = re.search(r'[\d,]+\.?\d*', price_text.replace(',', ''))
+                        if price_match:
+                            price_float = float(price_match.group())
+                            if self._validate_price(price_float, symbol):
+                                print(f"Moneycontrol: Got price {price_float} for {symbol}")
+                                return price_float
+        except Exception as e:
+            print(f"Moneycontrol error for {symbol}: {e}")
         return None
     
     def _validate_price(self, price, symbol):
