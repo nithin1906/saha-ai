@@ -1270,64 +1270,8 @@ class StockAnalysisView(View):
         except Exception as e:
             print(f"StockAnalysisView: Alpha Vantage API error: {e}")
         
-        # If all methods fail, try one more approach with web scraping
-        print(f"StockAnalysisView: All API methods failed for {ticker}, trying web scraping")
-        try:
-            from bs4 import BeautifulSoup
-            
-            # Try scraping from Moneycontrol or similar
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
-            
-            # Try multiple financial websites
-            urls_to_try = [
-                f"https://www.moneycontrol.com/india/stockpricequote/{ticker.lower()}/{ticker}",
-                f"https://www.nseindia.com/get-quotes/equity?symbol={ticker}",
-                f"https://www.bseindia.com/stock-share-price/{ticker.lower()}/{ticker}"
-            ]
-            
-            for url in urls_to_try:
-                try:
-                    response = requests.get(url, headers=headers, timeout=10)
-                    if response.status_code == 200:
-                        soup = BeautifulSoup(response.content, 'html.parser')
-                        # Look for price patterns in the HTML with better filtering
-                        price_elements = soup.find_all(text=re.compile(r'₹?\s*\d+\.?\d*'))
-                        for element in price_elements:
-                            try:
-                                price_text = element.strip().replace('₹', '').replace(',', '')
-                                price = float(price_text)
-                                
-                                # Better filtering to avoid index values
-                                # Stock prices are typically between 10-10000, not 20000+
-                                # Index values like NIFTY (24836) should be excluded
-                                if 10 <= price <= 10000:  # More reasonable stock price range
-                                    # Additional check: avoid values that look like indices
-                                    if price < 20000:  # Exclude NIFTY-like values
-                                        print(f"StockAnalysisView: Web scraping success for {ticker}: {price}")
-                                        fundamentals = {
-                                            "market_cap": "N/A",
-                                            "roe": 15.0,
-                                            "pe_ttm": 20.0,
-                                            "eps_ttm": 5.0,
-                                            "pb": 2.0,
-                                            "dividend_yield": 2.0,
-                                            "book_value": 50.0,
-                                            "face_value": 10.0
-                                        }
-                                        return price, fundamentals
-                                else:
-                                    print(f"StockAnalysisView: Skipping price {price} for {ticker} (outside stock range)")
-                            except ValueError:
-                                continue
-                except Exception as e:
-                    print(f"StockAnalysisView: Web scraping error for {url}: {e}")
-                    continue
-        except ImportError:
-            print("StockAnalysisView: BeautifulSoup not available for web scraping")
-        except Exception as e:
-            print(f"StockAnalysisView: Web scraping error: {e}")
+        # Skip web scraping as it's unreliable and returns incorrect prices
+        print(f"StockAnalysisView: All API methods failed for {ticker}, skipping web scraping due to unreliable results")
         
         # Final fallback - return a reasonable default based on stock type
         print(f"StockAnalysisView: All methods failed for {ticker}, using intelligent fallback")
