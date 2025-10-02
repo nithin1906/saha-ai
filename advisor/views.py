@@ -1253,6 +1253,55 @@ class PortfolioHealthView(View):
         
         print(f"PortfolioHealthView: Returning response: {response_data}")
         return JsonResponse(response_data)
+    
+    def _fetch_current_price(self, ticker):
+        """Fetch current price for a ticker"""
+        try:
+            # Try yfinance first
+            if yf is not None:
+                try:
+                    symbol = ticker if '.' in ticker else f"{ticker}.NS"
+                    stock = yf.Ticker(symbol)
+                    info = stock.info
+                    if info and info.get('regularMarketPrice'):
+                        return float(info.get('regularMarketPrice', 0))
+                except Exception as e:
+                    print(f"yfinance error for {ticker}: {e}")
+            
+            # Fallback to Yahoo Finance API
+            try:
+                symbol = ticker if '.' in ticker else f"{ticker}.NS"
+                url = "https://query1.finance.yahoo.com/v7/finance/quote"
+                params = {"symbols": symbol}
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Connection": "keep-alive",
+                    "Referer": "https://finance.yahoo.com/",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "same-site"
+                }
+                
+                r = requests.get(url, params=params, headers=headers, timeout=10)
+                if r.status_code == 200:
+                    result = (r.json() or {}).get("quoteResponse", {}).get("result", [])
+                    if result and len(result) > 0:
+                        item = result[0]
+                        if item.get("regularMarketPrice"):
+                            return float(item.get("regularMarketPrice", 0))
+            except Exception as e:
+                print(f"Yahoo Finance API error for {ticker}: {e}")
+            
+            # Final fallback - return 0 if no price found
+            print(f"No current price found for {ticker}, returning 0")
+            return 0.0
+            
+        except Exception as e:
+            print(f"Error fetching current price for {ticker}: {e}")
+            return 0.0
 
 # =====================
 # Mutual Fund Data
