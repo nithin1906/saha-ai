@@ -30,6 +30,7 @@ class CustomUserAdmin(BaseUserAdmin):
         custom_urls = [
             path('approve-user/<int:user_id>/', self.admin_site.admin_view(self.approve_user), name='approve_user'),
             path('reject-user/<int:user_id>/', self.admin_site.admin_view(self.reject_user), name='reject_user'),
+            path('remove-user/<int:user_id>/', self.admin_site.admin_view(self.remove_user), name='remove_user'),
         ]
         return custom_urls + urls
     
@@ -56,6 +57,29 @@ class CustomUserAdmin(BaseUserAdmin):
             messages.error(request, f'User {user.username} has no profile.')
         return redirect('admin:auth_user_changelist')
     
+    def remove_user(self, request, user_id):
+        user = get_object_or_404(User, pk=user_id)
+        if user.is_superuser:
+            messages.error(request, f'Cannot remove superuser {user.username}.')
+            return redirect('admin:auth_user_changelist')
+        
+        try:
+            # Delete user profile first
+            try:
+                profile = user.userprofile
+                profile.delete()
+            except UserProfile.DoesNotExist:
+                pass
+            
+            # Delete user
+            username = user.username
+            user.delete()
+            messages.success(request, f'User {username} has been removed successfully.')
+        except Exception as e:
+            messages.error(request, f'Error removing user {user.username}: {str(e)}')
+        
+        return redirect('admin:auth_user_changelist')
+    
     def is_approved(self, obj):
         try:
             profile = obj.userprofile
@@ -74,6 +98,7 @@ class CustomUserAdmin(BaseUserAdmin):
         approve_url = reverse('admin:approve_user', args=[obj.pk])
         reject_url = reverse('admin:reject_user', args=[obj.pk])
         delete_url = reverse('admin:auth_user_delete', args=[obj.pk])
+        remove_url = reverse('admin:remove_user', args=[obj.pk])
         
         buttons = []
         
@@ -85,7 +110,8 @@ class CustomUserAdmin(BaseUserAdmin):
         except UserProfile.DoesNotExist:
             pass
         
-        buttons.append(f'<a href="{delete_url}" class="button" style="background: #dc3545; color: white; padding: 2px 8px; text-decoration: none; border-radius: 3px;">Delete</a>')
+        buttons.append(f'<a href="{remove_url}" class="button" style="background: #dc3545; color: white; padding: 2px 8px; text-decoration: none; border-radius: 3px; margin-right: 5px; font-weight: bold;">Remove User</a>')
+        buttons.append(f'<a href="{delete_url}" class="button" style="background: #6c757d; color: white; padding: 2px 8px; text-decoration: none; border-radius: 3px;">Delete</a>')
         
         return format_html(' '.join(buttons))
     admin_actions.short_description = 'Actions'
