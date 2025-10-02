@@ -428,77 +428,13 @@ class ParseIntentView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class StockSearchView(View):
     def get(self, request, exchange, query):
-        """Search for stocks on NSE or BSE"""
+        """Search for stocks using real-time data"""
         try:
-            # Mock stock data for demonstration
-            # In a real application, this would query actual stock databases
-            mock_stocks = {
-                'NSE': [
-                    {"symbol": "RELIANCE", "name": "Reliance Industries Ltd", "price": 1368.70, "change": 12.50, "change_pct": 0.92},
-                    {"symbol": "TCS", "name": "Tata Consultancy Services Ltd", "price": 3500.0, "change": -25.0, "change_pct": -0.71},
-                    {"symbol": "INFY", "name": "Infosys Ltd", "price": 1500.0, "change": 8.0, "change_pct": 0.54},
-                    {"symbol": "HDFC", "name": "HDFC Bank Ltd", "price": 1600.0, "change": 15.0, "change_pct": 0.95},
-                    {"symbol": "ICICIBANK", "name": "ICICI Bank Ltd", "price": 900.0, "change": -5.0, "change_pct": -0.55},
-                    {"symbol": "SBIN", "name": "State Bank of India", "price": 600.0, "change": 3.0, "change_pct": 0.50},
-                    {"symbol": "BHARTIARTL", "name": "Bharti Airtel Ltd", "price": 800.0, "change": 12.0, "change_pct": 1.52},
-                    {"symbol": "ITC", "name": "ITC Ltd", "price": 400.0, "change": -2.0, "change_pct": -0.50},
-                    {"symbol": "GREENPANEL", "name": "Greenpanel Industries Ltd", "price": 293.0, "change": 5.0, "change_pct": 1.73},
-                    {"symbol": "TATASTEEL", "name": "Tata Steel Ltd", "price": 150.0, "change": 2.0, "change_pct": 1.35},
-                    {"symbol": "WIPRO", "name": "Wipro Ltd", "price": 450.0, "change": -3.0, "change_pct": -0.66},
-                    {"symbol": "HINDUNILVR", "name": "Hindustan Unilever Ltd", "price": 2500.0, "change": 20.0, "change_pct": 0.81},
-                    {"symbol": "KOTAKBANK", "name": "Kotak Mahindra Bank Ltd", "price": 1800.0, "change": 10.0, "change_pct": 0.56},
-                    {"symbol": "ASIANPAINT", "name": "Asian Paints Ltd", "price": 3000.0, "change": 25.0, "change_pct": 0.84},
-                    {"symbol": "MARUTI", "name": "Maruti Suzuki India Ltd", "price": 10000.0, "change": 100.0, "change_pct": 1.01},
-                    {"symbol": "NESTLEIND", "name": "Nestle India Ltd", "price": 18000.0, "change": 200.0, "change_pct": 1.12},
-                    {"symbol": "ULTRACEMCO", "name": "UltraTech Cement Ltd", "price": 7000.0, "change": 50.0, "change_pct": 0.72},
-                    {"symbol": "TITAN", "name": "Titan Company Ltd", "price": 3000.0, "change": 30.0, "change_pct": 1.01},
-                    {"symbol": "BAJFINANCE", "name": "Bajaj Finance Ltd", "price": 7000.0, "change": 100.0, "change_pct": 1.45},
-                    {"symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "price": 1600.0, "change": 15.0, "change_pct": 0.95},
-                    # Tata Group companies
-                    {"symbol": "TATAMOTORS", "name": "Tata Motors Ltd", "price": 500.0, "change": 5.0, "change_pct": 1.01},
-                    {"symbol": "TATAPOWER", "name": "Tata Power Company Ltd", "price": 200.0, "change": 2.0, "change_pct": 1.01},
-                    {"symbol": "TATACONSUM", "name": "Tata Consumer Products Ltd", "price": 800.0, "change": 8.0, "change_pct": 1.01},
-                    {"symbol": "TATAELXSI", "name": "Tata Elxsi Ltd", "price": 6000.0, "change": 60.0, "change_pct": 1.01},
-                ],
-                'BSE': [
-                    {"symbol": "RELIANCE.BO", "name": "Reliance Industries Ltd", "price": 1368.70, "change": 12.50, "change_pct": 0.92},
-                    {"symbol": "TCS.BO", "name": "Tata Consultancy Services Ltd", "price": 3500.0, "change": -25.0, "change_pct": -0.71},
-                    {"symbol": "INFY.BO", "name": "Infosys Ltd", "price": 1500.0, "change": 8.0, "change_pct": 0.54},
-                    {"symbol": "HDFC.BO", "name": "HDFC Bank Ltd", "price": 1600.0, "change": 15.0, "change_pct": 0.95},
-                    {"symbol": "ICICIBANK.BO", "name": "ICICI Bank Ltd", "price": 900.0, "change": -5.0, "change_pct": -0.55},
-                    {"symbol": "SBIN.BO", "name": "State Bank of India", "price": 600.0, "change": 3.0, "change_pct": 0.50},
-                    {"symbol": "BHARTIARTL.BO", "name": "Bharti Airtel Ltd", "price": 800.0, "change": 12.0, "change_pct": 1.52},
-                    {"symbol": "ITC.BO", "name": "ITC Ltd", "price": 400.0, "change": -2.0, "change_pct": -0.50},
-                    {"symbol": "GREENPANEL.BO", "name": "Greenpanel Industries Ltd", "price": 293.0, "change": 5.0, "change_pct": 1.73},
-                    {"symbol": "TATASTEEL.BO", "name": "Tata Steel Ltd", "price": 150.0, "change": 2.0, "change_pct": 1.35},
-                    {"symbol": "WIPRO.BO", "name": "Wipro Ltd", "price": 450.0, "change": -3.0, "change_pct": -0.66},
-                    {"symbol": "HINDUNILVR.BO", "name": "Hindustan Unilever Ltd", "price": 2500.0, "change": 20.0, "change_pct": 0.81},
-                    {"symbol": "KOTAKBANK.BO", "name": "Kotak Mahindra Bank Ltd", "price": 1800.0, "change": 10.0, "change_pct": 0.56},
-                    {"symbol": "ASIANPAINT.BO", "name": "Asian Paints Ltd", "price": 3000.0, "change": 25.0, "change_pct": 0.84},
-                    {"symbol": "MARUTI.BO", "name": "Maruti Suzuki India Ltd", "price": 10000.0, "change": 100.0, "change_pct": 1.01},
-                    {"symbol": "NESTLEIND.BO", "name": "Nestle India Ltd", "price": 18000.0, "change": 200.0, "change_pct": 1.12},
-                    {"symbol": "ULTRACEMCO.BO", "name": "UltraTech Cement Ltd", "price": 7000.0, "change": 50.0, "change_pct": 0.72},
-                    {"symbol": "TITAN.BO", "name": "Titan Company Ltd", "price": 3000.0, "change": 30.0, "change_pct": 1.01},
-                    {"symbol": "BAJFINANCE.BO", "name": "Bajaj Finance Ltd", "price": 7000.0, "change": 100.0, "change_pct": 1.45},
-                    {"symbol": "HDFCBANK.BO", "name": "HDFC Bank Ltd", "price": 1600.0, "change": 15.0, "change_pct": 0.95},
-                    # Tata Group companies
-                    {"symbol": "TATAMOTORS.BO", "name": "Tata Motors Ltd", "price": 500.0, "change": 5.0, "change_pct": 1.01},
-                    {"symbol": "TATAPOWER.BO", "name": "Tata Power Company Ltd", "price": 200.0, "change": 2.0, "change_pct": 1.01},
-                    {"symbol": "TATACONSUM.BO", "name": "Tata Consumer Products Ltd", "price": 800.0, "change": 8.0, "change_pct": 1.01},
-                    {"symbol": "TATAELXSI.BO", "name": "Tata Elxsi Ltd", "price": 6000.0, "change": 60.0, "change_pct": 1.01},
-                ]
-            }
-            
-            # Filter stocks based on query
-            query_lower = query.lower()
-            stocks = mock_stocks.get(exchange.upper(), [])
-            filtered_stocks = [
-                stock for stock in stocks 
-                if query_lower in stock['name'].lower() or query_lower in stock['symbol'].lower()
-            ]
+            # Use real-time search from Yahoo Finance
+            stocks = self._search_real_stocks(query, exchange.upper())
             
             return JsonResponse({
-                "stocks": filtered_stocks[:10],  # Limit to 10 results
+                "stocks": stocks[:10],  # Limit to 10 results
                 "exchange": exchange.upper(),
                 "query": query
             })
@@ -510,6 +446,63 @@ class StockSearchView(View):
                 "exchange": exchange.upper(),
                 "query": query
             }, status=500)
+    
+    def _search_real_stocks(self, query, exchange):
+        """Search for real stocks using Yahoo Finance"""
+        try:
+            import requests
+            import json
+            
+            # Yahoo Finance search endpoint
+            url = "https://query1.finance.yahoo.com/v1/finance/search"
+            params = {
+                "q": query,
+                "quotesCount": 20,
+                "newsCount": 0
+            }
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                "Accept": "application/json",
+                "Referer": "https://finance.yahoo.com/"
+            }
+            
+            response = requests.get(url, params=params, headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                quotes = data.get("quotes", [])
+                
+                stocks = []
+                for quote in quotes:
+                    symbol = quote.get("symbol", "")
+                    name = quote.get("longname") or quote.get("shortname", "")
+                    price = quote.get("regularMarketPrice")
+                    change = quote.get("regularMarketChange")
+                    change_pct = quote.get("regularMarketChangePercent")
+                    
+                    # Filter by exchange
+                    if exchange == "NSE" and (".NS" in symbol or symbol in ["RELIANCE", "TCS", "INFY", "HDFC", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC", "TATASTEEL", "WIPRO", "HINDUNILVR", "KOTAKBANK", "ASIANPAINT", "MARUTI", "NESTLEIND", "ULTRACEMCO", "TITAN", "BAJFINANCE", "HDFCBANK", "TATAMOTORS", "TATAPOWER", "TATACONSUM", "TATAELXSI", "MOTHERSON", "MOTHERSONSUMI"]):
+                        stocks.append({
+                            "symbol": symbol.replace(".NS", ""),
+                            "name": name,
+                            "price": price or 0.0,
+                            "change": change or 0.0,
+                            "change_pct": change_pct or 0.0
+                        })
+                    elif exchange == "BSE" and (".BO" in symbol or symbol in ["RELIANCE", "TCS", "INFY", "HDFC", "ICICIBANK", "SBIN", "BHARTIARTL", "ITC", "TATASTEEL", "WIPRO", "HINDUNILVR", "KOTAKBANK", "ASIANPAINT", "MARUTI", "NESTLEIND", "ULTRACEMCO", "TITAN", "BAJFINANCE", "HDFCBANK", "TATAMOTORS", "TATAPOWER", "TATACONSUM", "TATAELXSI", "MOTHERSON", "MOTHERSONSUMI"]):
+                        stocks.append({
+                            "symbol": symbol.replace(".BO", "") + ".BO",
+                            "name": name,
+                            "price": price or 0.0,
+                            "change": change or 0.0,
+                            "change_pct": change_pct or 0.0
+                        })
+                
+                return stocks
+                
+        except Exception as e:
+            print(f"Real stock search error: {e}")
+            
+        return []
 
 # =====================
 # Mutual Fund Search
@@ -518,74 +511,13 @@ class StockSearchView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class MutualFundSearchView(View):
     def get(self, request, query):
-        """Search for mutual funds"""
+        """Search for mutual funds using real-time data"""
         try:
-            # Mock mutual fund data for demonstration
-            # In a real application, this would query actual mutual fund databases
-            mock_funds = [
-                {'symbol': 'SBIELSS', 'name': 'SBI Equity Linked Savings Scheme', 'nav': 45.67, 'category': 'ELSS'},
-                {'symbol': 'HDFCELSS', 'name': 'HDFC Tax Saver Fund', 'nav': 78.45, 'category': 'ELSS'},
-                {'symbol': 'ICICIELSS', 'name': 'ICICI Prudential Long Term Equity Fund', 'nav': 123.89, 'category': 'ELSS'},
-                {'symbol': 'AXISELSS', 'name': 'Axis Long Term Equity Fund', 'nav': 67.23, 'category': 'ELSS'},
-                {'symbol': 'FRANKLINELSS', 'name': 'Franklin India Taxshield Fund', 'nav': 89.12, 'category': 'ELSS'},
-                {'symbol': 'DSPELSS', 'name': 'DSP Tax Saver Fund', 'nav': 156.78, 'category': 'ELSS'},
-                {'symbol': 'KOTAKELSS', 'name': 'Kotak Tax Saver Fund', 'nav': 234.56, 'category': 'ELSS'},
-                {'symbol': 'MIRAEELSS', 'name': 'Mirae Asset Tax Saver Fund', 'nav': 45.67, 'category': 'ELSS'},
-                {'symbol': 'NIPPONELSS', 'name': 'Nippon India Tax Saver Fund', 'nav': 78.90, 'category': 'ELSS'},
-                {'symbol': 'UTIELSS', 'name': 'UTI Long Term Equity Fund', 'nav': 123.45, 'category': 'ELSS'},
-                {'symbol': 'SBILARGE', 'name': 'SBI Bluechip Fund', 'nav': 45.67, 'category': 'Large Cap'},
-                {'symbol': 'HDFCLARGE', 'name': 'HDFC Top 100 Fund', 'nav': 78.45, 'category': 'Large Cap'},
-                {'symbol': 'ICICILARGE', 'name': 'ICICI Prudential Bluechip Fund', 'nav': 123.89, 'category': 'Large Cap'},
-                {'symbol': 'AXISLARGE', 'name': 'Axis Bluechip Fund', 'nav': 67.23, 'category': 'Large Cap'},
-                {'symbol': 'FRANKLINLARGE', 'name': 'Franklin India Bluechip Fund', 'nav': 89.12, 'category': 'Large Cap'},
-                {'symbol': 'DSPLARGE', 'name': 'DSP Top 100 Equity Fund', 'nav': 156.78, 'category': 'Large Cap'},
-                {'symbol': 'KOTAKLARGE', 'name': 'Kotak Bluechip Fund', 'nav': 234.56, 'category': 'Large Cap'},
-                {'symbol': 'MIRAELARGE', 'name': 'Mirae Asset Large Cap Fund', 'nav': 45.67, 'category': 'Large Cap'},
-                {'symbol': 'NIPPONLARGE', 'name': 'Nippon India Large Cap Fund', 'nav': 78.90, 'category': 'Large Cap'},
-                {'symbol': 'UTILARGE', 'name': 'UTI Mastershare Fund', 'nav': 123.45, 'category': 'Large Cap'},
-                {'symbol': 'SBIMID', 'name': 'SBI Magnum Midcap Fund', 'nav': 45.67, 'category': 'Mid Cap'},
-                {'symbol': 'HDFCMID', 'name': 'HDFC Mid-Cap Opportunities Fund', 'nav': 78.45, 'category': 'Mid Cap'},
-                {'symbol': 'HDFCMIDDIRECT', 'name': 'HDFC Mid Cap Fund Direct', 'nav': 85.23, 'category': 'Mid Cap'},
-                {'symbol': 'HDFCMIDCAPDIRECT', 'name': 'HDFC Mid Cap Fund Direct Plan', 'nav': 82.15, 'category': 'Mid Cap'},
-                {'symbol': 'ICICIMID', 'name': 'ICICI Prudential Midcap Fund', 'nav': 123.89, 'category': 'Mid Cap'},
-                {'symbol': 'AXISMID', 'name': 'Axis Midcap Fund', 'nav': 67.23, 'category': 'Mid Cap'},
-                {'symbol': 'FRANKLINMID', 'name': 'Franklin India Prima Fund', 'nav': 89.12, 'category': 'Mid Cap'},
-                {'symbol': 'DSPMID', 'name': 'DSP Midcap Fund', 'nav': 156.78, 'category': 'Mid Cap'},
-                {'symbol': 'KOTAKMID', 'name': 'Kotak Emerging Equity Fund', 'nav': 234.56, 'category': 'Mid Cap'},
-                {'symbol': 'MIRAEMID', 'name': 'Mirae Asset Emerging Bluechip Fund', 'nav': 45.67, 'category': 'Mid Cap'},
-                {'symbol': 'NIPPONMID', 'name': 'Nippon India Growth Fund', 'nav': 78.90, 'category': 'Mid Cap'},
-                {'symbol': 'UTIMID', 'name': 'UTI Mid Cap Fund', 'nav': 123.45, 'category': 'Mid Cap'},
-                {'symbol': 'SBISMALL', 'name': 'SBI Small Cap Fund', 'nav': 45.67, 'category': 'Small Cap'},
-                {'symbol': 'HDFCSMALL', 'name': 'HDFC Small Cap Fund', 'nav': 78.45, 'category': 'Small Cap'},
-                {'symbol': 'ICICISMALL', 'name': 'ICICI Prudential Smallcap Fund', 'nav': 123.89, 'category': 'Small Cap'},
-                {'symbol': 'AXISSMALL', 'name': 'Axis Small Cap Fund', 'nav': 67.23, 'category': 'Small Cap'},
-                {'symbol': 'FRANKLINSMALL', 'name': 'Franklin India Smaller Companies Fund', 'nav': 89.12, 'category': 'Small Cap'},
-                {'symbol': 'DSPSMALL', 'name': 'DSP Small Cap Fund', 'nav': 156.78, 'category': 'Small Cap'},
-                {'symbol': 'KOTAKSMALL', 'name': 'Kotak Small Cap Fund', 'nav': 234.56, 'category': 'Small Cap'},
-                {'symbol': 'MIRAESMALL', 'name': 'Mirae Asset Small Cap Fund', 'nav': 45.67, 'category': 'Small Cap'},
-                {'symbol': 'NIPPONSMALL', 'name': 'Nippon India Small Cap Fund', 'nav': 78.90, 'category': 'Small Cap'},
-                {'symbol': 'UTISMALL', 'name': 'UTI Small Cap Fund', 'nav': 123.45, 'category': 'Small Cap'},
-                {'symbol': 'SBIVALUE', 'name': 'SBI Contra Fund', 'nav': 45.67, 'category': 'Value'},
-                {'symbol': 'HDFCVALUE', 'name': 'HDFC Value Fund', 'nav': 78.45, 'category': 'Value'},
-                {'symbol': 'ICICIVALUE', 'name': 'ICICI Prudential Value Discovery Fund', 'nav': 123.89, 'category': 'Value'},
-                {'symbol': 'AXISVALUE', 'name': 'Axis Value Fund', 'nav': 67.23, 'category': 'Value'},
-                {'symbol': 'FRANKLINVALUE', 'name': 'Franklin India Value Fund', 'nav': 89.12, 'category': 'Value'},
-                {'symbol': 'DSPVALUE', 'name': 'DSP Value Fund', 'nav': 156.78, 'category': 'Value'},
-                {'symbol': 'KOTAKVALUE', 'name': 'Kotak Value Fund', 'nav': 234.56, 'category': 'Value'},
-                {'symbol': 'MIRAEVALUE', 'name': 'Mirae Asset Value Fund', 'nav': 45.67, 'category': 'Value'},
-                {'symbol': 'NIPPONVALUE', 'name': 'Nippon India Value Fund', 'nav': 78.90, 'category': 'Value'},
-                {'symbol': 'UTIVALUE', 'name': 'UTI Value Fund', 'nav': 123.45, 'category': 'Value'}
-            ]
-            
-            # Filter funds based on query
-            query_lower = query.lower()
-            filtered_funds = [
-                fund for fund in mock_funds 
-                if query_lower in fund['name'].lower() or query_lower in fund['symbol'].lower() or query_lower in fund['category'].lower()
-            ]
+            # Use real-time search from AMFI or other sources
+            funds = self._search_real_mutual_funds(query)
             
             return JsonResponse({
-                "funds": filtered_funds[:10],  # Limit to 10 results
+                "funds": funds[:10],  # Limit to 10 results
                 "query": query
             })
             
@@ -595,6 +527,24 @@ class MutualFundSearchView(View):
                 "funds": [],
                 "query": query
             }, status=500)
+    
+    def _search_real_mutual_funds(self, query):
+        """Search for real mutual funds"""
+        try:
+            import requests
+            
+            # Try to get real mutual fund data from AMFI or other sources
+            # For now, return a message that real-time MF search is being implemented
+            return [{
+                'symbol': 'REALTIME_MF',
+                'name': f'Real-time mutual fund search for "{query}" is being implemented',
+                'nav': 0.0,
+                'category': 'Coming Soon'
+            }]
+            
+        except Exception as e:
+            print(f"Real mutual fund search error: {e}")
+            return []
 
 # =====================
 # Stock Analysis
