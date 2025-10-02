@@ -978,12 +978,11 @@ class MarketSnapshotView(View):
     def get(self, request):
         # Prefer Yahoo quote API for multiple symbols in one call
         symbols = {
-            "NIFTY": "^NSEI",
-            "SENSEX": "^BSESN",
-            "BANKNIFTY": "^NSEBANK",
-            # Some indices may not always be available; included best-effort symbols
-            "MIDCPNIFTY": "^NSEMDCP50",
-            "FINNIFTY": "^NSEFIN"
+            "NIFTY": "NSEI.NS",  # NSE NIFTY 50
+            "SENSEX": "BSESN.BO",  # BSE SENSEX
+            "BANKNIFTY": "NSEBANK.NS",  # NSE BANK NIFTY
+            "MIDCPNIFTY": "NSEMDCP50.NS",  # NSE MIDCAP 50
+            "FINNIFTY": "NSEFIN.NS"  # NSE FINANCIAL SERVICES
         }
         # Try multiple data sources for real market data
         data = []
@@ -1065,7 +1064,40 @@ class MarketSnapshotView(View):
             except Exception as e:
                 print(f"yfinance info error: {e}")
         
-        # Method 4: Try to get historical data for closed markets
+        # Method 4: Try alternative symbols if primary ones fail
+        if not data:
+            alternative_symbols = {
+                "NIFTY": "NIFTY_50.NS",
+                "SENSEX": "SENSEX.BO", 
+                "BANKNIFTY": "BANKNIFTY.NS",
+                "MIDCPNIFTY": "MIDCAP_50.NS",
+                "FINNIFTY": "FINANCIAL_SERVICES.NS"
+            }
+            try:
+                for label, symbol in alternative_symbols.items():
+                    try:
+                        ticker = yf.Ticker(symbol)
+                        hist = ticker.history(period="2d")
+                        if not hist.empty:
+                            latest_close = hist['Close'].iloc[-1]
+                            prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else latest_close
+                            change = latest_close - prev_close
+                            change_pct = (change / prev_close) * 100 if prev_close != 0 else 0
+                            
+                            data.append({
+                                'symbol': symbol,
+                                'regularMarketPrice': latest_close,
+                                'regularMarketChange': change,
+                                'regularMarketChangePercent': change_pct
+                            })
+                    except Exception as e:
+                        print(f"Alternative symbol error for {symbol}: {e}")
+                        continue
+                print(f"Alternative symbols success: {len(data)} symbols")
+            except Exception as e:
+                print(f"Alternative symbols error: {e}")
+        
+        # Method 5: Try to get historical data for closed markets
         if not data and yf is not None:
             try:
                 for symbol in symbols.values():
@@ -1091,6 +1123,47 @@ class MarketSnapshotView(View):
                 print(f"Historical data success: {len(data)} symbols")
             except Exception as e:
                 print(f"Historical data error: {e}")
+        
+        # Method 6: Try direct web scraping as last resort
+        if not data:
+            try:
+                import requests
+                from bs4 import BeautifulSoup
+                
+                # Try to get data from a reliable financial website
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+                
+                # Try NSE official website
+                try:
+                    url = "https://www.nseindia.com/api/allIndices"
+                    response = requests.get(url, headers=headers, timeout=10)
+                    if response.status_code == 200:
+                        nse_data = response.json()
+                        for item in nse_data.get('data', []):
+                            if item.get('index') in ['NIFTY 50', 'NIFTY BANK', 'NIFTY MIDCAP 50']:
+                                symbol_map = {
+                                    'NIFTY 50': 'NIFTY',
+                                    'NIFTY BANK': 'BANKNIFTY', 
+                                    'NIFTY MIDCAP 50': 'MIDCPNIFTY'
+                                }
+                                label = symbol_map.get(item.get('index'))
+                                if label:
+                                    data.append({
+                                        'symbol': item.get('index'),
+                                        'regularMarketPrice': item.get('last'),
+                                        'regularMarketChange': item.get('variation'),
+                                        'regularMarketChangePercent': item.get('percentChange')
+                                    })
+                        print(f"NSE API success: {len(data)} symbols")
+                except Exception as e:
+                    print(f"NSE API error: {e}")
+                    
+            except ImportError:
+                print("BeautifulSoup not available for web scraping")
+            except Exception as e:
+                print(f"Web scraping error: {e}")
 
         resp = []
         by_symbol = {itm.get("symbol"): itm for itm in data}
