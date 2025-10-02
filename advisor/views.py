@@ -994,7 +994,10 @@ class MarketSnapshotView(View):
             r = requests.get(url, params=params, headers=headers, timeout=8)
             if r.status_code == 200:
                 data = (r.json() or {}).get("quoteResponse", {}).get("result", []) or []
-        except Exception:
+            else:
+                print(f"Yahoo API returned status {r.status_code}")
+        except Exception as e:
+            print(f"Yahoo API error: {e}")
             data = []
 
         resp = []
