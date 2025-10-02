@@ -308,7 +308,47 @@ class MarketSnapshotView(View):
             except Exception as e:
                 print(f"Web scraping error: {e}")
         
-        # Method 7: Use cached/static data as absolute last resort
+        # Method 7: Try alternative APIs for real data
+        if len(data) < 3:
+            try:
+                # Try Alpha Vantage API (free tier)
+                import os
+                alpha_vantage_key = os.environ.get('ALPHA_VANTAGE_API_KEY')
+                if alpha_vantage_key:
+                    for method_name, symbol_list in symbols.items():
+                        if any(item['symbol'] == method_name for item in data):
+                            continue
+                        
+                        for symbol in symbol_list:
+                            try:
+                                url = "https://www.alphavantage.co/query"
+                                params = {
+                                    'function': 'GLOBAL_QUOTE',
+                                    'symbol': symbol,
+                                    'apikey': alpha_vantage_key
+                                }
+                                response = requests.get(url, params=params, timeout=10)
+                                if response.status_code == 200:
+                                    result = response.json()
+                                    if 'Global Quote' in result:
+                                        quote = result['Global Quote']
+                                        if quote.get('05. price'):
+                                            data.append({
+                                                'symbol': method_name,
+                                                'regularMarketPrice': float(quote['05. price']),
+                                                'regularMarketChange': float(quote['09. change']),
+                                                'regularMarketChangePercent': float(quote['10. change percent'].replace('%', '')),
+                                                'regularMarketPreviousClose': float(quote['08. previous close'])
+                                            })
+                                            print(f"Alpha Vantage success for {method_name}")
+                                            break
+                            except Exception as e:
+                                print(f"Alpha Vantage error for {symbol}: {e}")
+                                continue
+            except Exception as e:
+                print(f"Alpha Vantage API error: {e}")
+        
+        # Method 8: Use cached/static data as absolute last resort
         if not data:
             print("All methods failed, using static fallback data")
             # Use some reasonable static values based on recent market data
@@ -589,6 +629,7 @@ class StockAnalysisView(View):
                 "buy_price": buy_price,
                 "shares": shares,
                 "current_price": round(current_price, 2),
+                "current_market_price": round(current_price, 2),  # Frontend expects this field
                 "total_investment": round(total_investment, 2),
                 "current_value": round(current_value, 2),
                 "profit_loss": round(profit_loss, 2),
@@ -600,6 +641,7 @@ class StockAnalysisView(View):
                 },
                 "recommendation": recommendation,
                 "recommendation_reason": recommendation_reason,
+                "personalized_advice": recommendation_reason,  # Frontend expects this field
                 "analysis_date": "2025-01-02"
             }
             
@@ -697,6 +739,7 @@ class MutualFundAnalysisView(View):
                 "buy_nav": buy_nav,
                 "units": units,
                 "current_nav": round(current_nav, 2),
+                "current_market_price": round(current_nav, 2),  # Frontend expects this field
                 "total_investment": round(total_investment, 2),
                 "current_value": round(current_value, 2),
                 "profit_loss": round(profit_loss, 2),
@@ -708,6 +751,7 @@ class MutualFundAnalysisView(View):
                 },
                 "recommendation": recommendation,
                 "recommendation_reason": recommendation_reason,
+                "personalized_advice": recommendation_reason,  # Frontend expects this field
                 "analysis_date": "2025-01-02"
             }
             
