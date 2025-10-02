@@ -6,7 +6,8 @@ from .views import (
     MarketSnapshotView,
     ParseIntentView,
     ChatView,
-    MutualFundView
+    MutualFundView,
+    PortfolioHealthView
 )
 
 urlpatterns = [
@@ -15,6 +16,7 @@ urlpatterns = [
 
     # Portfolio Management Endpoints
     path("portfolio/", PortfolioView.as_view(), name="portfolio-add-update"),
+    path("portfolio/health/", PortfolioHealthView.as_view(), name="portfolio-health"),
 
     # Mutual Fund Endpoints
     path("mutual-fund/", MutualFundView.as_view(), name="mutual-fund"),

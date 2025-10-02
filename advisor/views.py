@@ -115,7 +115,7 @@ class MarketSnapshotView(View):
                         "Sec-Fetch-Site": "same-site"
                     }
                     r = requests.get(url, params=params, headers=headers, timeout=10)
-                    if r.status_code == 200:
+            if r.status_code == 200:
                         result = (r.json() or {}).get("quoteResponse", {}).get("result", [])
                         if result and len(result) > 0:
                             item = result[0]
@@ -149,7 +149,7 @@ class MarketSnapshotView(View):
                             "Referer": "https://finance.yahoo.com/"
                         }
                         r = requests.get(url, params=params, headers=headers, timeout=8)
-                        if r.status_code == 200:
+        if r.status_code == 200:
                             chart_data = r.json()
                             if chart_data and 'chart' in chart_data and 'result' in chart_data['chart']:
                                 result = chart_data['chart']['result'][0]
@@ -166,7 +166,7 @@ class MarketSnapshotView(View):
                                     break
                     except Exception as e:
                         print(f"Chart API error for {symbol}: {e}")
-                        continue
+                    continue
         
         # Method 3: Try yfinance if available
         if len(data) < 3 and yf is not None:
@@ -190,7 +190,7 @@ class MarketSnapshotView(View):
                             break
                     except Exception as e:
                         print(f"yfinance error for {symbol}: {e}")
-                        continue
+            continue
         
         # Method 4: Try NSE official API
         if len(data) < 3:
@@ -329,7 +329,7 @@ class MarketSnapshotView(View):
                     "change_pct": "N/A",
                     "error": "Data unavailable"
                 })
-                continue
+            continue
                 
             resp.append({
                 "name": label,
@@ -365,7 +365,7 @@ class ParseIntentView(View):
             
             # Portfolio queries
             if any(word in text_lower for word in ["portfolio", "holdings", "stocks", "investments", "my stocks"]):
-                return JsonResponse({
+            return JsonResponse({
                     "intent": "portfolio",
                     "confidence": 0.9,
                     "entities": {"query": text}
@@ -373,7 +373,7 @@ class ParseIntentView(View):
             
             # Add to portfolio
             if any(word in text_lower for word in ["add", "buy", "purchase", "invest"]):
-                return JsonResponse({
+            return JsonResponse({
                     "intent": "add_to_portfolio",
                     "confidence": 0.8,
                     "entities": {"query": text}
@@ -381,7 +381,7 @@ class ParseIntentView(View):
             
             # General advice
             if any(word in text_lower for word in ["advice", "recommend", "suggest", "help", "what should"]):
-                return JsonResponse({
+            return JsonResponse({
                     "intent": "advice",
                     "confidence": 0.7,
                     "entities": {"query": text}
@@ -427,7 +427,7 @@ class ChatView(View):
             else:
                 response = self._handle_general_query(message)
             
-            return JsonResponse({
+        return JsonResponse({
                 "response": response,
                 "intent": intent,
                 "timestamp": datetime.now().isoformat()
@@ -585,3 +585,80 @@ def portfolio_page_view(request):
         'holdings': holdings,
         'total_value': total_value
     })
+
+# =====================
+# Portfolio Health View
+# =====================
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PortfolioHealthView(View):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+        
+        try:
+            holdings = Holding.objects.filter(user=request.user)
+            
+            if not holdings.exists():
+                return JsonResponse({
+                    "overall_score": 0,
+                    "diversification": {
+                        "score": 0,
+                        "feedback": "No holdings found. Add some investments to get a health score."
+                    },
+                    "risk_assessment": {
+                        "score": 0,
+                        "feedback": "No holdings found. Add some investments to get a risk assessment."
+                    },
+                    "performance": {
+                        "score": 0,
+                        "feedback": "No holdings found. Add some investments to get a performance score."
+                    }
+                })
+            
+            # Calculate diversification score
+            total_value = sum(h.quantity * h.buy_price for h in holdings)
+            unique_tickers = holdings.values('ticker').distinct().count()
+            
+            # Simple diversification scoring
+            if unique_tickers >= 10:
+                div_score = 10
+                div_feedback = "Excellent diversification across multiple assets"
+            elif unique_tickers >= 5:
+                div_score = 7
+                div_feedback = "Good diversification, consider adding more assets"
+            elif unique_tickers >= 3:
+                div_score = 5
+                div_feedback = "Moderate diversification, add more variety"
+            else:
+                div_score = 3
+                div_feedback = "Low diversification, consider spreading risk"
+            
+            # Calculate risk assessment (simplified)
+            risk_score = min(8, max(2, 10 - (unique_tickers * 0.5)))
+            risk_feedback = "Balanced risk profile" if risk_score >= 6 else "Consider diversifying to reduce risk"
+            
+            # Calculate performance (mock for now)
+            perf_score = random.randint(6, 9)
+            perf_feedback = "Good performance" if perf_score >= 7 else "Room for improvement"
+            
+            overall_score = round((div_score + risk_score + perf_score) / 3, 1)
+            
+            return JsonResponse({
+                "overall_score": overall_score,
+                "diversification": {
+                    "score": div_score,
+                    "feedback": div_feedback
+                },
+                "risk_assessment": {
+                    "score": risk_score,
+                    "feedback": risk_feedback
+                },
+                "performance": {
+                    "score": perf_score,
+                    "feedback": perf_feedback
+                }
+            })
+
+        except Exception as e:
+            return JsonResponse({"error": f"Failed to calculate portfolio health: {str(e)}"}, status=500)
