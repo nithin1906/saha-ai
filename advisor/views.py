@@ -173,7 +173,7 @@ class MarketSnapshotView(View):
                 })
             
             print(f"MarketSnapshotView: Successfully fetched {len(resp)} indices")
-        return JsonResponse({"indices": resp})
+            return JsonResponse({"indices": resp})
             
         except Exception as e:
             print(f"MarketSnapshotView: Error in get method: {e}")

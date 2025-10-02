@@ -249,7 +249,7 @@ class StockDataService:
                             price_float = float(latest['close'])
                             if self._validate_price(price_float, symbol):
                                 return price_float
-    except Exception as e:
+        except Exception as e:
             logger.error(f"BSE Official error for {symbol}: {e}")
         return None
 
@@ -277,7 +277,7 @@ class StockDataService:
                     if self._validate_price(price_float, symbol):
                         print(f"IndianAPI: Got price {price_float} for {symbol}")
                         return price_float
-    except Exception as e:
+        except Exception as e:
             print(f"IndianAPI error for {symbol}: {e}")
         return None
     
