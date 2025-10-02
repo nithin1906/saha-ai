@@ -985,27 +985,112 @@ class MarketSnapshotView(View):
             "MIDCPNIFTY": "^NSEMDCP50",
             "FINNIFTY": "^NSEFIN"
         }
-        # Try Yahoo batch first
+        # Try multiple data sources for real market data
         data = []
+        
+        # Method 1: Try Yahoo Finance API with better headers
         try:
             url = "https://query1.finance.yahoo.com/v7/finance/quote"
             params = {"symbols": ",".join([v for v in symbols.values()])}
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-                "Accept": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
                 "Accept-Language": "en-US,en;q=0.9",
                 "Accept-Encoding": "gzip, deflate, br",
                 "Connection": "keep-alive",
-                "Upgrade-Insecure-Requests": "1"
+                "Referer": "https://finance.yahoo.com/",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-site"
             }
-            r = requests.get(url, params=params, headers=headers, timeout=8)
+            r = requests.get(url, params=params, headers=headers, timeout=10)
             if r.status_code == 200:
                 data = (r.json() or {}).get("quoteResponse", {}).get("result", []) or []
+                print(f"Yahoo API success: {len(data)} symbols")
             else:
                 print(f"Yahoo API returned status {r.status_code}")
         except Exception as e:
             print(f"Yahoo API error: {e}")
-            data = []
+        
+        # Method 2: Try alternative Yahoo Finance endpoint if first fails
+        if not data:
+            try:
+                url = "https://query2.finance.yahoo.com/v8/finance/chart"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "application/json",
+                    "Referer": "https://finance.yahoo.com/"
+                }
+                for symbol in symbols.values():
+                    try:
+                        params = {"symbol": symbol, "range": "1d", "interval": "1m"}
+                        r = requests.get(url, params=params, headers=headers, timeout=8)
+                        if r.status_code == 200:
+                            chart_data = r.json()
+                            if chart_data and 'chart' in chart_data and 'result' in chart_data['chart']:
+                                result = chart_data['chart']['result'][0]
+                                meta = result.get('meta', {})
+                                if meta:
+                                    data.append({
+                                        'symbol': symbol,
+                                        'regularMarketPrice': meta.get('regularMarketPrice'),
+                                        'regularMarketChange': meta.get('regularMarketChange'),
+                                        'regularMarketChangePercent': meta.get('regularMarketChangePercent')
+                                    })
+                    except Exception as e:
+                        print(f"Chart API error for {symbol}: {e}")
+                        continue
+                print(f"Chart API success: {len(data)} symbols")
+            except Exception as e:
+                print(f"Chart API error: {e}")
+        
+        # Method 3: Try yfinance info as fallback
+        if not data and yf is not None:
+            try:
+                for symbol in symbols.values():
+                    try:
+                        ticker = yf.Ticker(symbol)
+                        info = ticker.info
+                        if info and 'regularMarketPrice' in info:
+                            data.append({
+                                'symbol': symbol,
+                                'regularMarketPrice': info.get('regularMarketPrice'),
+                                'regularMarketChange': info.get('regularMarketChange'),
+                                'regularMarketChangePercent': info.get('regularMarketChangePercent')
+                            })
+                    except Exception as e:
+                        print(f"yfinance info error for {symbol}: {e}")
+                        continue
+                print(f"yfinance info success: {len(data)} symbols")
+            except Exception as e:
+                print(f"yfinance info error: {e}")
+        
+        # Method 4: Try to get historical data for closed markets
+        if not data and yf is not None:
+            try:
+                for symbol in symbols.values():
+                    try:
+                        ticker = yf.Ticker(symbol)
+                        # Get recent data (last 5 days)
+                        hist = ticker.history(period="5d")
+                        if not hist.empty:
+                            latest_close = hist['Close'].iloc[-1]
+                            prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else latest_close
+                            change = latest_close - prev_close
+                            change_pct = (change / prev_close) * 100 if prev_close != 0 else 0
+                            
+                            data.append({
+                                'symbol': symbol,
+                                'regularMarketPrice': latest_close,
+                                'regularMarketChange': change,
+                                'regularMarketChangePercent': change_pct
+                            })
+                    except Exception as e:
+                        print(f"Historical data error for {symbol}: {e}")
+                        continue
+                print(f"Historical data success: {len(data)} symbols")
+            except Exception as e:
+                print(f"Historical data error: {e}")
 
         resp = []
         by_symbol = {itm.get("symbol"): itm for itm in data}
@@ -1058,15 +1143,14 @@ class MarketSnapshotView(View):
                 if fb is not None:
                     resp.append({"name": label, **fb})
                     continue
-                # Fallback to mock data if all else fails
-                mock_data = {
-                    "NIFTY": {"value": 19500.0, "change": 150.0, "change_pct": 0.78},
-                    "SENSEX": {"value": 65000.0, "change": 500.0, "change_pct": 0.77},
-                    "BANKNIFTY": {"value": 45000.0, "change": 200.0, "change_pct": 0.45},
-                    "MIDCPNIFTY": {"value": 12000.0, "change": 50.0, "change_pct": 0.42}
-                }
-                mock = mock_data.get(label, {"value": 0.0, "change": 0.0, "change_pct": 0.0})
-                resp.append({"name": label, **mock})
+                # If no data available, show error state
+                resp.append({
+                    "name": label,
+                    "value": "N/A",
+                    "change": "N/A",
+                    "change_pct": "N/A",
+                    "error": "Data unavailable"
+                })
                 continue
             resp.append({
                 "name": label,
