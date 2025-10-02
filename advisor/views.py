@@ -648,8 +648,8 @@ def dashboard(request):
 @login_required
 def portfolio_page(request):
     """Portfolio management page"""
-        holdings = Holding.objects.filter(portfolio__user=request.user)
-    total_value = sum(h.quantity * h.buy_price for h in holdings)
+    holdings = Holding.objects.filter(portfolio__user=request.user)
+    total_value = sum(h.quantity * h.average_buy_price for h in holdings)
     
     return render(request, 'advisor/portfolio.html', {
         'holdings': holdings,
@@ -678,8 +678,8 @@ def about_view(request):
 
 def portfolio_page_view(request):
     """Portfolio page view"""
-        holdings = Holding.objects.filter(portfolio__user=request.user)
-    total_value = sum(h.quantity * h.buy_price for h in holdings)
+    holdings = Holding.objects.filter(portfolio__user=request.user)
+    total_value = sum(h.quantity * h.average_buy_price for h in holdings)
     
     return render(request, 'advisor/portfolio.html', {
         'holdings': holdings,
