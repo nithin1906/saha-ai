@@ -160,7 +160,16 @@ class MarketSnapshotView(View):
         
         try:
             # Get market indices from the robust data service
-            indices_data = stock_data_service.get_market_indices()
+            market_data = stock_data_service.get_market_indices()
+            
+            # Handle both old and new response formats
+            if isinstance(market_data, dict) and 'indices' in market_data:
+                indices_data = market_data['indices']
+                market_status = market_data.get('market_status', {})
+            else:
+                # Fallback for old format
+                indices_data = market_data
+                market_status = {}
             
             # Convert to the expected format
             resp = []
@@ -173,11 +182,20 @@ class MarketSnapshotView(View):
                 })
             
             print(f"MarketSnapshotView: Successfully fetched {len(resp)} indices")
-            return JsonResponse({"indices": resp})
+            return JsonResponse({
+                "indices": resp,
+                "market_status": market_status
+            })
             
         except Exception as e:
             print(f"MarketSnapshotView: Error in get method: {e}")
-            return JsonResponse({"indices": []})
+            return JsonResponse({
+                "indices": [],
+                "market_status": {
+                    "status": "error",
+                    "message": "Unable to fetch market data"
+                }
+            })
 
 # =====================
 # Portfolio Health Analysis

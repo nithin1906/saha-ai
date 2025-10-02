@@ -342,13 +342,14 @@ class StockDataService:
         return True
     
     def get_market_indices(self):
-        """Get market indices with caching"""
+        """Get market indices with caching and market status"""
         cache_key = "market_indices"
         cached_data = cache.get(cache_key)
         if cached_data:
             return cached_data
         
         indices = {}
+        market_status = self._get_market_status()
         
         # Try to get real market indices
         try:
@@ -357,41 +358,102 @@ class StockDataService:
             if nifty_data:
                 indices['NIFTY'] = nifty_data
             else:
-                indices['NIFTY'] = {'price': 19500.0, 'change': 50.0, 'change_percent': 0.26}
+                # Use current realistic values based on Groww data
+                indices['NIFTY'] = {'price': 24836.30, 'change': 225.20, 'change_percent': 0.92}
             
             # SENSEX
             sensex_data = self._fetch_market_index('SENSEX')
             if sensex_data:
                 indices['SENSEX'] = sensex_data
             else:
-                indices['SENSEX'] = {'price': 65000.0, 'change': 150.0, 'change_percent': 0.23}
+                indices['SENSEX'] = {'price': 80983.31, 'change': 715.69, 'change_percent': 0.89}
             
             # BANKNIFTY
             banknifty_data = self._fetch_market_index('BANKNIFTY')
             if banknifty_data:
                 indices['BANKNIFTY'] = banknifty_data
             else:
-                indices['BANKNIFTY'] = {'price': 45000.0, 'change': 200.0, 'change_percent': 0.45}
+                indices['BANKNIFTY'] = {'price': 55347.95, 'change': 712.10, 'change_percent': 1.30}
             
             # MIDCPNIFTY
             midcpnifty_data = self._fetch_market_index('MIDCPNIFTY')
             if midcpnifty_data:
                 indices['MIDCPNIFTY'] = midcpnifty_data
             else:
-                indices['MIDCPNIFTY'] = {'price': 12000.0, 'change': 30.0, 'change_percent': 0.25}
+                indices['MIDCPNIFTY'] = {'price': 12698.15, 'change': 98.90, 'change_percent': 0.78}
                 
         except Exception as e:
             logger.error(f"Error fetching market indices: {e}")
-            # Fallback to realistic market values
+            # Fallback to current realistic market values
             indices = {
-                'NIFTY': {'price': 19500.0, 'change': 50.0, 'change_percent': 0.26},
-                'SENSEX': {'price': 65000.0, 'change': 150.0, 'change_percent': 0.23},
-                'BANKNIFTY': {'price': 45000.0, 'change': 200.0, 'change_percent': 0.45},
-                'MIDCPNIFTY': {'price': 12000.0, 'change': 30.0, 'change_percent': 0.25}
+                'NIFTY': {'price': 24836.30, 'change': 225.20, 'change_percent': 0.92},
+                'SENSEX': {'price': 80983.31, 'change': 715.69, 'change_percent': 0.89},
+                'BANKNIFTY': {'price': 55347.95, 'change': 712.10, 'change_percent': 1.30},
+                'MIDCPNIFTY': {'price': 12698.15, 'change': 98.90, 'change_percent': 0.78}
             }
         
-        cache.set(cache_key, indices, self.cache_timeout)  # Cache for configured timeout
-        return indices
+        # Add market status to the response
+        result = {
+            'indices': indices,
+            'market_status': market_status
+        }
+        
+        cache.set(cache_key, result, self.cache_timeout)  # Cache for configured timeout
+        return result
+    
+    def _get_market_status(self):
+        """Get current market status and timing"""
+        from datetime import datetime, time
+        import pytz
+        
+        try:
+            # Get current time in IST
+            ist = pytz.timezone('Asia/Kolkata')
+            now = datetime.now(ist)
+            current_time = now.time()
+            current_date = now.date()
+            
+            # Market hours: 9:15 AM to 3:30 PM IST (Monday to Friday)
+            market_open = time(9, 15)  # 9:15 AM
+            market_close = time(15, 30)  # 3:30 PM
+            
+            # Check if it's a weekday
+            is_weekday = current_date.weekday() < 5  # Monday = 0, Sunday = 6
+            
+            if is_weekday and market_open <= current_time <= market_close:
+                return {
+                    'status': 'open',
+                    'message': 'Market is LIVE',
+                    'next_close': f'Closes at 3:30 PM IST'
+                }
+            else:
+                # Market is closed
+                if not is_weekday:
+                    return {
+                        'status': 'closed',
+                        'message': 'Market Closed (Weekend)',
+                        'next_open': 'Opens Monday at 9:15 AM IST'
+                    }
+                elif current_time < market_open:
+                    return {
+                        'status': 'closed',
+                        'message': 'Market Closed',
+                        'next_open': 'Opens today at 9:15 AM IST'
+                    }
+                else:
+                    return {
+                        'status': 'closed',
+                        'message': 'Market Closed',
+                        'next_open': 'Opens tomorrow at 9:15 AM IST'
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Error getting market status: {e}")
+            return {
+                'status': 'unknown',
+                'message': 'Market status unknown',
+                'next_open': 'Check market hours'
+            }
     
     def _fetch_market_index(self, index_name):
         """Fetch specific market index data"""

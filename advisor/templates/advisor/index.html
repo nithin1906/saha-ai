@@ -1547,7 +1547,29 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = await fetch('/api/market/snapshot/');
             const d = await r.json();
             const arr = Array.isArray(d.indices) ? d.indices : [];
+            const marketStatusData = d.market_status || {};
+            
+            // Update market status display with backend data
+            if (marketStatusData.message) {
+                const statusColor = marketStatusData.status === 'open' ? 'text-green-600' : 
+                                  marketStatusData.status === 'closed' ? 'text-red-600' : 'text-gray-600';
+                marketStatus.innerHTML = `<span class="${statusColor}">${marketStatusData.message}</span>`;
+            } else {
+                // Fallback to frontend calculation
+                const now = new Date();
+                const day = now.getUTCDay();
+                const istMinutes = now.getUTCHours()*60 + now.getUTCMinutes() + 330; // UTC+5:30
+                const istHour = Math.floor(istMinutes/60) % 24;
+                const istMin = istMinutes % 60;
+                const mins = istHour*60 + istMin;
+                const open = 9*60 + 15, close = 15*60 + 30;
+                const isWeekday = day >= 1 && day <= 5;
+                const live = isWeekday && mins >= open && mins <= close;
+                marketStatus.textContent = live ? 'LIVE' : 'Last close';
+            }
+            
             marketCards.innerHTML = '';
+            if (marketCardsMobile) marketCardsMobile.innerHTML = '';
             
             if(arr.length === 0){
                 // Show loading state with animated skeleton cards
@@ -1612,18 +1634,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
-
-            // status: LIVE during Indian market hours (Mon-Fri 9:15-15:30 IST)
-            const now = new Date();
-            const day = now.getUTCDay();
-            const istMinutes = now.getUTCHours()*60 + now.getUTCMinutes() + 330; // UTC+5:30
-            const istHour = Math.floor(istMinutes/60) % 24;
-            const istMin = istMinutes % 60;
-            const mins = istHour*60 + istMin;
-            const open = 9*60 + 15, close = 15*60 + 30;
-            const isWeekday = day >= 1 && day <= 5;
-            const live = isWeekday && mins >= open && mins <= close;
-            marketStatus.textContent = live ? 'LIVE' : 'Last close';
         }catch(e){
             // Show error state with loading animation
             marketCards.innerHTML = '';
