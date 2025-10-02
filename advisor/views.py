@@ -29,8 +29,8 @@ class PortfolioView(View):
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Authentication required"}, status=401)
         
-        holdings = Holding.objects.filter(user=request.user)
-        total_value = sum(h.quantity * h.buy_price for h in holdings)
+        holdings = Holding.objects.filter(portfolio__user=request.user)
+        total_value = sum(h.quantity * h.average_buy_price for h in holdings)
         
         # Check if this is a details request (for portfolio page)
         if request.path.endswith('/details/'):
@@ -39,8 +39,8 @@ class PortfolioView(View):
                     {
                         "ticker": h.ticker,
                         "quantity": h.quantity,
-                        "average_buy_price": h.buy_price,
-                        "current_price": h.buy_price,  # Using buy_price as current for now
+                        "average_buy_price": h.average_buy_price,
+                        "current_price": h.average_buy_price,  # Using average_buy_price as current for now
                         "net_profit": 0  # No profit/loss calculation for now
                     }
                     for h in holdings
@@ -54,8 +54,8 @@ class PortfolioView(View):
                 {
                     "ticker": h.ticker,
                     "quantity": h.quantity,
-                    "buy_price": h.buy_price,
-                    "current_value": h.quantity * h.buy_price
+                    "buy_price": h.average_buy_price,
+                    "current_value": h.quantity * h.average_buy_price
                 }
                 for h in holdings
             ],
@@ -70,23 +70,26 @@ class PortfolioView(View):
             data = json.loads(request.body.decode("utf-8"))
             ticker = data.get("ticker", "").upper()
             quantity = float(data.get("quantity", 0))
-            buy_price = float(data.get("buy_price", 0))
+            average_buy_price = float(data.get("buy_price", 0))
             
-            if not ticker or quantity <= 0 or buy_price <= 0:
+            if not ticker or quantity <= 0 or average_buy_price <= 0:
                 return JsonResponse({"error": "Invalid data"}, status=400)
+            
+            # Get or create portfolio for user
+            portfolio, _ = Portfolio.objects.get_or_create(user=request.user)
             
             # Check if holding already exists
             holding, created = Holding.objects.get_or_create(
-                user=request.user,
+                portfolio=portfolio,
                 ticker=ticker,
-                defaults={"quantity": quantity, "buy_price": buy_price}
+                defaults={"quantity": quantity, "average_buy_price": average_buy_price}
             )
             
             if not created:
                 # Update existing holding
                 total_quantity = holding.quantity + quantity
-                total_cost = (holding.quantity * holding.buy_price) + (quantity * buy_price)
-                holding.buy_price = total_cost / total_quantity
+                total_cost = (holding.quantity * holding.average_buy_price) + (quantity * average_buy_price)
+                holding.average_buy_price = total_cost / total_quantity
                 holding.quantity = total_quantity
                 holding.save()
             
@@ -479,11 +482,11 @@ class ChatView(View):
         if not request.user.is_authenticated:
             return "Please log in to view your portfolio."
         
-        holdings = Holding.objects.filter(user=request.user)
+        holdings = Holding.objects.filter(portfolio__user=request.user)
         if not holdings.exists():
             return "Your portfolio is currently empty. You can add stocks by using the 'Add to Portfolio' feature."
         
-        total_value = sum(h.quantity * h.buy_price for h in holdings)
+        total_value = sum(h.quantity * h.average_buy_price for h in holdings)
         holdings_text = "\n".join([
             f"• {h.ticker}: {h.quantity} shares @ ₹{h.buy_price:.2f} (Total: ₹{h.quantity * h.buy_price:.2f})"
             for h in holdings
@@ -530,7 +533,7 @@ class PortfolioHealthView(View):
             print("PortfolioHealthView: User not authenticated, returning 401")
             return JsonResponse({"error": "Authentication required"}, status=401)
         
-        holdings = Holding.objects.filter(user=request.user)
+        holdings = Holding.objects.filter(portfolio__user=request.user)
         print(f"PortfolioHealthView: Found {holdings.count()} holdings for user {request.user}")
         
         if not holdings.exists():
@@ -552,7 +555,7 @@ class PortfolioHealthView(View):
             })
         
         # Calculate basic portfolio metrics
-        total_value = sum(h.quantity * h.buy_price for h in holdings)
+        total_value = sum(h.quantity * h.average_buy_price for h in holdings)
         num_holdings = holdings.count()
         
         # Diversification scoring (0-10)
@@ -645,7 +648,7 @@ def dashboard(request):
 @login_required
 def portfolio_page(request):
     """Portfolio management page"""
-    holdings = Holding.objects.filter(user=request.user)
+        holdings = Holding.objects.filter(portfolio__user=request.user)
     total_value = sum(h.quantity * h.buy_price for h in holdings)
     
     return render(request, 'advisor/portfolio.html', {
@@ -675,7 +678,7 @@ def about_view(request):
 
 def portfolio_page_view(request):
     """Portfolio page view"""
-    holdings = Holding.objects.filter(user=request.user)
+        holdings = Holding.objects.filter(portfolio__user=request.user)
     total_value = sum(h.quantity * h.buy_price for h in holdings)
     
     return render(request, 'advisor/portfolio.html', {
