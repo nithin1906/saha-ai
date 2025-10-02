@@ -17,6 +17,7 @@ urlpatterns = [
     # Portfolio Management Endpoints
     path("portfolio/", PortfolioView.as_view(), name="portfolio-add-update"),
     path("portfolio/health/", PortfolioHealthView.as_view(), name="portfolio-health"),
+    path("portfolio/details/", PortfolioView.as_view(), name="portfolio-details"),
 
     # Mutual Fund Endpoints
     path("mutual-fund/", MutualFundView.as_view(), name="mutual-fund"),

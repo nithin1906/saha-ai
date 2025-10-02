@@ -32,6 +32,23 @@ class PortfolioView(View):
         holdings = Holding.objects.filter(user=request.user)
         total_value = sum(h.quantity * h.buy_price for h in holdings)
         
+        # Check if this is a details request (for portfolio page)
+        if request.path.endswith('/details/'):
+            return JsonResponse({
+                "holdings": [
+                    {
+                        "ticker": h.ticker,
+                        "quantity": h.quantity,
+                        "average_buy_price": h.buy_price,
+                        "current_price": h.buy_price,  # Using buy_price as current for now
+                        "net_profit": 0  # No profit/loss calculation for now
+                    }
+                    for h in holdings
+                ],
+                "total_value": total_value
+            })
+        
+        # Default response for other portfolio requests
         return JsonResponse({
             "holdings": [
                 {
@@ -513,43 +530,61 @@ class PortfolioHealthView(View):
         
         if not holdings.exists():
             return JsonResponse({
-                "health_score": 0,
-                "message": "No holdings found in portfolio",
-                "recommendations": ["Add some stocks to your portfolio to get health analysis"]
+                "overall_score": 0,
+                "diversification": {
+                    "score": 0,
+                    "feedback": "No holdings found. Add stocks to get health analysis."
+                },
+                "risk": {
+                    "score": 5,
+                    "feedback": "Cannot assess risk without holdings."
+                },
+                "performance": {
+                    "score": 0,
+                    "feedback": "No performance data available."
+                }
             })
         
         # Calculate basic portfolio metrics
         total_value = sum(h.quantity * h.buy_price for h in holdings)
         num_holdings = holdings.count()
         
-        # Simple health scoring based on diversification
-        health_score = min(100, (num_holdings * 20))  # Basic scoring
+        # Diversification scoring (0-10)
+        if num_holdings >= 5:
+            diversification_score = 8
+            diversification_feedback = "Good diversification across multiple stocks."
+        elif num_holdings >= 3:
+            diversification_score = 6
+            diversification_feedback = "Moderate diversification. Consider adding more stocks."
+        else:
+            diversification_score = 3
+            diversification_feedback = "Low diversification. Add more stocks to reduce risk."
         
-        # Generate recommendations
-        recommendations = []
-        if num_holdings < 3:
-            recommendations.append("Consider diversifying your portfolio with more stocks")
-        if num_holdings > 10:
-            recommendations.append("Your portfolio might be over-diversified")
+        # Risk scoring (0-10) - simplified
+        risk_score = 6  # Default moderate risk
+        risk_feedback = "Moderate risk level. Monitor your investments regularly."
         
-        recommendations.append("Regularly review and rebalance your portfolio")
-        recommendations.append("Consider your risk tolerance and investment goals")
+        # Performance scoring (0-10) - simplified
+        performance_score = 7  # Default good performance
+        performance_feedback = "Portfolio performance looks stable."
+        
+        # Overall score (average of all scores)
+        overall_score = round((diversification_score + risk_score + performance_score) / 3, 1)
         
         return JsonResponse({
-            "health_score": health_score,
-            "total_value": total_value,
-            "num_holdings": num_holdings,
-            "recommendations": recommendations,
-            "holdings_summary": [
-                {
-                    "ticker": h.ticker,
-                    "quantity": h.quantity,
-                    "buy_price": h.buy_price,
-                    "current_value": h.quantity * h.buy_price,
-                    "percentage": round((h.quantity * h.buy_price / total_value) * 100, 2) if total_value > 0 else 0
-                }
-                for h in holdings
-            ]
+            "overall_score": overall_score,
+            "diversification": {
+                "score": diversification_score,
+                "feedback": diversification_feedback
+            },
+            "risk": {
+                "score": risk_score,
+                "feedback": risk_feedback
+            },
+            "performance": {
+                "score": performance_score,
+                "feedback": performance_feedback
+            }
         })
 
 # =====================
