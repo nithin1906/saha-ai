@@ -745,10 +745,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // portfolio health
     async function fetchAndDisplayPortfolioHealth() {
+        console.log('fetchAndDisplayPortfolioHealth: Starting...');
         try {
+            console.log('fetchAndDisplayPortfolioHealth: Fetching /api/portfolio/health/');
             const r = await fetch('/api/portfolio/health/');
-            if (!r.ok) throw new Error('health fetch failed');
+            console.log('fetchAndDisplayPortfolioHealth: Response status:', r.status);
+            console.log('fetchAndDisplayPortfolioHealth: Response ok:', r.ok);
+            
+            if (!r.ok) {
+                const errorText = await r.text();
+                console.error('fetchAndDisplayPortfolioHealth: Response not ok:', errorText);
+                throw new Error(`health fetch failed: ${r.status} ${errorText}`);
+            }
+            
             const d = await r.json();
+            console.log('fetchAndDisplayPortfolioHealth: Response data:', d);
+            
             healthScorePlaceholder.classList.add('hidden');
             healthScoreDisplay.classList.remove('hidden');
             
@@ -786,7 +798,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (healthScoreDisplayMobile) {
                 healthScoreDisplayMobile.innerHTML = healthHTML;
             }
+            console.log('fetchAndDisplayPortfolioHealth: Successfully displayed health data');
         } catch (e) {
+            console.error('fetchAndDisplayPortfolioHealth: Error:', e);
             healthScorePlaceholder.textContent = 'Could not load score.';
             const healthScorePlaceholderMobile = document.getElementById('health-score-placeholder-mobile');
             if (healthScorePlaceholderMobile) {

@@ -523,12 +523,18 @@ class ChatView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class PortfolioHealthView(View):
     def get(self, request):
+        print(f"PortfolioHealthView: User authenticated: {request.user.is_authenticated}")
+        print(f"PortfolioHealthView: User: {request.user}")
+        
         if not request.user.is_authenticated:
+            print("PortfolioHealthView: User not authenticated, returning 401")
             return JsonResponse({"error": "Authentication required"}, status=401)
         
         holdings = Holding.objects.filter(user=request.user)
+        print(f"PortfolioHealthView: Found {holdings.count()} holdings for user {request.user}")
         
         if not holdings.exists():
+            print("PortfolioHealthView: No holdings found, returning empty portfolio response")
             return JsonResponse({
                 "overall_score": 0,
                 "diversification": {
@@ -571,7 +577,7 @@ class PortfolioHealthView(View):
         # Overall score (average of all scores)
         overall_score = round((diversification_score + risk_score + performance_score) / 3, 1)
         
-        return JsonResponse({
+        response_data = {
             "overall_score": overall_score,
             "diversification": {
                 "score": diversification_score,
@@ -585,7 +591,10 @@ class PortfolioHealthView(View):
                 "score": performance_score,
                 "feedback": performance_feedback
             }
-        })
+        }
+        
+        print(f"PortfolioHealthView: Returning response: {response_data}")
+        return JsonResponse(response_data)
 
 # =====================
 # Mutual Fund Data
