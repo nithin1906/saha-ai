@@ -549,6 +549,235 @@ class MutualFundSearchView(View):
             }, status=500)
 
 # =====================
+# Stock Analysis Views
+# =====================
+
+@method_decorator(csrf_exempt, name="dispatch")
+class StockAnalysisView(View):
+    def get(self, request, ticker, buy_price, shares):
+        """Analyze a stock with buy price and shares"""
+        try:
+            buy_price = float(buy_price)
+            shares = int(shares)
+            
+            # Mock analysis data for demonstration
+            # In a real application, this would fetch real stock data and perform analysis
+            current_price = buy_price * (1 + (0.05 if ticker == 'GREENPANEL' else 0.02))  # Mock 5% gain for Greenpanel, 2% for others
+            total_investment = buy_price * shares
+            current_value = current_price * shares
+            profit_loss = current_value - total_investment
+            profit_loss_percent = (profit_loss / total_investment) * 100
+            
+            # Mock technical indicators
+            rsi = 65.5
+            macd = 2.3
+            bollinger_position = "Above Upper Band"
+            
+            # Mock recommendation
+            if profit_loss_percent > 10:
+                recommendation = "Strong Buy"
+                recommendation_reason = "Stock showing strong momentum with good technical indicators."
+            elif profit_loss_percent > 0:
+                recommendation = "Hold"
+                recommendation_reason = "Stock is performing well. Consider holding for better returns."
+            else:
+                recommendation = "Sell"
+                recommendation_reason = "Stock is underperforming. Consider selling to limit losses."
+            
+            analysis_data = {
+                "ticker": ticker,
+                "buy_price": buy_price,
+                "shares": shares,
+                "current_price": round(current_price, 2),
+                "total_investment": round(total_investment, 2),
+                "current_value": round(current_value, 2),
+                "profit_loss": round(profit_loss, 2),
+                "profit_loss_percent": round(profit_loss_percent, 2),
+                "technical_indicators": {
+                    "rsi": rsi,
+                    "macd": macd,
+                    "bollinger_position": bollinger_position
+                },
+                "recommendation": recommendation,
+                "recommendation_reason": recommendation_reason,
+                "analysis_date": "2025-01-02"
+            }
+            
+            return JsonResponse(analysis_data)
+            
+        except (ValueError, TypeError) as e:
+            return JsonResponse({
+                "error": f"Invalid parameters: {str(e)}",
+                "ticker": ticker,
+                "buy_price": buy_price,
+                "shares": shares
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                "error": f"Analysis failed: {str(e)}",
+                "ticker": ticker
+            }, status=500)
+
+@method_decorator(csrf_exempt, name="dispatch")
+class StockHistoryView(View):
+    def get(self, request, ticker):
+        """Get stock price history"""
+        try:
+            period = request.GET.get('period', '1y')
+            
+            # Mock historical data
+            # In a real application, this would fetch real historical data
+            import random
+            from datetime import datetime, timedelta
+            
+            base_price = 250 if ticker == 'GREENPANEL' else 100
+            days = 365 if period == '1y' else (90 if period == '3m' else 30)
+            
+            history_data = []
+            current_date = datetime.now()
+            
+            for i in range(days):
+                date = current_date - timedelta(days=i)
+                # Mock price with some volatility
+                price = base_price * (1 + random.uniform(-0.1, 0.1))
+                history_data.append({
+                    "date": date.strftime("%Y-%m-%d"),
+                    "price": round(price, 2),
+                    "volume": random.randint(1000, 10000)
+                })
+            
+            # Sort by date (oldest first)
+            history_data.sort(key=lambda x: x["date"])
+            
+            return JsonResponse({
+                "ticker": ticker,
+                "period": period,
+                "data": history_data
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                "error": f"Failed to fetch history: {str(e)}",
+                "ticker": ticker
+            }, status=500)
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MutualFundAnalysisView(View):
+    def get(self, request, scheme_id, buy_nav, units):
+        """Analyze a mutual fund with buy NAV and units"""
+        try:
+            buy_nav = float(buy_nav)
+            units = float(units)
+            
+            # Mock analysis data for demonstration
+            current_nav = buy_nav * 1.08  # Mock 8% gain
+            total_investment = buy_nav * units
+            current_value = current_nav * units
+            profit_loss = current_value - total_investment
+            profit_loss_percent = (profit_loss / total_investment) * 100
+            
+            # Mock fund metrics
+            expense_ratio = 1.2
+            risk_level = "Moderate"
+            category = "Large Cap"
+            
+            # Mock recommendation
+            if profit_loss_percent > 15:
+                recommendation = "Excellent Performance"
+                recommendation_reason = "Fund is outperforming with strong returns and good risk management."
+            elif profit_loss_percent > 5:
+                recommendation = "Good Performance"
+                recommendation_reason = "Fund is performing well above market average."
+            else:
+                recommendation = "Average Performance"
+                recommendation_reason = "Fund performance is in line with market expectations."
+            
+            analysis_data = {
+                "scheme_id": scheme_id,
+                "buy_nav": buy_nav,
+                "units": units,
+                "current_nav": round(current_nav, 2),
+                "total_investment": round(total_investment, 2),
+                "current_value": round(current_value, 2),
+                "profit_loss": round(profit_loss, 2),
+                "profit_loss_percent": round(profit_loss_percent, 2),
+                "fund_metrics": {
+                    "expense_ratio": expense_ratio,
+                    "risk_level": risk_level,
+                    "category": category
+                },
+                "recommendation": recommendation,
+                "recommendation_reason": recommendation_reason,
+                "analysis_date": "2025-01-02"
+            }
+            
+            return JsonResponse(analysis_data)
+            
+        except (ValueError, TypeError) as e:
+            return JsonResponse({
+                "error": f"Invalid parameters: {str(e)}",
+                "scheme_id": scheme_id,
+                "buy_nav": buy_nav,
+                "units": units
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                "error": f"Analysis failed: {str(e)}",
+                "scheme_id": scheme_id
+            }, status=500)
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MutualFundHistoryView(View):
+    def get(self, request, scheme_id):
+        """Get mutual fund NAV history"""
+        try:
+            period = request.GET.get('period', '1y')
+            
+            # Mock historical NAV data
+            import random
+            from datetime import datetime, timedelta
+            
+            base_nav = 45.67  # Mock base NAV
+            days = 365 if period == '1y' else (90 if period == '3m' else 30)
+            
+            history_data = []
+            current_date = datetime.now()
+            
+            for i in range(days):
+                date = current_date - timedelta(days=i)
+                # Mock NAV with gradual growth
+                nav = base_nav * (1 + (i * 0.0001) + random.uniform(-0.02, 0.02))
+                history_data.append({
+                    "date": date.strftime("%Y-%m-%d"),
+                    "nav": round(nav, 2)
+                })
+            
+            # Sort by date (oldest first)
+            history_data.sort(key=lambda x: x["date"])
+            
+            return JsonResponse({
+                "scheme_id": scheme_id,
+                "period": period,
+                "data": history_data
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                "error": f"Failed to fetch history: {str(e)}",
+                "scheme_id": scheme_id
+            }, status=500)
+
+@method_decorator(csrf_exempt, name="dispatch")
+class DevVersionView(View):
+    def get(self, request):
+        """Development version endpoint"""
+        return JsonResponse({
+            "version": "1.0.0",
+            "status": "development",
+            "timestamp": "2025-01-02T00:00:00Z"
+        })
+
+# =====================
 # Chat Response Generation
 # =====================
 
@@ -775,21 +1004,6 @@ class MutualFundView(View):
 def dashboard(request):
     """Main dashboard view"""
     return render(request, 'advisor/index.html')
-
-@login_required
-def portfolio_page(request):
-    """Portfolio management page"""
-    holdings = Holding.objects.filter(portfolio__user=request.user)
-    total_value = sum(h.quantity * h.average_buy_price for h in holdings)
-    
-    return render(request, 'advisor/portfolio.html', {
-        'holdings': holdings,
-        'total_value': total_value
-    })
-
-def about_page(request):
-    """About page"""
-    return render(request, 'advisor/about.html')
 
 # =====================
 # Missing View Functions for URL Configuration

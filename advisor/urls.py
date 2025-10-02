@@ -9,7 +9,12 @@ from .views import (
     MutualFundView,
     PortfolioHealthView,
     StockSearchView,
-    MutualFundSearchView
+    MutualFundSearchView,
+    StockAnalysisView,
+    StockHistoryView,
+    MutualFundAnalysisView,
+    MutualFundHistoryView,
+    DevVersionView
 )
 
 urlpatterns = [
@@ -33,4 +38,15 @@ urlpatterns = [
     # Search endpoints
     path("search/<str:exchange>/<str:query>/", StockSearchView.as_view(), name="stock-search"),
     path("search/MF/<str:query>/", MutualFundSearchView.as_view(), name="mutual-fund-search"),
+
+    # Analysis endpoints
+    path("analyze/<str:ticker>/<str:buy_price>/<str:shares>/", StockAnalysisView.as_view(), name="stock-analysis"),
+    path("analyze_mf/<str:scheme_id>/<str:buy_nav>/<str:units>/", MutualFundAnalysisView.as_view(), name="mutual-fund-analysis"),
+
+    # History endpoints
+    path("history/<str:ticker>/", StockHistoryView.as_view(), name="stock-history"),
+    path("history_mf/<str:scheme_id>/", MutualFundHistoryView.as_view(), name="mutual-fund-history"),
+
+    # Development endpoints
+    path("dev/version/", DevVersionView.as_view(), name="dev-version"),
 ]
