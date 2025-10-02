@@ -97,6 +97,9 @@ class PortfolioView(View):
             
         except (json.JSONDecodeError, ValueError, KeyError) as e:
             return JsonResponse({"error": "Invalid payload"}, status=400)
+        except Exception as e:
+            print(f"Portfolio POST error: {e}")
+            return JsonResponse({"error": f"Failed to add holding: {str(e)}"}, status=500)
 
 # =====================
 # Market snapshot
@@ -1177,7 +1180,10 @@ def dashboard(request):
 
 def chat_view(request):
     """Main chat interface view"""
-    return render(request, 'advisor/index.html')
+    return render(request, 'advisor/index.html', {
+        'user_first_name': request.user.first_name if request.user.is_authenticated else '',
+        'csrf_token_value': request.META.get('CSRF_COOKIE', '')
+    })
 
 def profile_view(request):
     """User profile view"""

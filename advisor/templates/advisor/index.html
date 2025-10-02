@@ -1339,11 +1339,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const addRes = msg.querySelector('#add-result');
                 addBtn && addBtn.addEventListener('click', async ()=>{
                     try{
-                        const res = await fetch('/api/portfolio/', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify({ ticker, quantity: shares, buy_price: buyPrice }) });
+                        const res = await fetch('/api/portfolio/', { 
+                            method:'POST', 
+                            headers:{ 
+                                'Content-Type':'application/json',
+                                'X-CSRFToken': csrfToken || ''
+                            }, 
+                            body: JSON.stringify({ 
+                                ticker: ticker, 
+                                quantity: shares, 
+                                buy_price: buyPrice 
+                            }) 
+                        });
                         const j = await res.json();
-                        if(res.ok){ addRes.textContent = 'Added!'; addRes.className = 'text-green-600'; }
-                        else { addRes.textContent = j.error || 'Failed to add'; addRes.className = 'text-red-600'; }
-                    }catch(e){ addRes.textContent = 'Failed to add'; addRes.className = 'text-red-600'; }
+                        if(res.ok){ 
+                            addRes.textContent = 'Added!'; 
+                            addRes.className = 'text-green-600'; 
+                        } else { 
+                            addRes.textContent = j.error || 'Failed to add'; 
+                            addRes.className = 'text-red-600'; 
+                        }
+                    }catch(e){ 
+                        console.error('Add to portfolio error:', e);
+                        addRes.textContent = 'Failed to add'; 
+                        addRes.className = 'text-red-600'; 
+                    }
                 });
 
                 // Bind fundamentals modal/inline
