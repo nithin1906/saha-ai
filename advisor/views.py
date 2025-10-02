@@ -1128,7 +1128,6 @@ class MarketSnapshotView(View):
         # Method 6: Try direct web scraping as last resort
         if not data:
             try:
-                import requests
                 from bs4 import BeautifulSoup
                 
                 # Try to get data from a reliable financial website
