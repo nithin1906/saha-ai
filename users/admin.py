@@ -12,6 +12,7 @@ from .models import UserProfile, InviteCode, AccessLog
 # Custom User Admin with enhanced functionality
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
+    fk_name = 'user'  # Specify which ForeignKey to use since there are multiple
     can_delete = False
     verbose_name_plural = 'Profile'
     fields = ('is_approved', 'approved_by', 'approved_at', 'last_access', 'access_count', 'ip_address')
