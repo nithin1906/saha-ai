@@ -418,6 +418,137 @@ class ParseIntentView(View):
             return JsonResponse({"error": "Invalid JSON"}, status=400)
 
 # =====================
+# Stock Search Views
+# =====================
+
+@method_decorator(csrf_exempt, name="dispatch")
+class StockSearchView(View):
+    def get(self, request, exchange, query):
+        """Search for stocks on NSE or BSE"""
+        try:
+            # Mock stock data for demonstration
+            # In a real application, this would query actual stock databases
+            mock_stocks = {
+                'NSE': [
+                    {'symbol': 'RELIANCE', 'name': 'Reliance Industries Limited'},
+                    {'symbol': 'TCS', 'name': 'Tata Consultancy Services Limited'},
+                    {'symbol': 'HDFCBANK', 'name': 'HDFC Bank Limited'},
+                    {'symbol': 'INFY', 'name': 'Infosys Limited'},
+                    {'symbol': 'HINDUNILVR', 'name': 'Hindustan Unilever Limited'},
+                    {'symbol': 'ITC', 'name': 'ITC Limited'},
+                    {'symbol': 'SBIN', 'name': 'State Bank of India'},
+                    {'symbol': 'BHARTIARTL', 'name': 'Bharti Airtel Limited'},
+                    {'symbol': 'KOTAKBANK', 'name': 'Kotak Mahindra Bank Limited'},
+                    {'symbol': 'LT', 'name': 'Larsen & Toubro Limited'},
+                    {'symbol': 'ASIANPAINT', 'name': 'Asian Paints Limited'},
+                    {'symbol': 'AXISBANK', 'name': 'Axis Bank Limited'},
+                    {'symbol': 'MARUTI', 'name': 'Maruti Suzuki India Limited'},
+                    {'symbol': 'NESTLEIND', 'name': 'Nestle India Limited'},
+                    {'symbol': 'SUNPHARMA', 'name': 'Sun Pharmaceutical Industries Limited'},
+                    {'symbol': 'TITAN', 'name': 'Titan Company Limited'},
+                    {'symbol': 'ULTRACEMCO', 'name': 'UltraTech Cement Limited'},
+                    {'symbol': 'WIPRO', 'name': 'Wipro Limited'},
+                    {'symbol': 'POWERGRID', 'name': 'Power Grid Corporation of India Limited'},
+                    {'symbol': 'NTPC', 'name': 'NTPC Limited'},
+                    {'symbol': 'GREENPANEL', 'name': 'Greenpanel Industries Limited'},
+                    {'symbol': 'GREENPANELIND', 'name': 'Greenpanel Industries Limited'},
+                ],
+                'BSE': [
+                    {'symbol': '500325', 'name': 'Reliance Industries Limited'},
+                    {'symbol': '532540', 'name': 'Tata Consultancy Services Limited'},
+                    {'symbol': '500180', 'name': 'HDFC Bank Limited'},
+                    {'symbol': '500209', 'name': 'Infosys Limited'},
+                    {'symbol': '500696', 'name': 'Hindustan Unilever Limited'},
+                    {'symbol': '500875', 'name': 'ITC Limited'},
+                    {'symbol': '500112', 'name': 'State Bank of India'},
+                    {'symbol': '532454', 'name': 'Bharti Airtel Limited'},
+                    {'symbol': '500247', 'name': 'Kotak Mahindra Bank Limited'},
+                    {'symbol': '500510', 'name': 'Larsen & Toubro Limited'},
+                    {'symbol': '500820', 'name': 'Asian Paints Limited'},
+                    {'symbol': '532215', 'name': 'Axis Bank Limited'},
+                    {'symbol': '532500', 'name': 'Maruti Suzuki India Limited'},
+                    {'symbol': '500790', 'name': 'Nestle India Limited'},
+                    {'symbol': '524715', 'name': 'Sun Pharmaceutical Industries Limited'},
+                    {'symbol': '500114', 'name': 'Titan Company Limited'},
+                    {'symbol': '532538', 'name': 'UltraTech Cement Limited'},
+                    {'symbol': '507685', 'name': 'Wipro Limited'},
+                    {'symbol': '532898', 'name': 'Power Grid Corporation of India Limited'},
+                    {'symbol': '532555', 'name': 'NTPC Limited'},
+                    {'symbol': '542008', 'name': 'Greenpanel Industries Limited'},
+                ]
+            }
+            
+            # Filter stocks based on query
+            query_lower = query.lower()
+            matching_stocks = []
+            
+            for stock in mock_stocks.get(exchange, []):
+                if (query_lower in stock['name'].lower() or 
+                    query_lower in stock['symbol'].lower()):
+                    matching_stocks.append(stock)
+            
+            return JsonResponse({
+                'stocks': matching_stocks[:10],  # Limit to 10 results
+                'exchange': exchange,
+                'query': query
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'error': f'Search failed: {str(e)}',
+                'stocks': [],
+                'exchange': exchange,
+                'query': query
+            }, status=500)
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MutualFundSearchView(View):
+    def get(self, request, query):
+        """Search for mutual funds"""
+        try:
+            # Mock mutual fund data for demonstration
+            # In a real application, this would query actual mutual fund databases
+            mock_funds = [
+                {'symbol': 'SBIELSS', 'name': 'SBI Equity Linked Savings Scheme', 'nav': 45.67, 'category': 'ELSS'},
+                {'symbol': 'HDFCEQ', 'name': 'HDFC Equity Fund', 'nav': 123.45, 'category': 'Large Cap'},
+                {'symbol': 'ICICIPRU', 'name': 'ICICI Prudential Value Discovery Fund', 'nav': 89.12, 'category': 'Value'},
+                {'symbol': 'AXISEQ', 'name': 'Axis Long Term Equity Fund', 'nav': 67.89, 'category': 'ELSS'},
+                {'symbol': 'FRANKLIN', 'name': 'Franklin India Bluechip Fund', 'nav': 234.56, 'category': 'Large Cap'},
+                {'symbol': 'DSPEQ', 'name': 'DSP Equity Fund', 'nav': 156.78, 'category': 'Large Cap'},
+                {'symbol': 'KOTAKEQ', 'name': 'Kotak Standard Multicap Fund', 'nav': 78.90, 'category': 'Multi Cap'},
+                {'symbol': 'MIRAEQ', 'name': 'Mirae Asset Large Cap Fund', 'nav': 45.23, 'category': 'Large Cap'},
+                {'symbol': 'UTIEQ', 'name': 'UTI Equity Fund', 'nav': 112.34, 'category': 'Large Cap'},
+                {'symbol': 'RELIANCE', 'name': 'Reliance Large Cap Fund', 'nav': 89.67, 'category': 'Large Cap'},
+                {'symbol': 'ADITYA', 'name': 'Aditya Birla Sun Life Frontline Equity Fund', 'nav': 234.12, 'category': 'Large Cap'},
+                {'symbol': 'TATAEQ', 'name': 'Tata Large Cap Fund', 'nav': 67.45, 'category': 'Large Cap'},
+                {'symbol': 'L&TEQ', 'name': 'L&T Large Cap Fund', 'nav': 123.78, 'category': 'Large Cap'},
+                {'symbol': 'INVESCO', 'name': 'Invesco India Growth Opportunities Fund', 'nav': 45.89, 'category': 'Large Cap'},
+                {'symbol': 'CANARAEQ', 'name': 'Canara Robeco Equity Diversified Fund', 'nav': 78.34, 'category': 'Large Cap'},
+            ]
+            
+            # Filter funds based on query
+            query_lower = query.lower()
+            matching_funds = []
+            
+            for fund in mock_funds:
+                if (query_lower in fund['name'].lower() or 
+                    query_lower in fund['symbol'].lower() or
+                    query_lower in fund['category'].lower()):
+                    matching_funds.append(fund)
+            
+            return JsonResponse({
+                'funds': matching_funds[:10],  # Limit to 10 results
+                'query': query
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'error': f'Search failed: {str(e)}',
+                'funds': [],
+                'query': query
+            }, status=500)
+
+# =====================
 # Chat Response Generation
 # =====================
 

@@ -7,7 +7,9 @@ from .views import (
     ParseIntentView,
     ChatView,
     MutualFundView,
-    PortfolioHealthView
+    PortfolioHealthView,
+    StockSearchView,
+    MutualFundSearchView
 )
 
 urlpatterns = [
@@ -27,4 +29,8 @@ urlpatterns = [
 
     # Chat endpoint
     path("chat/", ChatView.as_view(), name="chat"),
+
+    # Search endpoints
+    path("search/<str:exchange>/<str:query>/", StockSearchView.as_view(), name="stock-search"),
+    path("search/MF/<str:query>/", MutualFundSearchView.as_view(), name="mutual-fund-search"),
 ]
