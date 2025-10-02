@@ -19,7 +19,7 @@ class UserProfileInline(admin.StackedInline):
 
 class CustomUserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'is_approved', 'date_joined', 'last_login', 'actions')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'is_approved', 'date_joined', 'last_login', 'admin_actions')
     list_filter = ('is_staff', 'is_superuser', 'is_active', 'date_joined', 'userprofile__is_approved')
     search_fields = ('username', 'first_name', 'last_name', 'email')
     ordering = ('-date_joined',)
@@ -66,7 +66,7 @@ class CustomUserAdmin(BaseUserAdmin):
             return format_html('<span style="color: red;">❌ No Profile</span>')
     is_approved.short_description = 'Approval Status'
     
-    def actions(self, obj):
+    def admin_actions(self, obj):
         if obj.is_superuser:
             return format_html('<span style="color: gray;">Superuser</span>')
         
@@ -87,8 +87,8 @@ class CustomUserAdmin(BaseUserAdmin):
         buttons.append(f'<a href="{delete_url}" class="button" style="background: #dc3545; color: white; padding: 2px 8px; text-decoration: none; border-radius: 3px;">Delete</a>')
         
         return format_html(' '.join(buttons))
-    actions.short_description = 'Actions'
-    actions.allow_tags = True
+    admin_actions.short_description = 'Actions'
+    admin_actions.allow_tags = True
 
 # Invite Code Admin
 class InviteCodeAdmin(admin.ModelAdmin):
