@@ -500,6 +500,59 @@ class ChatView(View):
         return random.choice(general_responses)
 
 # =====================
+# Portfolio Health Analysis
+# =====================
+
+@method_decorator(csrf_exempt, name="dispatch")
+class PortfolioHealthView(View):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+        
+        holdings = Holding.objects.filter(user=request.user)
+        
+        if not holdings.exists():
+            return JsonResponse({
+                "health_score": 0,
+                "message": "No holdings found in portfolio",
+                "recommendations": ["Add some stocks to your portfolio to get health analysis"]
+            })
+        
+        # Calculate basic portfolio metrics
+        total_value = sum(h.quantity * h.buy_price for h in holdings)
+        num_holdings = holdings.count()
+        
+        # Simple health scoring based on diversification
+        health_score = min(100, (num_holdings * 20))  # Basic scoring
+        
+        # Generate recommendations
+        recommendations = []
+        if num_holdings < 3:
+            recommendations.append("Consider diversifying your portfolio with more stocks")
+        if num_holdings > 10:
+            recommendations.append("Your portfolio might be over-diversified")
+        
+        recommendations.append("Regularly review and rebalance your portfolio")
+        recommendations.append("Consider your risk tolerance and investment goals")
+        
+        return JsonResponse({
+            "health_score": health_score,
+            "total_value": total_value,
+            "num_holdings": num_holdings,
+            "recommendations": recommendations,
+            "holdings_summary": [
+                {
+                    "ticker": h.ticker,
+                    "quantity": h.quantity,
+                    "buy_price": h.buy_price,
+                    "current_value": h.quantity * h.buy_price,
+                    "percentage": round((h.quantity * h.buy_price / total_value) * 100, 2) if total_value > 0 else 0
+                }
+                for h in holdings
+            ]
+        })
+
+# =====================
 # Mutual Fund Data
 # =====================
 
