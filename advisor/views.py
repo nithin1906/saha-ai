@@ -984,6 +984,7 @@ class MarketSnapshotView(View):
             "MIDCPNIFTY": "NSEMDCP50.NS",  # NSE MIDCAP 50
             "FINNIFTY": "NSEFIN.NS"  # NSE FINANCIAL SERVICES
         }
+        print(f"Using symbols: {symbols}")  # Debug log
         # Try multiple data sources for real market data
         data = []
         
