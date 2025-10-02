@@ -6,7 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Avg
-from .models import Holding
+from .models import Holding, Portfolio
 import json
 import random
 import math
@@ -34,18 +34,30 @@ class PortfolioView(View):
         
         # Check if this is a details request (for portfolio page)
         if request.path.endswith('/details/'):
+            holdings_data = []
+            total_current_value = 0
+            
+            for h in holdings:
+                # Fetch real-time current price
+                current_price = self._fetch_current_price(h.ticker)
+                current_value = h.quantity * current_price
+                net_profit = current_value - (h.quantity * h.average_buy_price)
+                total_current_value += current_value
+                
+                holdings_data.append({
+                    "ticker": h.ticker,
+                    "quantity": h.quantity,
+                    "average_buy_price": float(h.average_buy_price),
+                    "current_price": current_price,
+                    "current_value": current_value,
+                    "net_profit": net_profit
+                })
+            
             return JsonResponse({
-                "holdings": [
-                    {
-                        "ticker": h.ticker,
-                        "quantity": h.quantity,
-                        "average_buy_price": h.average_buy_price,
-                        "current_price": h.average_buy_price,  # Using average_buy_price as current for now
-                        "net_profit": 0  # No profit/loss calculation for now
-                    }
-                    for h in holdings
-                ],
-                "total_value": total_value
+                "holdings": holdings_data,
+                "total_invested": total_value,
+                "total_current_value": total_current_value,
+                "net_profit": total_current_value - total_value
             })
         
         # Default response for other portfolio requests
@@ -100,6 +112,87 @@ class PortfolioView(View):
         except Exception as e:
             print(f"Portfolio POST error: {e}")
             return JsonResponse({"error": f"Failed to add holding: {str(e)}"}, status=500)
+    
+    def _fetch_current_price(self, ticker):
+        """Fetch current price for a ticker"""
+        try:
+            # Try yfinance first
+            if yf is not None:
+                try:
+                    symbol = ticker if '.' in ticker else f"{ticker}.NS"
+                    stock = yf.Ticker(symbol)
+                    info = stock.info
+                    if info and info.get('regularMarketPrice'):
+                        return float(info.get('regularMarketPrice', 0))
+                except Exception as e:
+                    print(f"yfinance error for {ticker}: {e}")
+            
+            # Fallback to Yahoo Finance API
+            try:
+                symbol = ticker if '.' in ticker else f"{ticker}.NS"
+                url = "https://query1.finance.yahoo.com/v7/finance/quote"
+                params = {"symbols": symbol}
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Connection": "keep-alive",
+                    "Referer": "https://finance.yahoo.com/",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "same-site"
+                }
+                
+                r = requests.get(url, params=params, headers=headers, timeout=10)
+                if r.status_code == 200:
+                    result = (r.json() or {}).get("quoteResponse", {}).get("result", [])
+                    if result and len(result) > 0:
+                        item = result[0]
+                        if item.get("regularMarketPrice"):
+                            return float(item.get("regularMarketPrice", 0))
+            except Exception as e:
+                print(f"Yahoo Finance API error for {ticker}: {e}")
+            
+            # Final fallback - return 0 if no price found
+            print(f"No current price found for {ticker}, returning 0")
+            return 0.0
+            
+        except Exception as e:
+            print(f"Error fetching current price for {ticker}: {e}")
+            return 0.0
+    
+    def delete(self, request):
+        """Remove a holding from portfolio"""
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+        
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            ticker = data.get("ticker", "").upper()
+            
+            if not ticker:
+                return JsonResponse({"error": "Ticker is required"}, status=400)
+            
+            # Get user's portfolio
+            try:
+                portfolio = Portfolio.objects.get(user=request.user)
+            except Portfolio.DoesNotExist:
+                return JsonResponse({"error": "Portfolio not found"}, status=404)
+            
+            # Find and delete the holding
+            try:
+                holding = Holding.objects.get(portfolio=portfolio, ticker=ticker)
+                holding.delete()
+                return JsonResponse({"message": f"Holding {ticker} removed successfully"})
+            except Holding.DoesNotExist:
+                return JsonResponse({"error": f"Holding {ticker} not found"}, status=404)
+            
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            return JsonResponse({"error": "Invalid payload"}, status=400)
+        except Exception as e:
+            print(f"Portfolio DELETE error: {e}")
+            return JsonResponse({"error": f"Failed to remove holding: {str(e)}"}, status=500)
 
 # =====================
 # Market snapshot
@@ -1017,7 +1110,7 @@ class ChatView(View):
         
         total_value = sum(h.quantity * h.average_buy_price for h in holdings)
         holdings_text = "\n".join([
-            f"• {h.ticker}: {h.quantity} shares @ ₹{h.buy_price:.2f} (Total: ₹{h.quantity * h.buy_price:.2f})"
+            f"• {h.ticker}: {h.quantity} shares @ ₹{h.average_buy_price:.2f} (Total: ₹{h.quantity * h.average_buy_price:.2f})"
             for h in holdings
         ])
         
@@ -1083,9 +1176,19 @@ class PortfolioHealthView(View):
                 }
             })
         
-        # Calculate basic portfolio metrics
-        total_value = sum(h.quantity * h.average_buy_price for h in holdings)
+        # Calculate basic portfolio metrics with real-time prices
+        total_invested = sum(h.quantity * h.average_buy_price for h in holdings)
+        total_current_value = 0
         num_holdings = holdings.count()
+        
+        # Fetch current prices and calculate performance
+        for h in holdings:
+            current_price = self._fetch_current_price(h.ticker)
+            total_current_value += h.quantity * current_price
+        
+        # Calculate overall performance
+        total_profit_loss = total_current_value - total_invested
+        performance_percentage = (total_profit_loss / total_invested * 100) if total_invested > 0 else 0
         
         # Diversification scoring (0-10)
         if num_holdings >= 5:
@@ -1098,13 +1201,36 @@ class PortfolioHealthView(View):
             diversification_score = 3
             diversification_feedback = "Low diversification. Add more stocks to reduce risk."
         
-        # Risk scoring (0-10) - simplified
-        risk_score = 6  # Default moderate risk
-        risk_feedback = "Moderate risk level. Monitor your investments regularly."
+        # Risk scoring (0-10) based on volatility and concentration
+        if num_holdings == 1:
+            risk_score = 2
+            risk_feedback = "High risk - single stock concentration."
+        elif num_holdings <= 2:
+            risk_score = 4
+            risk_feedback = "High risk - limited diversification."
+        elif num_holdings <= 4:
+            risk_score = 6
+            risk_feedback = "Moderate risk level. Monitor your investments regularly."
+        else:
+            risk_score = 8
+            risk_feedback = "Well-diversified portfolio with lower risk."
         
-        # Performance scoring (0-10) - simplified
-        performance_score = 7  # Default good performance
-        performance_feedback = "Portfolio performance looks stable."
+        # Performance scoring (0-10) based on actual returns
+        if performance_percentage >= 20:
+            performance_score = 9
+            performance_feedback = f"Excellent performance! +{performance_percentage:.1f}% returns."
+        elif performance_percentage >= 10:
+            performance_score = 8
+            performance_feedback = f"Good performance with +{performance_percentage:.1f}% returns."
+        elif performance_percentage >= 0:
+            performance_score = 6
+            performance_feedback = f"Positive performance with +{performance_percentage:.1f}% returns."
+        elif performance_percentage >= -10:
+            performance_score = 4
+            performance_feedback = f"Underperforming with {performance_percentage:.1f}% returns."
+        else:
+            performance_score = 2
+            performance_feedback = f"Poor performance with {performance_percentage:.1f}% returns."
         
         # Overall score (average of all scores)
         overall_score = round((diversification_score + risk_score + performance_score) / 3, 1)

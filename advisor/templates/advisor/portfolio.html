@@ -102,11 +102,12 @@
                         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">Current</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">Current Value</th>
                         <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">P/L</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-800 dark:text-gray-100">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="portfolio-table-body" class="divide-y divide-gray-200 dark:divide-gray-800">
                     <tr>
-                        <td colspan="6" class="p-6">
+                        <td colspan="7" class="p-6">
                             <div class="space-y-3">
                                 <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
                                 <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
@@ -147,7 +148,7 @@
             body.innerHTML = '';
             let totInvested=0, totCurrent=0, totPL=0;
             if(holdings.length===0){
-                body.innerHTML = '<tr><td colspan="6" class="text-center p-6">Your portfolio is empty.</td></tr>';
+                body.innerHTML = '<tr><td colspan="7" class="text-center p-6">Your portfolio is empty.</td></tr>';
             }
             holdings.forEach((h, idx)=>{
                 const invested = Number(h.average_buy_price) * Number(h.quantity);
@@ -165,6 +166,11 @@
                         <td class="px-6 py-3 text-gray-800 dark:text-gray-200">${fmt(h.current_price)}</td>
                         <td class="px-6 py-3 text-gray-800 dark:text-gray-200">${fmt(currentVal)}</td>
                         <td class="px-6 py-3"><span class="badge ${badgeClass}">${isGain?'+':''}${fmt(pl)}</span></td>
+                        <td class="px-6 py-3">
+                            <button onclick="removeHolding('${h.ticker}')" class="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors">
+                                Remove
+                            </button>
+                        </td>
                     </tr>`;
             });
             document.getElementById('total-current').textContent = fmt(totCurrent);
@@ -177,10 +183,44 @@
             
             document.getElementById('last-updated').textContent = 'Updated: ' + new Date().toLocaleString();
         }catch(e){
-            body.innerHTML = '<tr><td colspan="6" class="text-center p-6 text-red-500">Could not load portfolio data.</td></tr>';
+            body.innerHTML = '<tr><td colspan="7" class="text-center p-6 text-red-500">Could not load portfolio data.</td></tr>';
         }
         overlay.style.display = 'none';
     });
+
+    // Remove holding function
+    async function removeHolding(ticker) {
+        if (!confirm(`Are you sure you want to remove ${ticker} from your portfolio?`)) {
+            return;
+        }
+        
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display = 'flex';
+        
+        try {
+            const response = await fetch('/api/portfolio/', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ticker: ticker })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Reload the portfolio data
+                location.reload();
+            } else {
+                alert(`Error: ${data.error || 'Failed to remove holding'}`);
+            }
+        } catch (error) {
+            console.error('Error removing holding:', error);
+            alert('Failed to remove holding. Please try again.');
+        } finally {
+            overlay.style.display = 'none';
+        }
+    }
 
     // Theme toggle functionality
     const themeToggle = document.getElementById('theme-toggle');
