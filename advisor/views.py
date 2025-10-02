@@ -985,38 +985,75 @@ class StockAnalysisView(View):
             }, status=500)
     
     def _fetch_stock_data(self, ticker):
-        """Fetch real stock data and fundamentals"""
-        try:
-            # Try yfinance first
+        """Fetch real stock data and fundamentals with multiple data sources"""
+        print(f"=== StockAnalysisView: Fetching real data for {ticker} ===")
+        
+        # Try multiple symbol formats
+        symbol_variants = [
+            ticker if '.' in ticker else f"{ticker}.NS",  # NSE
+            ticker if '.' in ticker else f"{ticker}.BO",  # BSE
+            ticker,  # Original ticker
+            f"{ticker}.NSE",  # Alternative NSE format
+            f"{ticker}.BSE",  # Alternative BSE format
+        ]
+        
+        for symbol in symbol_variants:
+            print(f"StockAnalysisView: Trying symbol: {symbol}")
+            
+            # Method 1: Try yfinance
             if yf is not None:
                 try:
-                    # Add .NS suffix for NSE stocks if not present
-                    symbol = ticker if '.' in ticker else f"{ticker}.NS"
                     stock = yf.Ticker(symbol)
                     info = stock.info
+                    print(f"StockAnalysisView: yfinance info keys: {list(info.keys()) if info else 'None'}")
                     
-                    if info and info.get('regularMarketPrice'):
-                        current_price = info.get('regularMarketPrice', 0)
+                    # Try multiple price fields
+                    price_fields = ['regularMarketPrice', 'currentPrice', 'lastPrice', 'price']
+                    for field in price_fields:
+                        if info and info.get(field):
+                            current_price = float(info.get(field))
+                            print(f"StockAnalysisView: yfinance success for {ticker} using {symbol}: {current_price} (field: {field})")
+                            
+                            # Get real fundamentals from yfinance
+                            fundamentals = {
+                                "market_cap": self._format_market_cap(info.get('marketCap')),
+                                "roe": info.get('returnOnEquity', 15.0) * 100 if info.get('returnOnEquity') else 15.0,
+                                "pe_ttm": info.get('trailingPE', 20.0),
+                                "eps_ttm": info.get('trailingEps', 5.0),
+                                "pb": info.get('priceToBook', 2.0),
+                                "dividend_yield": info.get('dividendYield', 2.0) * 100 if info.get('dividendYield') else 2.0,
+                                "book_value": info.get('bookValue', 50.0),
+                                "face_value": info.get('faceValue', 10.0)
+                            }
+                            return current_price, fundamentals
+                    
+                    # Try getting latest price from history
+                    try:
+                        hist = stock.history(period="1d")
+                        if not hist.empty:
+                            latest_price = float(hist['Close'].iloc[-1])
+                            print(f"StockAnalysisView: yfinance history success for {ticker} using {symbol}: {latest_price}")
+                            
+                            # Get fundamentals from info even if price came from history
+                            fundamentals = {
+                                "market_cap": self._format_market_cap(info.get('marketCap')) if info else 'N/A',
+                                "roe": info.get('returnOnEquity', 15.0) * 100 if info and info.get('returnOnEquity') else 15.0,
+                                "pe_ttm": info.get('trailingPE', 20.0) if info else 20.0,
+                                "eps_ttm": info.get('trailingEps', 5.0) if info else 5.0,
+                                "pb": info.get('priceToBook', 2.0) if info else 2.0,
+                                "dividend_yield": info.get('dividendYield', 2.0) * 100 if info and info.get('dividendYield') else 2.0,
+                                "book_value": info.get('bookValue', 50.0) if info else 50.0,
+                                "face_value": info.get('faceValue', 10.0) if info else 10.0
+                            }
+                            return latest_price, fundamentals
+                    except Exception as e:
+                        print(f"StockAnalysisView: yfinance history error for {symbol}: {e}")
                         
-                        # Extract fundamentals with better fallbacks
-                        fundamentals = {
-                            "market_cap": self._format_market_cap(info.get('marketCap')),
-                            "roe": info.get('returnOnEquity') or 0.0,
-                            "pe_ttm": info.get('trailingPE') or 0.0,
-                            "eps_ttm": info.get('trailingEps') or 0.0,
-                            "pb": info.get('priceToBook') or 0.0,
-                            "dividend_yield": info.get('dividendYield') or 0.0,
-                            "book_value": info.get('bookValue') or 0.0,
-                            "face_value": info.get('faceValue') or 10.0
-                        }
-                        
-                        return current_price, fundamentals
                 except Exception as e:
-                    print(f"yfinance error for {ticker}: {e}")
+                    print(f"StockAnalysisView: yfinance error for {symbol}: {e}")
             
-            # Fallback to Yahoo Finance API
+            # Method 2: Try Yahoo Finance API
             try:
-                symbol = ticker if '.' in ticker else f"{ticker}.NS"
                 url = "https://query1.finance.yahoo.com/v7/finance/quote"
                 params = {"symbols": symbol}
                 headers = {
@@ -1032,60 +1069,156 @@ class StockAnalysisView(View):
                 }
                 
                 r = requests.get(url, params=params, headers=headers, timeout=10)
+                print(f"StockAnalysisView: Yahoo API response status for {symbol}: {r.status_code}")
+                
                 if r.status_code == 200:
                     result = (r.json() or {}).get("quoteResponse", {}).get("result", [])
+                    print(f"StockAnalysisView: Yahoo API result for {symbol}: {result}")
+                    
                     if result and len(result) > 0:
                         item = result[0]
-                        current_price = item.get("regularMarketPrice", 0)
-                        
-                        # For Yahoo Finance API, we get limited fundamental data
-                        # We'll use reasonable defaults based on the stock
-                        fundamentals = {
-                            "market_cap": "N/A",
-                            "roe": 15.0,  # Reasonable ROE for Indian stocks
-                            "pe_ttm": 20.0,  # Reasonable P/E ratio
-                            "eps_ttm": 5.0,  # Reasonable EPS
-                            "pb": 2.0,  # Reasonable P/B ratio
-                            "dividend_yield": 2.0,  # Reasonable dividend yield
-                            "book_value": 50.0,  # Reasonable book value
-                            "face_value": 10.0  # Common face value for Indian stocks
-                        }
-                        
-                        return current_price, fundamentals
+                        price_fields = ['regularMarketPrice', 'currentPrice', 'lastPrice']
+                        for field in price_fields:
+                            if item.get(field):
+                                current_price = float(item.get(field))
+                                print(f"StockAnalysisView: Yahoo API success for {ticker} using {symbol}: {current_price} (field: {field})")
+                                
+                                # Get limited fundamentals from Yahoo API
+                                fundamentals = {
+                                    "market_cap": self._format_market_cap(item.get('marketCap')),
+                                    "roe": 15.0,  # Default for Yahoo API
+                                    "pe_ttm": item.get('trailingPE', 20.0),
+                                    "eps_ttm": item.get('trailingEps', 5.0),
+                                    "pb": item.get('priceToBook', 2.0),
+                                    "dividend_yield": item.get('dividendYield', 2.0) * 100 if item.get('dividendYield') else 2.0,
+                                    "book_value": 50.0,  # Default
+                                    "face_value": 10.0   # Default
+                                }
+                                return current_price, fundamentals
             except Exception as e:
-                print(f"Yahoo Finance API error for {ticker}: {e}")
+                print(f"StockAnalysisView: Yahoo Finance API error for {symbol}: {e}")
             
-            # Final fallback - use mock data
-            print(f"Using fallback data for {ticker}")
-            current_price = 293 if ticker == 'GREENPANEL' else 100
-            fundamentals = {
-                "market_cap": "N/A",
-                "roe": 15.0,
-                "pe_ttm": 20.0,
-                "eps_ttm": 5.0,
-                "pb": 2.0,
-                "dividend_yield": 2.0,
-                "book_value": 50.0,
-                "face_value": 10.0
-            }
-            
-            return current_price, fundamentals
-            
+            # Method 3: Try Yahoo Finance Chart API
+            try:
+                url = "https://query2.finance.yahoo.com/v8/finance/chart"
+                params = {"symbol": symbol, "range": "1d", "interval": "1m"}
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "application/json",
+                    "Referer": "https://finance.yahoo.com/"
+                }
+                
+                r = requests.get(url, params=params, headers=headers, timeout=10)
+                print(f"StockAnalysisView: Yahoo Chart API response status for {symbol}: {r.status_code}")
+                
+                if r.status_code == 200:
+                    chart_data = r.json()
+                    if chart_data and 'chart' in chart_data and 'result' in chart_data['chart']:
+                        result = chart_data['chart']['result'][0]
+                        meta = result.get('meta', {})
+                        if meta and meta.get('regularMarketPrice'):
+                            current_price = float(meta.get('regularMarketPrice'))
+                            print(f"StockAnalysisView: Yahoo Chart API success for {ticker} using {symbol}: {current_price}")
+                            
+                            # Default fundamentals for chart API
+                            fundamentals = {
+                                "market_cap": "N/A",
+                                "roe": 15.0,
+                                "pe_ttm": 20.0,
+                                "eps_ttm": 5.0,
+                                "pb": 2.0,
+                                "dividend_yield": 2.0,
+                                "book_value": 50.0,
+                                "face_value": 10.0
+                            }
+                            return current_price, fundamentals
+            except Exception as e:
+                print(f"StockAnalysisView: Yahoo Chart API error for {symbol}: {e}")
+        
+        # Method 4: Try NSE API for Indian stocks
+        if not any('.' in ticker for ticker in [ticker]):
+            try:
+                nse_symbol = ticker.upper()
+                url = f"https://www.nseindia.com/api/quote-equity?symbol={nse_symbol}"
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/json',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Referer': 'https://www.nseindia.com/'
+                }
+                
+                # First get session cookies
+                session = requests.Session()
+                session.get('https://www.nseindia.com/', headers=headers, timeout=10)
+                
+                r = session.get(url, headers=headers, timeout=10)
+                print(f"StockAnalysisView: NSE API response status for {nse_symbol}: {r.status_code}")
+                
+                if r.status_code == 200:
+                    data = r.json()
+                    if data and 'priceInfo' in data:
+                        price_info = data['priceInfo']
+                        if price_info.get('lastPrice'):
+                            current_price = float(price_info.get('lastPrice'))
+                            print(f"StockAnalysisView: NSE API success for {ticker}: {current_price}")
+                            
+                            # Get fundamentals from NSE API
+                            fundamentals = {
+                                "market_cap": self._format_market_cap(data.get('marketDeptOrderBook', {}).get('totalTradedVolume')),
+                                "roe": 15.0,  # Default
+                                "pe_ttm": 20.0,  # Default
+                                "eps_ttm": 5.0,  # Default
+                                "pb": 2.0,  # Default
+                                "dividend_yield": 2.0,  # Default
+                                "book_value": 50.0,  # Default
+                                "face_value": 10.0   # Default
+                            }
+                            return current_price, fundamentals
+            except Exception as e:
+                print(f"StockAnalysisView: NSE API error for {ticker}: {e}")
+        
+        # Method 5: Try Alpha Vantage API
+        try:
+            import os
+            alpha_vantage_key = os.environ.get('ALPHA_VANTAGE_API_KEY')
+            if alpha_vantage_key:
+                for symbol in symbol_variants:
+                    try:
+                        url = "https://www.alphavantage.co/query"
+                        params = {
+                            'function': 'GLOBAL_QUOTE',
+                            'symbol': symbol,
+                            'apikey': alpha_vantage_key
+                        }
+                        response = requests.get(url, params=params, timeout=10)
+                        if response.status_code == 200:
+                            result = response.json()
+                            if 'Global Quote' in result:
+                                quote = result['Global Quote']
+                                if quote.get('05. price'):
+                                    current_price = float(quote['05. price'])
+                                    print(f"StockAnalysisView: Alpha Vantage success for {ticker} using {symbol}: {current_price}")
+                                    
+                                    fundamentals = {
+                                        "market_cap": "N/A",
+                                        "roe": 15.0,
+                                        "pe_ttm": 20.0,
+                                        "eps_ttm": 5.0,
+                                        "pb": 2.0,
+                                        "dividend_yield": 2.0,
+                                        "book_value": 50.0,
+                                        "face_value": 10.0
+                                    }
+                                    return current_price, fundamentals
+                    except Exception as e:
+                        print(f"StockAnalysisView: Alpha Vantage error for {symbol}: {e}")
+                        continue
         except Exception as e:
-            print(f"Error fetching stock data for {ticker}: {e}")
-            # Return fallback data
-            current_price = 293 if ticker == 'GREENPANEL' else 100
-            fundamentals = {
-                "market_cap": "N/A",
-                "roe": 15.0,
-                "pe_ttm": 20.0,
-                "eps_ttm": 5.0,
-                "pb": 2.0,
-                "dividend_yield": 2.0,
-                "book_value": 50.0,
-                "face_value": 10.0
-            }
-            return current_price, fundamentals
+            print(f"StockAnalysisView: Alpha Vantage API error: {e}")
+        
+        # If all methods fail, raise an exception instead of returning fake data
+        print(f"StockAnalysisView: All methods failed for {ticker}")
+        raise Exception(f"Unable to fetch real price data for {ticker} from any source")
     
     def _format_market_cap(self, market_cap):
         """Format market cap in readable format"""
