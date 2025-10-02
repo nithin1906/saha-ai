@@ -1292,25 +1292,33 @@ class StockAnalysisView(View):
                     response = requests.get(url, headers=headers, timeout=10)
                     if response.status_code == 200:
                         soup = BeautifulSoup(response.content, 'html.parser')
-                        # Look for price patterns in the HTML
+                        # Look for price patterns in the HTML with better filtering
                         price_elements = soup.find_all(text=re.compile(r'₹?\s*\d+\.?\d*'))
                         for element in price_elements:
                             try:
                                 price_text = element.strip().replace('₹', '').replace(',', '')
                                 price = float(price_text)
-                                if 10 <= price <= 100000:  # Reasonable stock price range
-                                    print(f"StockAnalysisView: Web scraping success for {ticker}: {price}")
-                                    fundamentals = {
-                                        "market_cap": "N/A",
-                                        "roe": 15.0,
-                                        "pe_ttm": 20.0,
-                                        "eps_ttm": 5.0,
-                                        "pb": 2.0,
-                                        "dividend_yield": 2.0,
-                                        "book_value": 50.0,
-                                        "face_value": 10.0
-                                    }
-                                    return price, fundamentals
+                                
+                                # Better filtering to avoid index values
+                                # Stock prices are typically between 10-10000, not 20000+
+                                # Index values like NIFTY (24836) should be excluded
+                                if 10 <= price <= 10000:  # More reasonable stock price range
+                                    # Additional check: avoid values that look like indices
+                                    if price < 20000:  # Exclude NIFTY-like values
+                                        print(f"StockAnalysisView: Web scraping success for {ticker}: {price}")
+                                        fundamentals = {
+                                            "market_cap": "N/A",
+                                            "roe": 15.0,
+                                            "pe_ttm": 20.0,
+                                            "eps_ttm": 5.0,
+                                            "pb": 2.0,
+                                            "dividend_yield": 2.0,
+                                            "book_value": 50.0,
+                                            "face_value": 10.0
+                                        }
+                                        return price, fundamentals
+                                else:
+                                    print(f"StockAnalysisView: Skipping price {price} for {ticker} (outside stock range)")
                             except ValueError:
                                 continue
                 except Exception as e:
@@ -1327,6 +1335,7 @@ class StockAnalysisView(View):
         # Use reasonable defaults based on stock type
         if ticker.upper() in ['RELIANCE', 'RELIANCE.NS']:
             current_price = 1368.70  # Updated to match Groww price
+            print(f"StockAnalysisView: Using RELIANCE fallback price: {current_price}")
         elif ticker.upper() in ['TCS', 'TCS.NS']:
             current_price = 3500.0  # Reasonable for TCS
         elif ticker.upper() in ['INFY', 'INFY.NS']:
