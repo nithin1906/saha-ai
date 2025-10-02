@@ -39,7 +39,7 @@ Your SAHA-AI application is now configured with real API keys and ready for prod
 
 1. **Set Environment Variables:**
    ```
-   ALPHA_VANTAGE_API_KEY=C4LYL8SIKSX9YD6L
+   ALPHA_VANTAGE_API_KEY=your-alpha-vantage-api-key-here
    DEBUG=False
    SECRET_KEY=your-production-secret-key
    ALLOWED_HOSTS=your-app-name.railway.app
@@ -71,7 +71,7 @@ Your SAHA-AI application is now configured with real API keys and ready for prod
 
 1. **Set Environment Variables:**
    ```bash
-   heroku config:set ALPHA_VANTAGE_API_KEY=C4LYL8SIKSX9YD6L
+   heroku config:set ALPHA_VANTAGE_API_KEY=your-alpha-vantage-api-key-here
    heroku config:set DEBUG=False
    heroku config:set SECRET_KEY=your-production-secret-key
    ```
