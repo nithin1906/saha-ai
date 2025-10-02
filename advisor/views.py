@@ -89,7 +89,7 @@ class MarketSnapshotView(View):
         # Define symbols with multiple fallback options
         symbols = {
             "NIFTY": ["NSEI.NS", "^NSEI", "NIFTY_50.NS"],
-            "SENSEX": ["^BSESN", "BSESN.BO", "SENSEX.BO", "BSE-SENSEX.BO"],
+            "SENSEX": ["BSESN.BO", "^BSESN", "SENSEX.BO"],
             "BANKNIFTY": ["NSEBANK.NS", "^NSEBANK", "BANKNIFTY.NS"],
             "MIDCPNIFTY": ["NSEMDCP50.NS", "^NSEMDCP50", "MIDCAP_50.NS"],
             "FINNIFTY": ["NSEFIN.NS", "^NSEFIN", "FINANCIAL_SERVICES.NS"]
@@ -115,7 +115,7 @@ class MarketSnapshotView(View):
                         "Sec-Fetch-Site": "same-site"
                     }
                     r = requests.get(url, params=params, headers=headers, timeout=10)
-            if r.status_code == 200:
+                    if r.status_code == 200:
                         result = (r.json() or {}).get("quoteResponse", {}).get("result", [])
                         if result and len(result) > 0:
                             item = result[0]
@@ -149,7 +149,7 @@ class MarketSnapshotView(View):
                             "Referer": "https://finance.yahoo.com/"
                         }
                         r = requests.get(url, params=params, headers=headers, timeout=8)
-        if r.status_code == 200:
+                        if r.status_code == 200:
                             chart_data = r.json()
                             if chart_data and 'chart' in chart_data and 'result' in chart_data['chart']:
                                 result = chart_data['chart']['result'][0]
@@ -166,7 +166,7 @@ class MarketSnapshotView(View):
                                     break
                     except Exception as e:
                         print(f"Chart API error for {symbol}: {e}")
-                    continue
+                        continue
         
         # Method 3: Try yfinance if available
         if len(data) < 3 and yf is not None:
@@ -190,7 +190,7 @@ class MarketSnapshotView(View):
                             break
                     except Exception as e:
                         print(f"yfinance error for {symbol}: {e}")
-            continue
+                        continue
         
         # Method 4: Try NSE official API
         if len(data) < 3:
@@ -241,61 +241,23 @@ class MarketSnapshotView(View):
         if not any(item['symbol'] == 'SENSEX' for item in data):
             try:
                 headers = {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'application/json, text/plain, */*',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Referer': 'https://www.bseindia.com/',
-                    'Origin': 'https://www.bseindia.com'
-                }
-                
-                # Try BSE SENSEX API
-                url = "https://www.bseindia.com/markets/equity/EQReports/StockPrcHistori.aspx"
-                response = requests.get(url, headers=headers, timeout=15)
-                
-                if response.status_code == 200:
-                    print("BSE API response received for SENSEX")
-                    # Try to extract SENSEX data from BSE response
-                    # This is a simplified approach - in production, you'd parse the actual response
-                    sensex_data = {
-                        "symbol": "SENSEX",
-                        "regularMarketPrice": 65000.0,
-                        "regularMarketChange": 500.0,
-                        "regularMarketChangePercent": 0.78
-                    }
-                    data.append(sensex_data)
-                    print("SENSEX data added from BSE API")
-                    
-            except Exception as e:
-                print(f"BSE API error: {e}")
-                
-        # Method 6: Try alternative SENSEX data source
-        if not any(item['symbol'] == 'SENSEX' for item in data):
-            try:
-                headers = {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 }
                 
-                # Try a financial data API
-                url = "https://query1.finance.yahoo.com/v8/finance/chart/^BSESN"
-                response = requests.get(url, headers=headers, timeout=10)
+                # Try BSE API
+                url = "https://www.bseindia.com/api/stockprices/GetStockPrices.aspx"
+                params = {
+                    'type': 'EQ',
+                    'text': 'SENSEX'
+                }
+                response = requests.get(url, params=params, headers=headers, timeout=10)
                 
                 if response.status_code == 200:
-                    result = response.json()
-                    if 'chart' in result and 'result' in result['chart'] and result['chart']['result']:
-                        chart_data = result['chart']['result'][0]
-                        if 'meta' in chart_data:
-                            meta = chart_data['meta']
-                            sensex_data = {
-                                "symbol": "SENSEX",
-                                "regularMarketPrice": meta.get('regularMarketPrice', 65000.0),
-                                "regularMarketChange": meta.get('regularMarketChange', 500.0),
-                                "regularMarketChangePercent": meta.get('regularMarketChangePercent', 0.78)
-                            }
-                            data.append(sensex_data)
-                            print("SENSEX data added from Yahoo Finance chart API")
-                            
+                    # Parse BSE response (this is a simplified approach)
+                    # BSE API might return different format, so we'll try a different approach
+                    pass
             except Exception as e:
-                print(f"Yahoo Finance chart API error: {e}")
+                print(f"BSE API error: {e}")
         
         # Method 6: Web scraping fallback
         if len(data) < 3:
@@ -331,11 +293,11 @@ class MarketSnapshotView(View):
             print("All methods failed, using static fallback data")
             # Use some reasonable static values based on recent market data
             static_data = {
-                "NIFTY": {"price": 24836.3, "change": 225.2, "change_pct": 0.92},
+                "NIFTY": {"price": 19500.0, "change": 150.0, "change_pct": 0.78},
                 "SENSEX": {"price": 65000.0, "change": 500.0, "change_pct": 0.78},
-                "BANKNIFTY": {"price": 55347.95, "change": 712.1, "change_pct": 1.30},
-                "MIDCPNIFTY": {"price": 16084.05, "change": 138.65, "change_pct": 0.87},
-                "FINNIFTY": {"price": 26382.2, "change": 360.1, "change_pct": 1.38}
+                "BANKNIFTY": {"price": 45000.0, "change": 300.0, "change_pct": 0.67},
+                "MIDCPNIFTY": {"price": 12000.0, "change": 80.0, "change_pct": 0.67},
+                "FINNIFTY": {"price": 20000.0, "change": 120.0, "change_pct": 0.60}
             }
             
             for method_name, values in static_data.items():
@@ -367,7 +329,7 @@ class MarketSnapshotView(View):
                     "change_pct": "N/A",
                     "error": "Data unavailable"
                 })
-            continue
+                continue
                 
             resp.append({
                 "name": label,
@@ -403,7 +365,7 @@ class ParseIntentView(View):
             
             # Portfolio queries
             if any(word in text_lower for word in ["portfolio", "holdings", "stocks", "investments", "my stocks"]):
-            return JsonResponse({
+                return JsonResponse({
                     "intent": "portfolio",
                     "confidence": 0.9,
                     "entities": {"query": text}
@@ -411,7 +373,7 @@ class ParseIntentView(View):
             
             # Add to portfolio
             if any(word in text_lower for word in ["add", "buy", "purchase", "invest"]):
-            return JsonResponse({
+                return JsonResponse({
                     "intent": "add_to_portfolio",
                     "confidence": 0.8,
                     "entities": {"query": text}
@@ -419,7 +381,7 @@ class ParseIntentView(View):
             
             # General advice
             if any(word in text_lower for word in ["advice", "recommend", "suggest", "help", "what should"]):
-            return JsonResponse({
+                return JsonResponse({
                     "intent": "advice",
                     "confidence": 0.7,
                     "entities": {"query": text}
@@ -465,7 +427,7 @@ class ChatView(View):
             else:
                 response = self._handle_general_query(message)
             
-        return JsonResponse({
+            return JsonResponse({
                 "response": response,
                 "intent": intent,
                 "timestamp": datetime.now().isoformat()
@@ -623,80 +585,3 @@ def portfolio_page_view(request):
         'holdings': holdings,
         'total_value': total_value
     })
-
-# =====================
-# Portfolio Health View
-# =====================
-
-@method_decorator(csrf_exempt, name="dispatch")
-class PortfolioHealthView(View):
-    def get(self, request):
-        if not request.user.is_authenticated:
-            return JsonResponse({"error": "Authentication required"}, status=401)
-        
-        try:
-            holdings = Holding.objects.filter(user=request.user)
-            
-            if not holdings.exists():
-                return JsonResponse({
-                    "overall_score": 0,
-                    "diversification": {
-                        "score": 0,
-                        "feedback": "No holdings found. Add some investments to get a health score."
-                    },
-                    "risk_assessment": {
-                        "score": 0,
-                        "feedback": "No holdings found. Add some investments to get a risk assessment."
-                    },
-                    "performance": {
-                        "score": 0,
-                        "feedback": "No holdings found. Add some investments to get a performance score."
-                    }
-                })
-            
-            # Calculate diversification score
-            total_value = sum(h.quantity * h.buy_price for h in holdings)
-            unique_tickers = holdings.values('ticker').distinct().count()
-            
-            # Simple diversification scoring
-            if unique_tickers >= 10:
-                div_score = 10
-                div_feedback = "Excellent diversification across multiple assets"
-            elif unique_tickers >= 5:
-                div_score = 7
-                div_feedback = "Good diversification, consider adding more assets"
-            elif unique_tickers >= 3:
-                div_score = 5
-                div_feedback = "Moderate diversification, add more variety"
-            else:
-                div_score = 3
-                div_feedback = "Low diversification, consider spreading risk"
-            
-            # Calculate risk assessment (simplified)
-            risk_score = min(8, max(2, 10 - (unique_tickers * 0.5)))
-            risk_feedback = "Balanced risk profile" if risk_score >= 6 else "Consider diversifying to reduce risk"
-            
-            # Calculate performance (mock for now)
-            perf_score = random.randint(6, 9)
-            perf_feedback = "Good performance" if perf_score >= 7 else "Room for improvement"
-            
-            overall_score = round((div_score + risk_score + perf_score) / 3, 1)
-            
-            return JsonResponse({
-                "overall_score": overall_score,
-                "diversification": {
-                    "score": div_score,
-                    "feedback": div_feedback
-                },
-                "risk_assessment": {
-                    "score": risk_score,
-                    "feedback": risk_feedback
-                },
-                "performance": {
-                    "score": perf_score,
-                    "feedback": perf_feedback
-                }
-            })
-
-        except Exception as e:
-            return JsonResponse({"error": f"Failed to calculate portfolio health: {str(e)}"}, status=500)
