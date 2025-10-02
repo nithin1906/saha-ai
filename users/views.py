@@ -21,9 +21,7 @@ def is_admin(user):
 def send_welcome_email(user):
     """Send welcome email to approved user"""
     try:
-        login_url = f"{settings.ALLOWED_HOSTS[0] if settings.ALLOWED_HOSTS else 'localhost:8000'}/users/login/"
-        if not login_url.startswith('http'):
-            login_url = f"http://{login_url}"
+        login_url = f"https://saha-ai.up.railway.app/users/login/"
         
         html_message = render_to_string('users/emails/welcome_email.html', {
             'user': user,
@@ -36,7 +34,7 @@ def send_welcome_email(user):
             html_message=html_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
-            fail_silently=False,
+            fail_silently=True,  # Don't raise exceptions
         )
         print(f"Welcome email sent to {user.email}")
     except Exception as e:
@@ -145,10 +143,13 @@ def manage_users(request):
             user_profile.user.is_active = True
             user_profile.user.save()
             
-            # Send welcome email
-            send_welcome_email(user_profile.user)
+            # Send welcome email (async, don't block)
+            try:
+                send_welcome_email(user_profile.user)
+            except Exception as e:
+                print(f"Email sending failed (non-blocking): {e}")
             
-            messages.success(request, f'User {user_profile.user.username} approved, activated, and welcome email sent!')
+            messages.success(request, f'User {user_profile.user.username} approved and activated!')
         elif action == 'reject':
             user_profile = get_object_or_404(UserProfile, user_id=user_id)
             user_profile.user.delete()
