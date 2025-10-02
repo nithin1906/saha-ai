@@ -19,6 +19,113 @@
         .chat-bubble { opacity: 0; transform: translateY(18px); animation: popIn 0.35s ease-out forwards; box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1); }
         @keyframes popIn { to { opacity: 1; transform: translateY(0); } }
 
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .mobile-sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 280px;
+                height: 100vh;
+                z-index: 50;
+                transition: left 0.3s ease-in-out;
+            }
+            .mobile-sidebar.open {
+                left: 0;
+            }
+            .mobile-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 40;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease-in-out;
+            }
+            .mobile-overlay.open {
+                opacity: 1;
+                visibility: visible;
+            }
+            .mobile-main {
+                width: 100%;
+                margin-left: 0;
+            }
+            .mobile-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem;
+                background: white;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            .mobile-menu-btn {
+                padding: 0.5rem;
+                border-radius: 0.5rem;
+                background: #f3f4f6;
+                border: none;
+                cursor: pointer;
+            }
+            .mobile-logo {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            .mobile-logo h1 {
+                font-size: 1.25rem;
+                font-weight: 700;
+            }
+            .mobile-logo p {
+                font-size: 0.75rem;
+                color: #6b7280;
+            }
+            .market-cards-mobile {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 0.5rem;
+            }
+            .market-card-mobile {
+                width: 100%;
+                padding: 0.75rem;
+                border-radius: 0.5rem;
+                background: white;
+                border: 1px solid #e5e7eb;
+            }
+            .chat-window-mobile {
+                padding: 1rem;
+                height: calc(100vh - 200px);
+            }
+            .input-area-mobile {
+                padding: 1rem;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-top: 1px solid #e5e7eb;
+            }
+            .suggestions-mobile {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                margin-top: 0.5rem;
+            }
+            .suggestion-chip-mobile {
+                font-size: 0.875rem;
+                padding: 0.5rem 0.75rem;
+                border-radius: 1rem;
+                background: #f3f4f6;
+                color: #374151;
+                border: none;
+                cursor: pointer;
+                transition: all 0.2s;
+            }
+            .suggestion-chip-mobile:hover {
+                background: #e5e7eb;
+            }
+        }
+
         /* Bot bubble */
         .chat-bubble-bot { background-color: #ffffff; color: #1f2937; border: 1px solid #e5e7eb; }
         html.dark .chat-bubble-bot { background-color: #111827; color: #f3f4f6; border-color: #374151; }
@@ -259,8 +366,11 @@
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 
 <div class="h-screen flex">
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="mobile-overlay"></div>
+    
     <!-- Sidebar -->
-    <aside class="w-1/3 max-w-sm h-screen flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4">
+    <aside id="sidebar" class="w-1/3 max-w-sm h-screen flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 p-4 mobile-sidebar">
         <div class="flex items-center space-x-3 mb-6">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
             <div>
@@ -321,9 +431,36 @@
     </aside>
 
     <!-- Chat main -->
-    <main class="flex-1 flex flex-col bg-white dark:bg-gray-800">
+    <main class="flex-1 flex flex-col bg-white dark:bg-gray-800 mobile-main">
+        <!-- Mobile Header -->
+        <div class="mobile-header md:hidden">
+            <button id="mobile-menu-btn" class="mobile-menu-btn">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            <div class="mobile-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                    <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                </svg>
+                <div>
+                    <h1>SAHA-AI</h1>
+                    <p>Your Finance Analyst</p>
+                </div>
+            </div>
+            <button id="theme-toggle-mobile" class="mobile-menu-btn">
+                <svg id="theme-toggle-dark-icon-mobile" class="hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+                <svg id="theme-toggle-light-icon-mobile" class="hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+            </button>
+        </div>
+
         <!-- Top bar with theme toggle -->
-        <div class="sticky top-0 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200 dark:border-gray-700">
+        <div class="sticky top-0 z-10 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200 dark:border-gray-700 hidden md:block">
             <div class="max-w-3xl mx-auto px-3 py-2 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
                     <span class="text-[11px] tracking-wide uppercase text-gray-600 dark:text-gray-400">Market</span>
@@ -338,7 +475,7 @@
         
         <!-- Market snapshot bar -->
         <div id="market-snapshot" class="bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200 dark:border-gray-700">
-            <div class="max-w-3xl mx-auto px-3 py-2">
+            <div class="max-w-3xl mx-auto px-3 py-2 hidden md:block">
                 <div id="market-cards" class="flex items-stretch space-x-2 overflow-x-auto hide-scrollbar">
                     <!-- Skeleton loading cards -->
                     <div class="market-skeleton-card">
@@ -373,15 +510,19 @@
                     </div>
                 </div>
             </div>
+            <!-- Mobile Market Cards -->
+            <div id="market-cards-mobile" class="market-cards-mobile md:hidden">
+                <!-- Mobile market cards will be populated here -->
+            </div>
         </div>
-        <div id="chat-window" class="flex-1 p-6 overflow-y-auto w-full max-w-3xl mx-auto bg-white dark:bg-gray-800">
+        <div id="chat-window" class="flex-1 p-6 overflow-y-auto w-full max-w-3xl mx-auto bg-white dark:bg-gray-800 chat-window-mobile">
             <!-- explicit initial greeting to avoid duplication -->
             <div id="initial-greeting" class="w-full max-w-md p-3 rounded-xl mb-4 chat-bubble chat-bubble-bot">
                 Hi, I am SAHA-AI, How may I help you today?
             </div>
         </div>
 
-        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 input-area-mobile">
             <div class="w-full max-w-3xl mx-auto">
                 <div class="relative">
                     <input id="user-input" type="text" class="w-full p-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type commands like - Analyze a stock or mutual fund, or Show my portfolio">
@@ -390,10 +531,10 @@
                     </button>
                 </div>
 
-                <div id="quick-suggestions" class="mt-3 text-center">
-                    <span class="suggestion-chip" id="chip-analyze-stock">Analyze a stock</span>
-                    <span class="suggestion-chip" id="chip-analyze-mf">Analyze a mutual fund</span>
-                    <span class="suggestion-chip" id="chip-show-portfolio">Show my portfolio</span>
+                <div id="quick-suggestions" class="mt-3 text-center suggestions-mobile">
+                    <span class="suggestion-chip suggestion-chip-mobile" id="chip-analyze-stock">Analyze a stock</span>
+                    <span class="suggestion-chip suggestion-chip-mobile" id="chip-analyze-mf">Analyze a mutual fund</span>
+                    <span class="suggestion-chip suggestion-chip-mobile" id="chip-show-portfolio">Show my portfolio</span>
                 </div>
 
                 <div id="suggestions-box" class="mt-3 text-center"></div>
@@ -446,6 +587,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const healthScorePlaceholder = document.getElementById('health-score-placeholder');
     const healthScoreDisplay = document.getElementById('health-score-display');
     const initialGreetingEl = document.getElementById('initial-greeting');
+    
+    // Mobile elements
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    const sidebar = document.getElementById('sidebar');
+    const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+    const darkIconMobile = document.getElementById('theme-toggle-dark-icon-mobile');
+    const lightIconMobile = document.getElementById('theme-toggle-light-icon-mobile');
+    const marketCardsMobile = document.getElementById('market-cards-mobile');
 
     // injected data
     const userFirstNameElement = document.getElementById('user-first-name');
@@ -458,6 +608,49 @@ document.addEventListener('DOMContentLoaded', () => {
     let analysisContext = {}; // { type: 'stock'|'mf', ... }
     let isFirstInteraction = true;
     let lastRequestedFlow = null; // 'stock' | 'mf' | null
+
+    // Mobile menu functionality
+    function toggleMobileMenu() {
+        sidebar.classList.toggle('open');
+        mobileOverlay.classList.toggle('open');
+    }
+
+    function closeMobileMenu() {
+        sidebar.classList.remove('open');
+        mobileOverlay.classList.remove('open');
+    }
+
+    // Mobile event listeners
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    }
+    if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', closeMobileMenu);
+    }
+
+    // Mobile theme toggle
+    if (themeToggleMobile) {
+        themeToggleMobile.addEventListener('click', () => {
+            if (themeToggle) themeToggle.click();
+        });
+    }
+
+    // Close mobile menu when clicking on sidebar links
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeMobileMenu();
+        }
+    });
 
     // small helpers
     function addMessage(message, sender='bot', opts = {}) {
@@ -1039,6 +1232,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const up = (x.change || 0) >= 0;
                     const color = up ? 'text-emerald-600' : 'text-red-600';
                     const bgSoft = up ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20';
+                    
+                    // Desktop card
                     const card = document.createElement('div');
                     card.className = `min-w-[180px] rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1.5 ${bgSoft} fade-in`;
                     card.innerHTML = `
@@ -1049,6 +1244,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="text-[13px] font-semibold text-gray-800 dark:text-gray-100">${x.value}</div>
                     `;
                     marketCards.appendChild(card);
+                    
+                    // Mobile card
+                    if (marketCardsMobile) {
+                        const mobileCard = document.createElement('div');
+                        mobileCard.className = `market-card-mobile ${bgSoft} fade-in`;
+                        mobileCard.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">${x.name}</div>
+                                    <div class="text-lg font-bold text-gray-800 dark:text-gray-100">${x.value}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm ${color}">${(x.change >= 0 ? '+' : '') + x.change}</div>
+                                    <div class="text-xs ${color}">${(x.change_pct >= 0 ? '+' : '') + x.change_pct}%</div>
+                                </div>
+                            </div>
+                        `;
+                        marketCardsMobile.appendChild(mobileCard);
+                    }
                 });
             }
 
@@ -1066,6 +1280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }catch(e){
             // Show error state with skeleton cards
             marketCards.innerHTML = '';
+            if (marketCardsMobile) marketCardsMobile.innerHTML = '';
             for(let i = 0; i < 3; i++) {
                 const errorCard = document.createElement('div');
                 errorCard.className = 'market-skeleton-card';
@@ -1076,6 +1291,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
                 marketCards.appendChild(errorCard);
+                
+                // Mobile error card
+                if (marketCardsMobile) {
+                    const mobileErrorCard = document.createElement('div');
+                    mobileErrorCard.className = 'market-card-mobile';
+                    mobileErrorCard.innerHTML = `
+                        <div class="text-center text-gray-500">
+                            <div class="text-sm">Loading...</div>
+                        </div>
+                    `;
+                    marketCardsMobile.appendChild(mobileErrorCard);
+                }
             }
         }
     }
