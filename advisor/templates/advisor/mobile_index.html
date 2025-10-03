@@ -361,12 +361,20 @@ if (themeToggleMobile) {
             if (lightIconMobile) lightIconMobile.classList.add('hidden');
             console.log('Switched to light mode');
         } else {
-            // Currently light, switching to dark
+            // Currently light, switching to dark - try multiple methods
             document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('class', document.documentElement.getAttribute('class') + ' dark');
             localStorage.setItem('color-theme', 'dark');
             if (darkIconMobile) darkIconMobile.classList.add('hidden');
             if (lightIconMobile) lightIconMobile.classList.remove('hidden');
             console.log('Switched to dark mode');
+            
+            // Debug: Check if class was actually added
+            setTimeout(() => {
+                console.log('After adding dark class, has dark:', document.documentElement.classList.contains('dark'));
+                console.log('All classes:', document.documentElement.className);
+                console.log('HTML element:', document.documentElement.outerHTML.substring(0, 100));
+            }, 10);
         }
         
         // Force browser to recalculate styles immediately
