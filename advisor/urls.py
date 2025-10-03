@@ -40,8 +40,8 @@ urlpatterns = [
     path("chat/", ChatView.as_view(), name="chat"),
 
     # Search endpoints
-    path("search/<str:exchange>/<str:query>/", StockSearchView.as_view(), name="stock-search"),
     path("search/MF/<str:query>/", MutualFundSearchView.as_view(), name="mutual-fund-search"),
+    path("search/<str:exchange>/<str:query>/", StockSearchView.as_view(), name="stock-search"),
 
     # Analysis endpoints
     path("analyze/<str:ticker>/<str:buy_price>/<str:shares>/", StockAnalysisView.as_view(), name="stock-analysis"),
