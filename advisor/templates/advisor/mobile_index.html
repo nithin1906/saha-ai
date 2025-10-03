@@ -374,40 +374,15 @@ if (themeToggleMobile) {
             if (lightIconMobile) lightIconMobile.classList.add('hidden');
             console.log('Switched to light mode');
         } else {
-            // Currently light, switching to dark - use direct DOM manipulation
+            // Currently light, switching to dark - use brute force method that works
             console.log('Attempting to switch to dark mode...');
             
-            // Method 1: Direct classList
-            document.documentElement.classList.add('dark');
-            console.log('Method 1 - classList.add result:', document.documentElement.classList.contains('dark'));
-            
-            // Method 2: Direct attribute manipulation
-            const currentClass = document.documentElement.getAttribute('class') || '';
-            document.documentElement.setAttribute('class', currentClass + ' dark');
-            console.log('Method 2 - setAttribute result:', document.documentElement.classList.contains('dark'));
-            
-            // Method 3: Force with style
-            document.documentElement.style.setProperty('--tw-dark', '1');
-            console.log('Method 3 - CSS variable set');
-            
+            // Use the brute force method that actually works
+            document.documentElement.className = 'dark';
             localStorage.setItem('color-theme', 'dark');
             if (darkIconMobile) darkIconMobile.classList.add('hidden');
             if (lightIconMobile) lightIconMobile.classList.remove('hidden');
             console.log('Switched to dark mode');
-            
-            // Debug: Check if class was actually added
-            setTimeout(() => {
-                console.log('After adding dark class, has dark:', document.documentElement.classList.contains('dark'));
-                console.log('All classes:', document.documentElement.className);
-                console.log('HTML element:', document.documentElement.outerHTML.substring(0, 100));
-                
-                // If still not working, try brute force
-                if (!document.documentElement.classList.contains('dark')) {
-                    console.log('Brute force attempt...');
-                    document.documentElement.className = 'dark';
-                    console.log('Brute force result:', document.documentElement.classList.contains('dark'));
-                }
-            }, 50);
         }
         
         // Force browser to recalculate styles immediately

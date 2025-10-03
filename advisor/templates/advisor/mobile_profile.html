@@ -222,13 +222,13 @@ function initializeThemeProfile() {
     console.log('Profile theme initialization - savedTheme:', savedTheme, 'prefersDark:', prefersDark);
     
     if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
-        document.documentElement.classList.add('dark');
+        document.documentElement.className = 'dark';
         localStorage.setItem('color-theme', 'dark');
         if (lightIconMobileProfile) lightIconMobileProfile.classList.remove('hidden');
         if (darkIconMobileProfile) darkIconMobileProfile.classList.add('hidden');
         console.log('Profile applied dark theme');
     } else {
-        document.documentElement.classList.remove('dark');
+        document.documentElement.className = '';
         localStorage.setItem('color-theme', 'light');
         if (darkIconMobileProfile) darkIconMobileProfile.classList.remove('hidden');
         if (lightIconMobileProfile) lightIconMobileProfile.classList.add('hidden');
