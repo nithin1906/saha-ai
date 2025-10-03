@@ -366,7 +366,7 @@ if (themeToggleMobile) {
         }
         
         // Force theme application - use only 'dark' class (Tailwind standard)
-        // Remove all theme classes first
+        // Remove dark class first
         document.documentElement.classList.remove('dark');
         
         // Apply dark class only if switching TO dark mode
@@ -377,12 +377,12 @@ if (themeToggleMobile) {
             console.log('Removed dark theme class (light mode)');
         }
         
-        // Force browser to recalculate styles
+        // Force browser to recalculate styles immediately
         document.documentElement.style.transform = 'translateZ(0)';
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             document.documentElement.style.transform = '';
             console.log('Theme force-applied, current classes:', document.documentElement.className);
-        }, 1);
+        });
     });
 } else {
     console.error('Theme toggle button not found');
