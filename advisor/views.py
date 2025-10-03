@@ -682,6 +682,9 @@ class StockAnalysisView(View):
                         print(f"StockAnalysisView: Using fallback fundamentals for {ticker}")
         except Exception as e:
             print(f"StockAnalysisView: Error getting fundamentals: {e}")
+        
+        print(f"StockAnalysisView: Returning price {current_price} and fundamentals for {ticker}")
+        return current_price, fundamentals
     
     def _fetch_fundamentals_yahoo_api(self, ticker):
         """Fetch fundamentals from Yahoo Finance API"""

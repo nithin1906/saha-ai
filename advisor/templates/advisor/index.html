@@ -1195,7 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = await fetch(`/api/search/MF/${encodeURIComponent(query)}/`);
             const data = await r.json();
             thinking.remove();
-            const results = (data.funds || []).map(s => ({ name: s.name, scheme_id: s.symbol }));
+            const results = (data.funds || []).map(s => ({ name: s.fund_name, scheme_id: s.scheme_id }));
             if (!results.length) {
                 addMessage(`No mutual funds found for "${query}". Try another name.`, 'bot');
                 startConversation(false);

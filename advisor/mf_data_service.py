@@ -18,7 +18,7 @@ class MutualFundDataService:
         if os.environ.get('DEBUG', 'False').lower() == 'true':
             self.cache_timeout = 60  # 1 minute for development
         else:
-            self.cache_timeout = 300  # 5 minutes for production
+            self.cache_timeout = 60  # 1 minute for production (reduced from 5 minutes)
         
         logger.info("MutualFundDataService initialized")
         
@@ -74,14 +74,26 @@ class MutualFundDataService:
         if not query_lower:
             return []
         
-        # Search in multiple fields
+        # Search in multiple fields with better matching
         matching_funds = []
         for fund in self.fund_database:
             # Search in fund name, AMC, category, and scheme ID
-            if (query_lower in fund['fund_name'].lower() or 
-                query_lower in fund['amc'].lower() or 
-                query_lower in fund['category'].lower() or 
-                query_lower in fund['scheme_id'].lower()):
+            fund_name_lower = fund['fund_name'].lower()
+            amc_lower = fund['amc'].lower()
+            category_lower = fund['category'].lower()
+            scheme_id_lower = fund['scheme_id'].lower()
+            
+            # More flexible matching
+            if (query_lower in fund_name_lower or 
+                query_lower in amc_lower or 
+                query_lower in category_lower or 
+                query_lower in scheme_id_lower or
+                # Handle common variations
+                query_lower.replace(' ', '') in fund_name_lower.replace(' ', '') or
+                query_lower.replace(' ', '') in amc_lower.replace(' ', '') or
+                # Handle partial matches
+                any(word in fund_name_lower for word in query_lower.split()) or
+                any(word in amc_lower for word in query_lower.split())):
                 matching_funds.append(fund)
         
         # Sort by relevance (exact matches first, then partial matches)

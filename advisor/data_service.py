@@ -20,7 +20,7 @@ class StockDataService:
         if os.environ.get('DEBUG', 'False').lower() == 'true':
             self.cache_timeout = 60  # 1 minute for development
         else:
-            self.cache_timeout = 300  # 5 minutes for production
+            self.cache_timeout = 60  # 1 minute for production (reduced from 5 minutes)
         
         # Log API key status (without exposing keys)
         logger.info(f"Alpha Vantage API: {'Configured' if self.alpha_vantage_key else 'Not configured'}")
