@@ -347,34 +347,26 @@ function initializeTheme() {
 if (themeToggleMobile) {
     themeToggleMobile.addEventListener('click', (e) => {
         e.preventDefault();
-        const isDark = document.documentElement.classList.contains('dark');
         
-        console.log('Theme toggle clicked, current theme:', isDark ? 'dark' : 'light');
+        // Check current state by looking at the actual DOM class
+        const hasDarkClass = document.documentElement.classList.contains('dark');
         
-        if (isDark) {
+        console.log('Theme toggle clicked, has dark class:', hasDarkClass);
+        
+        if (hasDarkClass) {
+            // Currently dark, switching to light
             document.documentElement.classList.remove('dark');
             localStorage.setItem('color-theme', 'light');
             if (darkIconMobile) darkIconMobile.classList.remove('hidden');
             if (lightIconMobile) lightIconMobile.classList.add('hidden');
             console.log('Switched to light mode');
         } else {
+            // Currently light, switching to dark
             document.documentElement.classList.add('dark');
             localStorage.setItem('color-theme', 'dark');
             if (darkIconMobile) darkIconMobile.classList.add('hidden');
             if (lightIconMobile) lightIconMobile.classList.remove('hidden');
             console.log('Switched to dark mode');
-        }
-        
-        // Force theme application - use only 'dark' class (Tailwind standard)
-        // Remove dark class first
-        document.documentElement.classList.remove('dark');
-        
-        // Apply dark class only if switching TO dark mode
-        if (!isDark) {
-            document.documentElement.classList.add('dark');
-            console.log('Applied dark theme class');
-        } else {
-            console.log('Removed dark theme class (light mode)');
         }
         
         // Force browser to recalculate styles immediately
