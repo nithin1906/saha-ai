@@ -21,6 +21,12 @@ urlpatterns = [
     path("profile/", advisor_views.profile_view, name="profile"),
     path("about/", advisor_views.about_view, name="about"),
     path("portfolio-page/", advisor_views.portfolio_page_view, name="portfolio-page"),
+    
+    # Mobile pages
+    path("mobile/", advisor_views.mobile_index, name="mobile_index"),
+    path("mobile/portfolio/", advisor_views.mobile_portfolio, name="mobile_portfolio"),
+    path("mobile/profile/", advisor_views.mobile_profile, name="mobile_profile"),
+    path("mobile/about/", advisor_views.mobile_about, name="mobile_about"),
 
     # APIs
     path("api/", include("advisor.urls")),

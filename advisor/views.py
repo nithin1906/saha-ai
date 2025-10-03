@@ -20,6 +20,127 @@ from decimal import Decimal
 logger = logging.getLogger(__name__)
 
 # =====================
+# Basic View Functions
+# =====================
+
+def index(request):
+    """Main index view"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    return render(request, 'advisor/index.html', {
+        'user_first_name': request.user.first_name if request.user.is_authenticated else '',
+        'csrf_token_value': request.META.get('CSRF_COOKIE', '')
+    })
+
+def portfolio(request):
+    """Portfolio view"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    return render(request, 'advisor/portfolio.html')
+
+def about(request):
+    """About page view"""
+    return render(request, 'advisor/about.html')
+
+def profile(request):
+    """User profile view"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    return render(request, 'advisor/profile.html')
+
+# =====================
+# API Views
+# =====================
+
+@method_decorator(csrf_exempt, name="dispatch")
+class ChatAPIView(View):
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+        
+        try:
+            data = json.loads(request.body)
+            message = data.get('message', '')
+            
+            if not message:
+                return JsonResponse({"error": "Message is required"}, status=400)
+            
+            # Process the message using the existing chat logic
+            chat_processor = ChatProcessor()
+            response = chat_processor.process_message(message, request.user)
+            
+            return JsonResponse({"response": response})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            logger.error(f"Chat API error: {e}")
+            return JsonResponse({"error": "Internal server error"}, status=500)
+
+def chat_api(request):
+    """Chat API endpoint"""
+    if request.method == 'POST':
+        view = ChatAPIView()
+        return view.post(request)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def portfolio_api(request):
+    """Portfolio API endpoint"""
+    if request.method == 'GET':
+        view = PortfolioView()
+        return view.get(request)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def add_to_portfolio(request):
+    """Add to portfolio API endpoint"""
+    if request.method == 'POST':
+        view = AddToPortfolioView()
+        return view.post(request)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def remove_from_portfolio(request, ticker):
+    """Remove from portfolio API endpoint"""
+    if request.method == 'POST':
+        view = RemoveFromPortfolioView()
+        return view.post(request, ticker)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def portfolio_health(request):
+    """Portfolio health API endpoint"""
+    if request.method == 'GET':
+        view = PortfolioHealthView()
+        return view.get(request)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def market_snapshot(request):
+    """Market snapshot API endpoint"""
+    if request.method == 'GET':
+        view = MarketSnapshotView()
+        return view.get(request)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def mutual_fund_search(request):
+    """Mutual fund search API endpoint"""
+    if request.method == 'GET':
+        view = MutualFundSearchView()
+        return view.get(request)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def mutual_fund_analysis(request):
+    """Mutual fund analysis API endpoint"""
+    if request.method == 'POST':
+        view = MutualFundAnalysisView()
+        return view.post(request)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+def stock_analysis(request):
+    """Stock analysis API endpoint"""
+    if request.method == 'POST':
+        view = StockAnalysisView()
+        return view.post(request)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
+# =====================
 # Portfolio Management
 # =====================
 
@@ -428,6 +549,17 @@ def mobile_portfolio(request):
         return render(request, 'users/login.html')
     
     return render(request, 'advisor/mobile_portfolio.html')
+
+def mobile_profile(request):
+    """Mobile-optimized profile page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_profile.html')
+
+def mobile_about(request):
+    """Mobile-optimized about page"""
+    return render(request, 'advisor/mobile_about.html')
 
 # =====================
 # Natural Language Understanding (NLU)
@@ -1241,3 +1373,14 @@ def mobile_portfolio(request):
         return render(request, 'users/login.html')
     
     return render(request, 'advisor/mobile_portfolio.html')
+
+def mobile_profile(request):
+    """Mobile-optimized profile page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_profile.html')
+
+def mobile_about(request):
+    """Mobile-optimized about page"""
+    return render(request, 'advisor/mobile_about.html')
