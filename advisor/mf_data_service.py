@@ -76,11 +76,16 @@ class MutualFundDataService:
         """
         Search mutual funds with comprehensive filtering
         """
-        cache_key = f"mf_search_{query.lower()}"
-        cached_result = cache.get(cache_key)
-        if cached_result:
-            logger.info(f"Cache hit for MF search: {query}")
-            return cached_result
+        # Skip caching if Django settings not configured
+        try:
+            cache_key = f"mf_search_{query.lower()}"
+            cached_result = cache.get(cache_key)
+            if cached_result:
+                logger.info(f"Cache hit for MF search: {query}")
+                return cached_result
+        except Exception:
+            # Django settings not configured, skip caching
+            pass
         
         query_lower = query.lower().strip()
         if not query_lower:
@@ -139,8 +144,13 @@ class MutualFundDataService:
         
         matching_funds.sort(key=relevance_score, reverse=True)
         
-        # Cache the result
-        cache.set(cache_key, matching_funds, self.cache_timeout)
+        # Cache the result (if Django settings configured)
+        try:
+            cache.set(cache_key, matching_funds, self.cache_timeout)
+        except Exception:
+            # Django settings not configured, skip caching
+            pass
+        
         logger.info(f"MF search completed for '{query}': {len(matching_funds)} results")
         
         return matching_funds
@@ -248,17 +258,14 @@ class MutualFundDataService:
                 'change_pct': round(((nav - nav_history[-1]['nav']) / nav_history[-1]['nav'] * 100), 2) if nav_history else 0
             })
         
-        cache.set(cache_key, nav_history, self.cache_timeout)
+        # Cache the result (if Django settings configured)
+        try:
+            cache.set(cache_key, nav_history, self.cache_timeout)
+        except Exception:
+            # Django settings not configured, skip caching
+            pass
+        
         return nav_history
 
 # Global instance
 mf_data_service = MutualFundDataService()
-
-# Test the service on initialization
-print(f"=== MF Service Test ===")
-print(f"Service initialized with {len(mf_data_service.fund_database)} funds")
-test_search = mf_data_service.search_mutual_funds("motilal")
-print(f"Test search for 'motilal' returned {len(test_search)} results")
-if test_search:
-    print(f"First result: {test_search[0]['fund_name']}")
-print(f"=== End MF Service Test ===")
