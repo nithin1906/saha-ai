@@ -936,7 +936,8 @@ class MutualFundAnalysisView(View):
                 "current_value": current_value,
                 "profit_loss": profit_loss,
                 "profit_loss_percent": profit_loss_percent,
-                "recommendation_reason": analysis
+                "personalized_advice": analysis,
+                "reasoning": f"Based on your investment of ₹{total_investment:.2f} at ₹{buy_nav:.2f} NAV, current value is ₹{current_value:.2f} at ₹{current_nav:.2f} NAV."
             })
             
         except Exception as e:
