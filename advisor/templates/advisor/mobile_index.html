@@ -320,23 +320,23 @@ const themeToggleMobile = document.getElementById('theme-toggle-mobile');
 const darkIconMobile = document.getElementById('theme-toggle-dark-icon-mobile');
 const lightIconMobile = document.getElementById('theme-toggle-light-icon-mobile');
 
+// Flag to prevent initialization interference
+let userToggledTheme = false;
+
 // Initialize theme
 function initializeTheme() {
+    // Don't initialize if user just toggled theme
+    if (userToggledTheme) {
+        console.log('Skipping initialization - user toggled theme');
+        userToggledTheme = false; // Reset flag
+        return;
+    }
+    
     // Check localStorage first, then system preference
     const savedTheme = localStorage.getItem('color-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     console.log('Theme initialization - savedTheme:', savedTheme, 'prefersDark:', prefersDark);
-    
-    // Don't override if user just toggled theme
-    if (document.documentElement.classList.contains('dark') && savedTheme === 'light') {
-        console.log('Skipping initialization - user just toggled to dark');
-        return;
-    }
-    if (!document.documentElement.classList.contains('dark') && savedTheme === 'dark') {
-        console.log('Skipping initialization - user just toggled to light');
-        return;
-    }
     
     if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
         document.documentElement.classList.add('dark');
@@ -357,6 +357,9 @@ function initializeTheme() {
 if (themeToggleMobile) {
     themeToggleMobile.addEventListener('click', (e) => {
         e.preventDefault();
+        
+        // Set flag to prevent initialization interference
+        userToggledTheme = true;
         
         // Check current state by looking at the actual DOM class
         const hasDarkClass = document.documentElement.classList.contains('dark');
