@@ -21,6 +21,7 @@ class MutualFundDataService:
         
         # Comprehensive Indian mutual fund database
         self.fund_database = self._load_fund_database()
+        logger.info(f"Loaded {len(self.fund_database)} funds into database")
     
     def _load_fund_database(self):
         """Load comprehensive Indian mutual fund database"""
@@ -87,6 +88,8 @@ class MutualFundDataService:
         
         print(f"=== MF Search Debug: Searching for '{query}' ===")
         print(f"Database has {len(self.fund_database)} funds")
+        logger.info(f"MF Search Debug: Searching for '{query}'")
+        logger.info(f"MF Search Debug: Database has {len(self.fund_database)} funds")
         
         # Search in multiple fields with better matching
         matching_funds = []
@@ -116,8 +119,10 @@ class MutualFundDataService:
                 query_lower in amc_lower):
                 matching_funds.append(fund)
                 print(f"Found match: {fund['fund_name']} (AMC: {fund['amc']})")
+                logger.info(f"Found match: {fund['fund_name']} (AMC: {fund['amc']})")
         
         print(f"Total matches found: {len(matching_funds)}")
+        logger.info(f"Total matches found: {len(matching_funds)}")
         
         # Sort by relevance (exact matches first, then partial matches)
         def relevance_score(fund):
@@ -248,3 +253,12 @@ class MutualFundDataService:
 
 # Global instance
 mf_data_service = MutualFundDataService()
+
+# Test the service on initialization
+print(f"=== MF Service Test ===")
+print(f"Service initialized with {len(mf_data_service.fund_database)} funds")
+test_search = mf_data_service.search_mutual_funds("motilal")
+print(f"Test search for 'motilal' returned {len(test_search)} results")
+if test_search:
+    print(f"First result: {test_search[0]['fund_name']}")
+print(f"=== End MF Service Test ===")
