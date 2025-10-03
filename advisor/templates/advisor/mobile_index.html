@@ -339,13 +339,13 @@ function initializeTheme() {
     console.log('Theme initialization - savedTheme:', savedTheme, 'prefersDark:', prefersDark);
     
     if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
-        document.documentElement.classList.add('dark');
+        document.documentElement.className = 'dark';
         localStorage.setItem('color-theme', 'dark');
         if (lightIconMobile) lightIconMobile.classList.remove('hidden');
         if (darkIconMobile) darkIconMobile.classList.add('hidden');
         console.log('Applied dark theme');
     } else {
-        document.documentElement.classList.remove('dark');
+        document.documentElement.className = '';
         localStorage.setItem('color-theme', 'light');
         if (darkIconMobile) darkIconMobile.classList.remove('hidden');
         if (lightIconMobile) lightIconMobile.classList.add('hidden');
