@@ -55,6 +55,20 @@ class MutualFundDataService:
             # Debt Funds
             {'scheme_id': 'HDFCDEBT001', 'fund_name': 'HDFC Corporate Bond Fund', 'nav': 23.45, 'change': 0.12, 'change_pct': 0.51, 'category': 'Debt', 'amc': 'HDFC Mutual Fund', 'aum': '₹5,678 Cr', 'expense_ratio': 0.85, 'min_sip': 500, 'min_lumpsum': 5000},
             {'scheme_id': 'ICICIDEBT002', 'fund_name': 'ICICI Prudential Corporate Bond Fund', 'nav': 34.56, 'change': 0.08, 'change_pct': 0.23, 'category': 'Debt', 'amc': 'ICICI Prudential', 'aum': '₹4,321 Cr', 'expense_ratio': 0.90, 'min_sip': 500, 'min_lumpsum': 5000},
+            
+            # Additional Popular Funds
+            {'scheme_id': 'MOTILAL001', 'fund_name': 'Motilal Oswal Midcap Fund', 'nav': 156.78, 'change': 2.45, 'change_pct': 1.58, 'category': 'Mid Cap', 'amc': 'Motilal Oswal Mutual Fund', 'aum': '₹3,456 Cr', 'expense_ratio': 1.25, 'min_sip': 500, 'min_lumpsum': 5000},
+            {'scheme_id': 'MOTILAL002', 'fund_name': 'Motilal Oswal Large Cap Fund', 'nav': 89.34, 'change': 1.23, 'change_pct': 1.40, 'category': 'Large Cap', 'amc': 'Motilal Oswal Mutual Fund', 'aum': '₹2,345 Cr', 'expense_ratio': 1.15, 'min_sip': 500, 'min_lumpsum': 5000},
+            {'scheme_id': 'MOTILAL003', 'fund_name': 'Motilal Oswal Small Cap Fund', 'nav': 234.56, 'change': 4.56, 'change_pct': 1.98, 'category': 'Small Cap', 'amc': 'Motilal Oswal Mutual Fund', 'aum': '₹1,876 Cr', 'expense_ratio': 1.45, 'min_sip': 500, 'min_lumpsum': 5000},
+            {'scheme_id': 'MOTILAL004', 'fund_name': 'Motilal Oswal Multicap Fund', 'nav': 67.89, 'change': 0.89, 'change_pct': 1.33, 'category': 'Multi Cap', 'amc': 'Motilal Oswal Mutual Fund', 'aum': '₹4,567 Cr', 'expense_ratio': 1.20, 'min_sip': 500, 'min_lumpsum': 5000},
+            
+            # More HDFC Funds
+            {'scheme_id': 'HDFC003', 'fund_name': 'HDFC Equity Fund', 'nav': 234.56, 'change': 3.45, 'change_pct': 1.49, 'category': 'Large Cap', 'amc': 'HDFC Mutual Fund', 'aum': '₹8,765 Cr', 'expense_ratio': 1.25, 'min_sip': 500, 'min_lumpsum': 5000},
+            {'scheme_id': 'HDFC004', 'fund_name': 'HDFC Flexi Cap Fund', 'nav': 123.45, 'change': 1.67, 'change_pct': 1.37, 'category': 'Flexi Cap', 'amc': 'HDFC Mutual Fund', 'aum': '₹6,543 Cr', 'expense_ratio': 1.30, 'min_sip': 500, 'min_lumpsum': 5000},
+            
+            # More SBI Funds
+            {'scheme_id': 'SBI002', 'fund_name': 'SBI Large & Midcap Fund', 'nav': 78.90, 'change': 1.23, 'change_pct': 1.58, 'category': 'Large & Mid Cap', 'amc': 'SBI Mutual Fund', 'aum': '₹5,432 Cr', 'expense_ratio': 1.35, 'min_sip': 500, 'min_lumpsum': 5000},
+            {'scheme_id': 'SBI003', 'fund_name': 'SBI Flexicap Fund', 'nav': 45.67, 'change': 0.78, 'change_pct': 1.74, 'category': 'Flexi Cap', 'amc': 'SBI Mutual Fund', 'aum': '₹3,456 Cr', 'expense_ratio': 1.40, 'min_sip': 500, 'min_lumpsum': 5000},
         ]
     
     def search_mutual_funds(self, query):
@@ -70,6 +84,9 @@ class MutualFundDataService:
         query_lower = query.lower().strip()
         if not query_lower:
             return []
+        
+        print(f"=== MF Search Debug: Searching for '{query}' ===")
+        print(f"Database has {len(self.fund_database)} funds")
         
         # Search in multiple fields with better matching
         matching_funds = []
@@ -98,6 +115,9 @@ class MutualFundDataService:
                 query_lower in fund_name_lower or
                 query_lower in amc_lower):
                 matching_funds.append(fund)
+                print(f"Found match: {fund['fund_name']} (AMC: {fund['amc']})")
+        
+        print(f"Total matches found: {len(matching_funds)}")
         
         # Sort by relevance (exact matches first, then partial matches)
         def relevance_score(fund):
