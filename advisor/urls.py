@@ -14,7 +14,9 @@ from .views import (
     StockHistoryView,
     MutualFundAnalysisView,
     MutualFundHistoryView,
-    DevVersionView
+    DevVersionView,
+    MutualFundCategoriesView,
+    MutualFundDetailsView
 )
 
 urlpatterns = [
@@ -28,6 +30,8 @@ urlpatterns = [
 
     # Mutual Fund Endpoints
     path("mutual-fund/", MutualFundView.as_view(), name="mutual-fund"),
+    path("mutual-fund/categories/", MutualFundCategoriesView.as_view(), name="mutual-fund-categories"),
+    path("mutual-fund/<str:scheme_id>/", MutualFundDetailsView.as_view(), name="mutual-fund-details"),
 
     # Market snapshot
     path("market/snapshot/", MarketSnapshotView.as_view(), name="market-snapshot"),

@@ -8,12 +8,16 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Avg
 from .models import Holding, Portfolio
 from .data_service import stock_data_service
+from .mf_data_service import mf_data_service
 import json
 import random
 import math
 import re
+import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 # =====================
 # Portfolio Management
@@ -317,35 +321,29 @@ class PortfolioHealthView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class MutualFundView(View):
     def get(self, request):
-        # Sample mutual fund data - in production, this would come from a real API
-        funds = [
-            {
-                "scheme_id": "SBI001",
-                "fund_name": "SBI Bluechip Fund",
-                "nav": 45.67,
-                "change": 0.23,
-                "change_pct": 0.51,
-                "category": "Large Cap"
-            },
-            {
-                "scheme_id": "HDFC002",
-                "fund_name": "HDFC Top 100 Fund",
-                "nav": 78.45,
-                "change": -0.12,
-                "change_pct": -0.15,
-                "category": "Large Cap"
-            },
-            {
-                "scheme_id": "ICICI003",
-                "fund_name": "ICICI Prudential Value Discovery Fund",
-                "nav": 123.89,
-                "change": 0.67,
-                "change_pct": 0.54,
-                "category": "Value"
-            }
-        ]
-        
-        return JsonResponse({"funds": funds})
+        """Get mutual fund data with filtering options"""
+        try:
+            category = request.GET.get('category', '')
+            limit = int(request.GET.get('limit', 20))
+            
+            if category:
+                funds = mf_data_service.get_funds_by_category(category)
+            else:
+                # Get top performing funds by default
+                funds = mf_data_service.get_top_performing_funds(limit=limit)
+            
+            return JsonResponse({
+                "funds": funds[:limit],
+                "total_count": len(funds),
+                "category": category or "All"
+            })
+            
+        except Exception as e:
+            logger.error(f"MutualFundView error: {e}")
+            return JsonResponse({
+                "error": f"Failed to fetch mutual fund data: {str(e)}",
+                "funds": []
+            }, status=500)
 
 # =====================
 # Dashboard Views
@@ -529,87 +527,78 @@ class StockSearchView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class MutualFundSearchView(View):
     def get(self, request, query):
-        """Search for mutual funds using real-time data"""
+        """Search for mutual funds using comprehensive database"""
         try:
-            # Use real-time search from AMFI or other sources
-            funds = self._search_real_mutual_funds(query)
+            # Use the new MF data service for search
+            funds = mf_data_service.search_mutual_funds(query)
             
             return JsonResponse({
                 "funds": funds[:10],  # Limit to 10 results
-                "query": query
+                "query": query,
+                "total_results": len(funds)
             })
             
         except Exception as e:
+            logger.error(f"MutualFundSearchView error: {e}")
             return JsonResponse({
                 "error": f"Search failed: {str(e)}",
                 "funds": [],
                 "query": query
             }, status=500)
-    
-    def _search_real_mutual_funds(self, query):
-        """Search for real mutual funds"""
+
+# =====================
+# Mutual Fund Categories
+# =====================
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MutualFundCategoriesView(View):
+    def get(self, request):
+        """Get all available mutual fund categories"""
         try:
-            import requests
+            categories = mf_data_service.get_fund_categories()
             
-            # Try to get real mutual fund data from AMFI or other sources
-            # For now, return a comprehensive list of popular mutual funds
-            popular_funds = [
-                {'symbol': 'HDFCMIDCAPDIRECT', 'name': 'HDFC Mid Cap Fund Direct', 'nav': 85.23, 'category': 'Mid Cap'},
-                {'symbol': 'HDFCMIDCAP', 'name': 'HDFC Mid Cap Fund', 'nav': 82.15, 'category': 'Mid Cap'},
-                {'symbol': 'SBILARGE', 'name': 'SBI Bluechip Fund', 'nav': 45.67, 'category': 'Large Cap'},
-                {'symbol': 'HDFCLARGE', 'name': 'HDFC Top 100 Fund', 'nav': 78.45, 'category': 'Large Cap'},
-                {'symbol': 'ICICILARGE', 'name': 'ICICI Prudential Bluechip Fund', 'nav': 123.89, 'category': 'Large Cap'},
-                {'symbol': 'AXISLARGE', 'name': 'Axis Bluechip Fund', 'nav': 67.23, 'category': 'Large Cap'},
-                {'symbol': 'FRANKLINLARGE', 'name': 'Franklin India Bluechip Fund', 'nav': 89.12, 'category': 'Large Cap'},
-                {'symbol': 'DSPLARGE', 'name': 'DSP Top 100 Equity Fund', 'nav': 156.78, 'category': 'Large Cap'},
-                {'symbol': 'KOTAKLARGE', 'name': 'Kotak Bluechip Fund', 'nav': 234.56, 'category': 'Large Cap'},
-                {'symbol': 'MIRAELARGE', 'name': 'Mirae Asset Large Cap Fund', 'nav': 45.67, 'category': 'Large Cap'},
-                {'symbol': 'NIPPONLARGE', 'name': 'Nippon India Large Cap Fund', 'nav': 78.90, 'category': 'Large Cap'},
-                {'symbol': 'UTILARGE', 'name': 'UTI Mastershare Fund', 'nav': 123.45, 'category': 'Large Cap'},
-                {'symbol': 'SBIMID', 'name': 'SBI Magnum Midcap Fund', 'nav': 45.67, 'category': 'Mid Cap'},
-                {'symbol': 'HDFCMID', 'name': 'HDFC Mid-Cap Opportunities Fund', 'nav': 78.45, 'category': 'Mid Cap'},
-                {'symbol': 'ICICIMID', 'name': 'ICICI Prudential Midcap Fund', 'nav': 123.89, 'category': 'Mid Cap'},
-                {'symbol': 'AXISMID', 'name': 'Axis Midcap Fund', 'nav': 67.23, 'category': 'Mid Cap'},
-                {'symbol': 'FRANKLINMID', 'name': 'Franklin India Prima Fund', 'nav': 89.12, 'category': 'Mid Cap'},
-                {'symbol': 'DSPMID', 'name': 'DSP Midcap Fund', 'nav': 156.78, 'category': 'Mid Cap'},
-                {'symbol': 'KOTAKMID', 'name': 'Kotak Emerging Equity Fund', 'nav': 234.56, 'category': 'Mid Cap'},
-                {'symbol': 'MIRAEMID', 'name': 'Mirae Asset Emerging Bluechip Fund', 'nav': 45.67, 'category': 'Mid Cap'},
-                {'symbol': 'NIPPONMID', 'name': 'Nippon India Growth Fund', 'nav': 78.90, 'category': 'Mid Cap'},
-                {'symbol': 'UTIMID', 'name': 'UTI Mid Cap Fund', 'nav': 123.45, 'category': 'Mid Cap'},
-                {'symbol': 'SBISMALL', 'name': 'SBI Small Cap Fund', 'nav': 45.67, 'category': 'Small Cap'},
-                {'symbol': 'HDFCSMALL', 'name': 'HDFC Small Cap Fund', 'nav': 78.45, 'category': 'Small Cap'},
-                {'symbol': 'ICICISMALL', 'name': 'ICICI Prudential Smallcap Fund', 'nav': 123.89, 'category': 'Small Cap'},
-                {'symbol': 'AXISSMALL', 'name': 'Axis Small Cap Fund', 'nav': 67.23, 'category': 'Small Cap'},
-                {'symbol': 'FRANKLINSMALL', 'name': 'Franklin India Smaller Companies Fund', 'nav': 89.12, 'category': 'Small Cap'},
-                {'symbol': 'DSPSMALL', 'name': 'DSP Small Cap Fund', 'nav': 156.78, 'category': 'Small Cap'},
-                {'symbol': 'KOTAKSMALL', 'name': 'Kotak Small Cap Fund', 'nav': 234.56, 'category': 'Small Cap'},
-                {'symbol': 'MIRAESMALL', 'name': 'Mirae Asset Small Cap Fund', 'nav': 45.67, 'category': 'Small Cap'},
-                {'symbol': 'NIPPONSMALL', 'name': 'Nippon India Small Cap Fund', 'nav': 78.90, 'category': 'Small Cap'},
-                {'symbol': 'UTISMALL', 'name': 'UTI Small Cap Fund', 'nav': 123.45, 'category': 'Small Cap'},
-                {'symbol': 'SBIELSS', 'name': 'SBI Equity Linked Savings Scheme', 'nav': 45.67, 'category': 'ELSS'},
-                {'symbol': 'HDFCELSS', 'name': 'HDFC Tax Saver Fund', 'nav': 78.45, 'category': 'ELSS'},
-                {'symbol': 'ICICIELSS', 'name': 'ICICI Prudential Long Term Equity Fund', 'nav': 123.89, 'category': 'ELSS'},
-                {'symbol': 'AXISELSS', 'name': 'Axis Long Term Equity Fund', 'nav': 67.23, 'category': 'ELSS'},
-                {'symbol': 'FRANKLINELSS', 'name': 'Franklin India Taxshield Fund', 'nav': 89.12, 'category': 'ELSS'},
-                {'symbol': 'DSPELSS', 'name': 'DSP Tax Saver Fund', 'nav': 156.78, 'category': 'ELSS'},
-                {'symbol': 'KOTAKELSS', 'name': 'Kotak Tax Saver Fund', 'nav': 234.56, 'category': 'ELSS'},
-                {'symbol': 'MIRAEELSS', 'name': 'Mirae Asset Tax Saver Fund', 'nav': 45.67, 'category': 'ELSS'},
-                {'symbol': 'NIPPONELSS', 'name': 'Nippon India Tax Saver Fund', 'nav': 78.90, 'category': 'ELSS'},
-                {'symbol': 'UTIELSS', 'name': 'UTI Long Term Equity Fund', 'nav': 123.45, 'category': 'ELSS'},
-            ]
-            
-            # Filter funds based on query
-            query_lower = query.lower()
-            filtered_funds = [
-                fund for fund in popular_funds 
-                if query_lower in fund['name'].lower() or query_lower in fund['symbol'].lower() or query_lower in fund['category'].lower()
-            ]
-            
-            return filtered_funds
+            return JsonResponse({
+                "categories": categories,
+                "total_categories": len(categories)
+            })
             
         except Exception as e:
-            print(f"Real mutual fund search error: {e}")
-            return []
+            logger.error(f"MutualFundCategoriesView error: {e}")
+            return JsonResponse({
+                "error": f"Failed to fetch categories: {str(e)}",
+                "categories": []
+            }, status=500)
+
+# =====================
+# Mutual Fund Details
+# =====================
+
+@method_decorator(csrf_exempt, name="dispatch")
+class MutualFundDetailsView(View):
+    def get(self, request, scheme_id):
+        """Get detailed information about a specific mutual fund"""
+        try:
+            fund = mf_data_service.get_fund_by_id(scheme_id)
+            
+            if not fund:
+                return JsonResponse({
+                    "error": f"Fund with scheme ID '{scheme_id}' not found"
+                }, status=404)
+            
+            # Get NAV history for the fund
+            nav_history = mf_data_service.get_fund_nav_history(scheme_id, days=30)
+            
+            return JsonResponse({
+                "fund": fund,
+                "nav_history": nav_history,
+                "last_updated": datetime.now().isoformat()
+            })
+            
+        except Exception as e:
+            logger.error(f"MutualFundDetailsView error: {e}")
+            return JsonResponse({
+                "error": f"Failed to fetch fund details: {str(e)}"
+            }, status=500)
 
 # =====================
 # Stock Analysis

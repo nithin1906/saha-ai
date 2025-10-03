@@ -1,0 +1,60 @@
+{
+  "summary": {
+    "total": 10,
+    "passed": 0,
+    "failed": 10,
+    "success_rate": 0.0
+  },
+  "results": [
+    {
+      "test": "Market Snapshot",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Stock Search NSE",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Stock Analysis",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Get All Mutual Funds",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Get Categories",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Mutual Fund Search",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Fund Details",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Parse Intent",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Chat",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    },
+    {
+      "test": "Version Info",
+      "status": "FAIL",
+      "message": "Status code: 302"
+    }
+  ]
+}

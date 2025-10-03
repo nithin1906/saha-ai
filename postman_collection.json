@@ -1,0 +1,498 @@
+{
+	"info": {
+		"_postman_id": "stock-market-chatbot-api",
+		"name": "Stock Market Chatbot API",
+		"description": "Comprehensive API testing collection for the Stock Market Chatbot application",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"testpass123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/login/",
+							"host": ["{{base_url}}"],
+							"path": ["users", "login", ""]
+						},
+						"description": "Login endpoint for user authentication"
+					}
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"newuser\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"newpass123\",\n    \"first_name\": \"New\",\n    \"last_name\": \"User\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/register/",
+							"host": ["{{base_url}}"],
+							"path": ["users", "register", ""]
+						},
+						"description": "User registration endpoint"
+					}
+				}
+			]
+		},
+		{
+			"name": "Market Data",
+			"item": [
+				{
+					"name": "Market Snapshot",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/market/snapshot/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "market", "snapshot", ""]
+						},
+						"description": "Get current market indices (NIFTY, SENSEX, etc.)"
+					}
+				},
+				{
+					"name": "Stock Search - NSE",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/search/NSE/{{stock_query}}",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "search", "NSE", "{{stock_query}}"]
+						},
+						"description": "Search for stocks on NSE exchange"
+					}
+				},
+				{
+					"name": "Stock Search - BSE",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/search/BSE/{{stock_query}}",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "search", "BSE", "{{stock_query}}"]
+						},
+						"description": "Search for stocks on BSE exchange"
+					}
+				},
+				{
+					"name": "Stock Analysis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/analyze/{{ticker}}/{{buy_price}}/{{shares}}",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "analyze", "{{ticker}}", "{{buy_price}}", "{{shares}}"]
+						},
+						"description": "Analyze a stock with buy price and shares"
+					}
+				},
+				{
+					"name": "Stock History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/history/{{ticker}}/?period=1y",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "history", "{{ticker}}", ""],
+							"query": [
+								{
+									"key": "period",
+									"value": "1y"
+								}
+							]
+						},
+						"description": "Get stock price history"
+					}
+				}
+			]
+		},
+		{
+			"name": "Mutual Funds",
+			"item": [
+				{
+					"name": "Get All Mutual Funds",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/mutual-fund/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "mutual-fund", ""]
+						},
+						"description": "Get all mutual funds with optional filtering"
+					}
+				},
+				{
+					"name": "Get Mutual Funds by Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/mutual-fund/?category={{category}}",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "mutual-fund", ""],
+							"query": [
+								{
+									"key": "category",
+									"value": "{{category}}"
+								}
+							]
+						},
+						"description": "Get mutual funds filtered by category"
+					}
+				},
+				{
+					"name": "Mutual Fund Categories",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/mutual-fund/categories/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "mutual-fund", "categories", ""]
+						},
+						"description": "Get all available mutual fund categories"
+					}
+				},
+				{
+					"name": "Mutual Fund Search",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/search/MF/{{mf_query}}",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "search", "MF", "{{mf_query}}"]
+						},
+						"description": "Search for mutual funds by name, AMC, or category"
+					}
+				},
+				{
+					"name": "Mutual Fund Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/mutual-fund/{{scheme_id}}/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "mutual-fund", "{{scheme_id}}", ""]
+						},
+						"description": "Get detailed information about a specific mutual fund"
+					}
+				},
+				{
+					"name": "Mutual Fund Analysis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/analyze_mf/{{scheme_id}}/{{buy_nav}}/{{units}}",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "analyze_mf", "{{scheme_id}}", "{{buy_nav}}", "{{units}}"]
+						},
+						"description": "Analyze a mutual fund investment"
+					}
+				},
+				{
+					"name": "Mutual Fund History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/history_mf/{{scheme_id}}/?period=1y",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "history_mf", "{{scheme_id}}", ""],
+							"query": [
+								{
+									"key": "period",
+									"value": "1y"
+								}
+							]
+						},
+						"description": "Get mutual fund NAV history"
+					}
+				}
+			]
+		},
+		{
+			"name": "Portfolio Management",
+			"item": [
+				{
+					"name": "Get Portfolio",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/advisor/portfolio/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "portfolio", ""]
+						},
+						"description": "Get user's portfolio holdings"
+					}
+				},
+				{
+					"name": "Get Portfolio Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/advisor/portfolio/details/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "portfolio", "details", ""]
+						},
+						"description": "Get detailed portfolio information with current values"
+					}
+				},
+				{
+					"name": "Add to Portfolio",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ticker\": \"RELIANCE\",\n    \"quantity\": 10,\n    \"buy_price\": 2500.00\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/advisor/portfolio/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "portfolio", ""]
+						},
+						"description": "Add a stock holding to portfolio"
+					}
+				},
+				{
+					"name": "Remove from Portfolio",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ticker\": \"RELIANCE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/advisor/portfolio/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "portfolio", ""]
+						},
+						"description": "Remove a stock holding from portfolio"
+					}
+				},
+				{
+					"name": "Portfolio Health",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/advisor/portfolio/health/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "portfolio", "health", ""]
+						},
+						"description": "Get portfolio health analysis"
+					}
+				}
+			]
+		},
+		{
+			"name": "Chat & AI",
+			"item": [
+				{
+					"name": "Parse Intent",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"What is the current price of Reliance?\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/advisor/parse/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "parse", ""]
+						},
+						"description": "Parse user intent from natural language"
+					}
+				},
+				{
+					"name": "Chat",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"message\": \"Show me my portfolio performance\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/advisor/chat/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "chat", ""]
+						},
+						"description": "Chat with the AI assistant"
+					}
+				}
+			]
+		},
+		{
+			"name": "Development",
+			"item": [
+				{
+					"name": "Version Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/advisor/dev/version/",
+							"host": ["{{base_url}}"],
+							"path": ["advisor", "dev", "version", ""]
+						},
+						"description": "Get development version information"
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "stock_query",
+			"value": "RELIANCE",
+			"type": "string"
+		},
+		{
+			"key": "mf_query",
+			"value": "HDFC",
+			"type": "string"
+		},
+		{
+			"key": "ticker",
+			"value": "RELIANCE",
+			"type": "string"
+		},
+		{
+			"key": "buy_price",
+			"value": "2500",
+			"type": "string"
+		},
+		{
+			"key": "shares",
+			"value": "10",
+			"type": "string"
+		},
+		{
+			"key": "scheme_id",
+			"value": "HDFC002",
+			"type": "string"
+		},
+		{
+			"key": "buy_nav",
+			"value": "75.50",
+			"type": "string"
+		},
+		{
+			"key": "units",
+			"value": "100",
+			"type": "string"
+		},
+		{
+			"key": "category",
+			"value": "Large Cap",
+			"type": "string"
+		}
+	]
+}
