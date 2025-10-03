@@ -160,7 +160,9 @@
                 const rowBg = idx % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800';
                 
                 // Determine asset type (stock vs mutual fund)
-                const isMutualFund = /^[A-Za-z]+$/.test(h.ticker) || (h.ticker.length > 3 && /^[A-Za-z]+$/.test(h.ticker.substring(0, 3)));
+                // Mutual funds typically have scheme IDs like 'HDFCMID001', 'SBI001', etc.
+                // Stocks typically have tickers like 'TATA', 'GREENPANEL', 'RELIANCE', etc.
+                const isMutualFund = /^[A-Za-z]+\d+$/.test(h.ticker) || h.ticker.includes('MID') || h.ticker.includes('SMALL') || h.ticker.includes('ELSS') || h.ticker.includes('HYBRID') || h.ticker.includes('DEBT');
                 const assetType = isMutualFund ? 'MF' : 'STK';
                 const assetColor = isMutualFund ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
                 

@@ -840,9 +840,6 @@ class StockAnalysisView(View):
         except Exception as e:
             print(f"Alpha Vantage fundamentals error: {e}")
         return None
-        
-        print(f"StockAnalysisView: Returning price {current_price} and fundamentals for {ticker}")
-        return current_price, fundamentals
     
     def _format_market_cap(self, market_cap):
         """Format market cap in readable format"""

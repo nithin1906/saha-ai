@@ -35,6 +35,7 @@ class StockDataService:
             'ITC': 400.0,
             'GREENPANEL': 293.0,
             'TATASTEEL': 150.0,
+            'TATAINVEST': 850.0,
             'WIPRO': 450.0,
             'HINDUNILVR': 2500.0,
             'KOTAKBANK': 1800.0,
@@ -194,6 +195,12 @@ class StockDataService:
                             price_float = float(price)
                             if self._validate_price(price_float, symbol):
                                 return price_float
+                elif response.status_code == 401:
+                    logger.warning(f"Yahoo Finance API: Unauthorized (401) for {symbol} - may be rate limited or blocked")
+                elif response.status_code == 403:
+                    logger.warning(f"Yahoo Finance API: Forbidden (403) for {symbol} - may be blocked")
+                else:
+                    logger.warning(f"Yahoo Finance API: HTTP {response.status_code} for {symbol}")
         except Exception as e:
             logger.error(f"Yahoo Finance API error for {symbol}: {e}")
         return None
@@ -221,6 +228,12 @@ class StockDataService:
                     price_float = float(price)
                     if self._validate_price(price_float, symbol):
                         return price_float
+            elif response.status_code == 401:
+                logger.warning(f"NSE Official API: Unauthorized (401) for {symbol} - may be rate limited or blocked")
+            elif response.status_code == 403:
+                logger.warning(f"NSE Official API: Forbidden (403) for {symbol} - may be blocked")
+            else:
+                logger.warning(f"NSE Official API: HTTP {response.status_code} for {symbol}")
         except Exception as e:
             logger.error(f"NSE Official error for {symbol}: {e}")
         return None
@@ -527,6 +540,12 @@ class StockDataService:
                         else:
                             print(f"No data in response for {symbol}")
                             logger.warning(f"No data in response for {symbol}")
+                    elif response.status_code == 401:
+                        print(f"Yahoo Finance API: Unauthorized (401) for {symbol} - may be rate limited or blocked")
+                        logger.warning(f"Yahoo Finance API: Unauthorized (401) for {symbol} - may be rate limited or blocked")
+                    elif response.status_code == 403:
+                        print(f"Yahoo Finance API: Forbidden (403) for {symbol} - may be blocked")
+                        logger.warning(f"Yahoo Finance API: Forbidden (403) for {symbol} - may be blocked")
                     else:
                         print(f"HTTP error {response.status_code} for {symbol}")
                         logger.warning(f"HTTP error {response.status_code} for {symbol}")
@@ -593,6 +612,12 @@ class StockDataService:
                 
                 print(f"NSE API: Index {nse_symbol} not found in response")
                 logger.warning(f"NSE API: Index {nse_symbol} not found in response")
+            elif response.status_code == 401:
+                print(f"NSE API: Unauthorized (401) for {nse_symbol} - may be rate limited or blocked")
+                logger.warning(f"NSE API: Unauthorized (401) for {nse_symbol} - may be rate limited or blocked")
+            elif response.status_code == 403:
+                print(f"NSE API: Forbidden (403) for {nse_symbol} - may be blocked")
+                logger.warning(f"NSE API: Forbidden (403) for {nse_symbol} - may be blocked")
             else:
                 print(f"NSE API: HTTP error {response.status_code}")
                 logger.warning(f"NSE API: HTTP error {response.status_code}")

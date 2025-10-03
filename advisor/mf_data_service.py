@@ -34,7 +34,7 @@ class MutualFundDataService:
             {'scheme_id': 'FRANKLIN005', 'fund_name': 'Franklin India Bluechip Fund', 'nav': 89.12, 'change': -0.23, 'change_pct': -0.26, 'category': 'Large Cap', 'amc': 'Franklin Templeton', 'aum': '₹7,543 Cr', 'expense_ratio': 1.30, 'min_sip': 500, 'min_lumpsum': 5000},
             
             # Mid Cap Funds
-            {'scheme_id': 'HDFCMID001', 'fund_name': 'HDFC Mid Cap Fund', 'nav': 85.23, 'change': 1.12, 'change_pct': 1.33, 'category': 'Mid Cap', 'amc': 'HDFC Mutual Fund', 'aum': '₹8,234 Cr', 'expense_ratio': 1.35, 'min_sip': 500, 'min_lumpsum': 5000},
+            {'scheme_id': 'HDFCMID001', 'fund_name': 'HDFC Mid Cap Fund', 'nav': 244.15, 'change': 1.12, 'change_pct': 0.46, 'category': 'Mid Cap', 'amc': 'HDFC Mutual Fund', 'aum': '₹8,234 Cr', 'expense_ratio': 1.35, 'min_sip': 500, 'min_lumpsum': 5000},
             {'scheme_id': 'SBIMID002', 'fund_name': 'SBI Magnum Midcap Fund', 'nav': 45.67, 'change': 0.78, 'change_pct': 1.74, 'category': 'Mid Cap', 'amc': 'SBI Mutual Fund', 'aum': '₹6,789 Cr', 'expense_ratio': 1.40, 'min_sip': 500, 'min_lumpsum': 5000},
             {'scheme_id': 'ICICIMID003', 'fund_name': 'ICICI Prudential Midcap Fund', 'nav': 123.89, 'change': 0.89, 'change_pct': 0.72, 'category': 'Mid Cap', 'amc': 'ICICI Prudential', 'aum': '₹5,432 Cr', 'expense_ratio': 1.45, 'min_sip': 500, 'min_lumpsum': 5000},
             {'scheme_id': 'AXISMID004', 'fund_name': 'Axis Midcap Fund', 'nav': 67.23, 'change': 1.23, 'change_pct': 1.86, 'category': 'Mid Cap', 'amc': 'Axis Mutual Fund', 'aum': '₹4,567 Cr', 'expense_ratio': 1.38, 'min_sip': 500, 'min_lumpsum': 5000},
