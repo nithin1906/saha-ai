@@ -118,8 +118,25 @@ class PortfolioView(View):
             return JsonResponse({"error": f"Failed to add holding: {str(e)}"}, status=500)
     
     def _fetch_current_price(self, ticker):
-        """Fetch current price using the robust data service"""
-        return stock_data_service.get_stock_price(ticker)
+        """Fetch current price/NAV for stocks and mutual funds"""
+        # Check if it's a mutual fund (scheme IDs typically start with letters)
+        if ticker.isalpha() or (len(ticker) > 3 and ticker[:3].isalpha()):
+            # Try to get mutual fund NAV
+            try:
+                from advisor.mf_data_service import mf_data_service
+                fund = mf_data_service.get_fund_by_id(ticker)
+                if fund:
+                    return fund['nav']
+                else:
+                    # If not found in MF database, try as stock
+                    return stock_data_service.get_stock_price(ticker)
+            except Exception as e:
+                print(f"Error fetching MF NAV for {ticker}: {e}")
+                # Fallback to stock price
+                return stock_data_service.get_stock_price(ticker)
+        else:
+            # Regular stock ticker
+            return stock_data_service.get_stock_price(ticker)
     
     def delete(self, request):
         """Remove a holding from portfolio"""
@@ -311,8 +328,25 @@ class PortfolioHealthView(View):
             }, status=500)
     
     def _fetch_current_price(self, ticker):
-        """Fetch current price using the robust data service"""
-        return stock_data_service.get_stock_price(ticker)
+        """Fetch current price/NAV for stocks and mutual funds"""
+        # Check if it's a mutual fund (scheme IDs typically start with letters)
+        if ticker.isalpha() or (len(ticker) > 3 and ticker[:3].isalpha()):
+            # Try to get mutual fund NAV
+            try:
+                from advisor.mf_data_service import mf_data_service
+                fund = mf_data_service.get_fund_by_id(ticker)
+                if fund:
+                    return fund['nav']
+                else:
+                    # If not found in MF database, try as stock
+                    return stock_data_service.get_stock_price(ticker)
+            except Exception as e:
+                print(f"Error fetching MF NAV for {ticker}: {e}")
+                # Fallback to stock price
+                return stock_data_service.get_stock_price(ticker)
+        else:
+            # Regular stock ticker
+            return stock_data_service.get_stock_price(ticker)
 
 # =====================
 # Mutual Fund Data

@@ -1404,14 +1404,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     const series = [];
                     const labels = [];
                     
-                    let basePrice = currentPrice;
+                    // Start from a lower price and work up to current price
+                    const startPrice = currentPrice * 0.7; // Start 30% lower
+                    const priceRange = currentPrice - startPrice;
+                    
                     for (let i = 0; i < dataPoints; i++) {
-                        // Generate realistic price movement with some volatility
-                        const volatility = 0.02; // 2% daily volatility
-                        const trend = Math.sin(i / dataPoints * Math.PI) * 0.1; // Slight trend
+                        // Generate realistic price movement ending at current price
+                        const progress = i / (dataPoints - 1); // 0 to 1
+                        const volatility = 0.01; // 1% daily volatility
                         const random = (Math.random() - 0.5) * volatility;
-                        basePrice = basePrice * (1 + trend + random);
-                        series.push(Math.max(basePrice * 0.5, basePrice)); // Ensure positive prices
+                        
+                        // Linear progression with some randomness, ending at current price
+                        let price = startPrice + (priceRange * progress);
+                        if (i === dataPoints - 1) {
+                            // Last point (today) should be exactly current price
+                            price = currentPrice;
+                        } else {
+                            price = price * (1 + random);
+                        }
+                        
+                        series.push(Math.max(price * 0.5, price)); // Ensure positive prices
                         
                         // Generate date labels
                         const date = new Date();
@@ -1752,7 +1764,15 @@ document.addEventListener('DOMContentLoaded', () => {
                             })
                         });
                         const j = await res.json();
-                        if(res.ok){ addRes.textContent = 'Added!'; addRes.className = 'text-green-600'; }
+                        if(res.ok){ 
+                            addRes.textContent = 'Added!'; 
+                            addRes.className = 'text-green-600'; 
+                            
+                            // Refresh portfolio health automatically
+                            setTimeout(() => {
+                                loadPortfolioHealth();
+                            }, 1000);
+                        }
                         else { addRes.textContent = j.error || 'Failed to add'; addRes.className = 'text-red-600'; }
                     }catch(e){ addRes.textContent = 'Failed to add'; addRes.className = 'text-red-600'; }
                 };
@@ -1766,14 +1786,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     const series = [];
                     const labels = [];
                     
-                    let baseNAV = currentNAV;
+                    // Start from a lower NAV and work up to current NAV
+                    const startNAV = currentNAV * 0.8; // Start 20% lower (less volatile than stocks)
+                    const navRange = currentNAV - startNAV;
+                    
                     for (let i = 0; i < dataPoints; i++) {
-                        // Generate realistic NAV movement with lower volatility than stocks
-                        const volatility = 0.01; // 1% daily volatility (lower than stocks)
-                        const trend = Math.sin(i / dataPoints * Math.PI) * 0.05; // Gentle trend
+                        // Generate realistic NAV movement ending at current NAV
+                        const progress = i / (dataPoints - 1); // 0 to 1
+                        const volatility = 0.005; // 0.5% daily volatility (lower than stocks)
                         const random = (Math.random() - 0.5) * volatility;
-                        baseNAV = baseNAV * (1 + trend + random);
-                        series.push(Math.max(baseNAV * 0.7, baseNAV)); // Ensure positive NAV
+                        
+                        // Linear progression with some randomness, ending at current NAV
+                        let nav = startNAV + (navRange * progress);
+                        if (i === dataPoints - 1) {
+                            // Last point (today) should be exactly current NAV
+                            nav = currentNAV;
+                        } else {
+                            nav = nav * (1 + random);
+                        }
+                        
+                        series.push(Math.max(nav * 0.7, nav)); // Ensure positive NAV
                         
                         // Generate date labels
                         const date = new Date();
