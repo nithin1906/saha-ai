@@ -365,17 +365,16 @@ if (themeToggleMobile) {
             console.log('Switched to dark mode');
         }
         
-        // Force theme application with immediate DOM manipulation
+        // Force theme application - use only 'dark' class (Tailwind standard)
         // Remove all theme classes first
-        document.documentElement.classList.remove('dark', 'light');
+        document.documentElement.classList.remove('dark');
         
-        // Apply the new theme class immediately
-        if (isDark) {
-            document.documentElement.classList.add('light');
-            console.log('Applied light theme class');
-        } else {
+        // Apply dark class only if switching TO dark mode
+        if (!isDark) {
             document.documentElement.classList.add('dark');
             console.log('Applied dark theme class');
+        } else {
+            console.log('Removed dark theme class (light mode)');
         }
         
         // Force browser to recalculate styles
