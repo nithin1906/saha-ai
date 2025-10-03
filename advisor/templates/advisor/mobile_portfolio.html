@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Portfolio - SAHA-AI Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/mobile-saha.css' %}">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        html.dark { color-scheme: dark; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Mobile-specific styles */
+        .mobile-container { 
+            max-width: 100vw; 
+            overflow-x: hidden;
+            padding-bottom: 80px; /* Space for bottom nav */
+        }
+        
+        .mobile-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 8px;
+            padding: 16px;
+        }
+        
+        html.dark .mobile-card {
+            background: #1f2937;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        .mobile-button {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            touch-action: manipulation;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 8px 0;
+            z-index: 50;
+        }
+        
+        html.dark .bottom-nav {
+            background: #1f2937;
+            border-top-color: #374151;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            text-decoration: none;
+            color: #6b7280;
+            transition: color 0.2s;
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+        }
+        
+        .nav-item svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+        
+        /* Portfolio specific styles */
+        .holding-card {
+            border-left: 4px solid #3b82f6;
+            transition: transform 0.2s;
+        }
+        
+        .holding-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .profit-positive {
+            color: #10b981;
+        }
+        
+        .profit-negative {
+            color: #ef4444;
+        }
+        
+        .asset-badge {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .asset-stock {
+            background: #ddd6fe;
+            color: #5b21b6;
+        }
+        
+        .asset-mf {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+        
+        /* Touch-friendly elements */
+        .touch-target {
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        /* Loading states */
+        .mobile-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Hide scrollbars but keep functionality */
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Swipe actions */
+        .swipe-actions {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            background: #ef4444;
+            border-radius: 0 16px 16px 0;
+            padding: 0 16px;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+        }
+        
+        .holding-item {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .holding-item.swiped .swipe-actions {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 mobile-container">
+
+<!-- Mobile Header -->
+<header class="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between p-4">
+        <div class="flex items-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+            </svg>
+            <div>
+                <h1 class="text-lg font-bold text-gray-900 dark:text-gray-100">Portfolio</h1>
+                <p class="text-xs text-gray-600 dark:text-gray-400">Your Holdings</p>
+            </div>
+        </div>
+        <button id="refresh-portfolio-mobile" class="touch-target p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+            <svg class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+        </button>
+    </div>
+</header>
+
+<!-- Portfolio Summary -->
+<div class="px-4 py-4">
+    <div class="mobile-card">
+        <h2 class="text-lg font-semibold mb-4">Portfolio Overview</h2>
+        
+        <!-- Portfolio Health Score -->
+        <div id="portfolio-health-mobile" class="mb-6">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Health Score</span>
+                <span id="health-score-mobile" class="text-2xl font-bold text-gray-900 dark:text-gray-100">--</span>
+            </div>
+            <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div id="health-bar-mobile" class="h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <p id="health-message-mobile" class="text-sm text-gray-600 dark:text-gray-400 mt-2">Loading...</p>
+        </div>
+        
+        <!-- Portfolio Stats -->
+        <div class="grid grid-cols-2 gap-4">
+            <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div id="total-value-mobile" class="text-lg font-bold text-gray-900 dark:text-gray-100">₹0</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Total Value</div>
+            </div>
+            <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div id="total-gain-mobile" class="text-lg font-bold text-gray-900 dark:text-gray-100">₹0</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">Total Gain/Loss</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Holdings List -->
+<div class="px-4 pb-20">
+    <div class="mobile-card">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold">Your Holdings</h3>
+            <button id="add-holding-mobile" class="mobile-button bg-blue-600 hover:bg-blue-700 text-white text-sm">
+                + Add
+            </button>
+        </div>
+        
+        <div id="holdings-list-mobile">
+            <!-- Holdings will be populated here -->
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                <svg class="w-12 h-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <p>No holdings yet</p>
+                <p class="text-sm">Add stocks or mutual funds to get started</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+    <div class="flex justify-around">
+        <a href="/" class="nav-item" id="nav-chat">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+            </svg>
+            <span class="text-xs">Chat</span>
+        </a>
+        <a href="/portfolio/" class="nav-item active" id="nav-portfolio">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            <span class="text-xs">Portfolio</span>
+        </a>
+        <a href="/about/" class="nav-item" id="nav-about">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="text-xs">About</span>
+        </a>
+        <a href="/profile/" class="nav-item" id="nav-profile">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <span class="text-xs">Profile</span>
+        </a>
+    </div>
+</nav>
+
+<script>
+// Mobile Portfolio JavaScript
+let holdingsData = [];
+
+// Initialize mobile portfolio
+document.addEventListener('DOMContentLoaded', () => {
+    initializeMobilePortfolio();
+    loadPortfolioDataMobile();
+});
+
+function initializeMobilePortfolio() {
+    // Set up refresh button
+    const refreshBtn = document.getElementById('refresh-portfolio-mobile');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            loadPortfolioDataMobile();
+        });
+    }
+    
+    // Set up add holding button
+    const addBtn = document.getElementById('add-holding-mobile');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            // Navigate to main page for adding holdings
+            window.location.href = '/';
+        });
+    }
+}
+
+async function loadPortfolioDataMobile() {
+    try {
+        // Load portfolio health
+        await fetchAndDisplayPortfolioHealthMobile();
+        
+        // Load holdings
+        await loadHoldingsMobile();
+        
+    } catch (error) {
+        console.error('Error loading portfolio data:', error);
+    }
+}
+
+async function fetchAndDisplayPortfolioHealthMobile() {
+    try {
+        const response = await fetch('/api/portfolio/health/', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Update health score
+        const healthScore = document.getElementById('health-score-mobile');
+        const healthBar = document.getElementById('health-bar-mobile');
+        const healthMessage = document.getElementById('health-message-mobile');
+        
+        if (healthScore && healthBar && healthMessage) {
+            healthScore.textContent = data.score || '--';
+            healthBar.style.width = `${data.score || 0}%`;
+            
+            // Color coding for health bar
+            if (data.score >= 80) {
+                healthBar.className = 'h-3 rounded-full transition-all duration-500 bg-green-500';
+            } else if (data.score >= 60) {
+                healthBar.className = 'h-3 rounded-full transition-all duration-500 bg-yellow-500';
+            } else {
+                healthBar.className = 'h-3 rounded-full transition-all duration-500 bg-red-500';
+            }
+            
+            healthMessage.textContent = data.message || 'Portfolio health analysis complete';
+        }
+        
+    } catch (error) {
+        console.error('Error fetching portfolio health:', error);
+    }
+}
+
+async function loadHoldingsMobile() {
+    try {
+        const response = await fetch('/api/portfolio/', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        holdingsData = data.holdings || [];
+        
+        displayHoldingsMobile(holdingsData);
+        updatePortfolioStatsMobile(holdingsData);
+        
+    } catch (error) {
+        console.error('Error loading holdings:', error);
+    }
+}
+
+function displayHoldingsMobile(holdings) {
+    const holdingsList = document.getElementById('holdings-list-mobile');
+    
+    if (!holdingsList) return;
+    
+    if (holdings.length === 0) {
+        holdingsList.innerHTML = `
+            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                <svg class="w-12 h-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <p>No holdings yet</p>
+                <p class="text-sm">Add stocks or mutual funds to get started</p>
+            </div>
+        `;
+        return;
+    }
+    
+    holdingsList.innerHTML = holdings.map(holding => {
+        const isMutualFund = /^[A-Za-z]+\d+$/.test(holding.ticker) || 
+                           holding.ticker.includes('MID') || 
+                           holding.ticker.includes('SMALL') || 
+                           holding.ticker.includes('ELSS') || 
+                           holding.ticker.includes('HYBRID') || 
+                           holding.ticker.includes('DEBT');
+        
+        const assetType = isMutualFund ? 'MF' : 'STK';
+        const assetClass = isMutualFund ? 'asset-mf' : 'asset-stock';
+        
+        const currentValue = holding.quantity * holding.current_price;
+        const totalCost = holding.quantity * holding.purchase_price;
+        const gainLoss = currentValue - totalCost;
+        const gainLossPercent = ((gainLoss / totalCost) * 100).toFixed(2);
+        
+        const profitClass = gainLoss >= 0 ? 'profit-positive' : 'profit-negative';
+        const profitIcon = gainLoss >= 0 ? '↗' : '↘';
+        
+        return `
+            <div class="holding-item holding-card p-4 mb-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-3">
+                        <div>
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100">${holding.name}</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">${holding.ticker}</p>
+                        </div>
+                    </div>
+                    <span class="asset-badge ${assetClass}">${assetType}</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Quantity</p>
+                        <p class="font-semibold">${holding.quantity}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Current Price</p>
+                        <p class="font-semibold">₹${holding.current_price.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Purchase Price</p>
+                        <p class="font-semibold">₹${holding.purchase_price.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 dark:text-gray-400">Gain/Loss</p>
+                        <p class="font-semibold ${profitClass}">${profitIcon} ${gainLossPercent}%</p>
+                    </div>
+                </div>
+                
+                <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Current Value</p>
+                            <p class="font-bold text-lg">₹${currentValue.toFixed(2)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Total Gain/Loss</p>
+                            <p class="font-bold text-lg ${profitClass}">₹${gainLoss.toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Swipe Actions -->
+                <div class="swipe-actions">
+                    <button class="text-white touch-target" onclick="removeHoldingMobile('${holding.ticker}')">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Add swipe functionality
+    addSwipeFunctionalityMobile();
+}
+
+function addSwipeFunctionalityMobile() {
+    const holdingItems = document.querySelectorAll('.holding-item');
+    
+    holdingItems.forEach(item => {
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+        
+        item.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+        });
+        
+        item.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            
+            currentX = e.touches[0].clientX;
+            const diffX = startX - currentX;
+            
+            if (diffX > 0) {
+                item.style.transform = `translateX(-${Math.min(diffX, 80)}px)`;
+            }
+        });
+        
+        item.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            
+            const diffX = startX - currentX;
+            
+            if (diffX > 50) {
+                item.classList.add('swiped');
+            } else {
+                item.style.transform = '';
+                item.classList.remove('swiped');
+            }
+            
+            isDragging = false;
+        });
+    });
+}
+
+function updatePortfolioStatsMobile(holdings) {
+    let totalValue = 0;
+    let totalGainLoss = 0;
+    
+    holdings.forEach(holding => {
+        const currentValue = holding.quantity * holding.current_price;
+        const totalCost = holding.quantity * holding.purchase_price;
+        
+        totalValue += currentValue;
+        totalGainLoss += (currentValue - totalCost);
+    });
+    
+    // Update total value
+    const totalValueEl = document.getElementById('total-value-mobile');
+    if (totalValueEl) {
+        totalValueEl.textContent = `₹${totalValue.toFixed(2)}`;
+    }
+    
+    // Update total gain/loss
+    const totalGainEl = document.getElementById('total-gain-mobile');
+    if (totalGainEl) {
+        totalGainEl.textContent = `₹${totalGainLoss.toFixed(2)}`;
+        totalGainEl.className = `text-lg font-bold ${totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`;
+    }
+}
+
+async function removeHoldingMobile(ticker) {
+    if (!confirm('Are you sure you want to remove this holding?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/portfolio/remove/${ticker}/`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            // Reload portfolio data
+            await loadPortfolioDataMobile();
+        } else {
+            alert('Error removing holding. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error removing holding:', error);
+        alert('Error removing holding. Please try again.');
+    }
+}
+</script>
+
+</body>
+</html>

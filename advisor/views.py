@@ -412,6 +412,24 @@ def portfolio_page_view(request):
     return render(request, 'advisor/portfolio.html')
 
 # =====================
+# Mobile Views
+# =====================
+
+def mobile_index(request):
+    """Mobile-optimized index page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_index.html')
+
+def mobile_portfolio(request):
+    """Mobile-optimized portfolio page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_portfolio.html')
+
+# =====================
 # Natural Language Understanding (NLU)
 # =====================
 
@@ -1205,3 +1223,21 @@ def about_view(request):
 def portfolio_page_view(request):
     """Portfolio page view"""
     return render(request, 'advisor/portfolio.html')
+
+# =====================
+# Mobile Views
+# =====================
+
+def mobile_index(request):
+    """Mobile-optimized index page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_index.html')
+
+def mobile_portfolio(request):
+    """Mobile-optimized portfolio page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_portfolio.html')
