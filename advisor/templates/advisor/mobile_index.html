@@ -326,14 +326,20 @@ function initializeTheme() {
     const savedTheme = localStorage.getItem('color-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
+    console.log('Theme initialization - savedTheme:', savedTheme, 'prefersDark:', prefersDark);
+    
     if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
         document.documentElement.classList.add('dark');
+        localStorage.setItem('color-theme', 'dark');
         if (lightIconMobile) lightIconMobile.classList.remove('hidden');
         if (darkIconMobile) darkIconMobile.classList.add('hidden');
+        console.log('Applied dark theme');
     } else {
         document.documentElement.classList.remove('dark');
+        localStorage.setItem('color-theme', 'light');
         if (darkIconMobile) darkIconMobile.classList.remove('hidden');
         if (lightIconMobile) lightIconMobile.classList.add('hidden');
+        console.log('Applied light theme');
     }
 }
 
@@ -358,6 +364,11 @@ if (themeToggleMobile) {
             if (lightIconMobile) lightIconMobile.classList.remove('hidden');
             console.log('Switched to dark mode');
         }
+        
+        // Force re-render to ensure theme applies
+        document.body.style.display = 'none';
+        document.body.offsetHeight; // Trigger reflow
+        document.body.style.display = '';
     });
 } else {
     console.error('Theme toggle button not found');
