@@ -367,8 +367,8 @@ if (themeToggleMobile) {
         console.log('Theme toggle clicked, has dark class:', hasDarkClass);
         
         if (hasDarkClass) {
-            // Currently dark, switching to light
-            document.documentElement.classList.remove('dark');
+            // Currently dark, switching to light - use brute force method
+            document.documentElement.className = '';
             localStorage.setItem('color-theme', 'light');
             if (darkIconMobile) darkIconMobile.classList.remove('hidden');
             if (lightIconMobile) lightIconMobile.classList.add('hidden');
