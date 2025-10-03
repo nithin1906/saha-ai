@@ -263,19 +263,19 @@
             </svg>
             <span class="text-xs">Chat</span>
         </a>
-        <a href="/portfolio/" class="nav-item" id="nav-portfolio">
+        <a href="/mobile/portfolio/" class="nav-item" id="nav-portfolio">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
             </svg>
             <span class="text-xs">Portfolio</span>
         </a>
-        <a href="/about/" class="nav-item" id="nav-about">
+        <a href="/mobile/about/" class="nav-item" id="nav-about">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <span class="text-xs">About</span>
         </a>
-        <a href="/profile/" class="nav-item" id="nav-profile">
+        <a href="/mobile/profile/" class="nav-item" id="nav-profile">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
             </svg>
@@ -338,27 +338,40 @@ function initializeTheme() {
 
 // Theme toggle event listener
 if (themeToggleMobile) {
-    themeToggleMobile.addEventListener('click', () => {
+    themeToggleMobile.addEventListener('click', (e) => {
+        e.preventDefault();
         const isDark = document.documentElement.classList.contains('dark');
+        
+        console.log('Theme toggle clicked, current theme:', isDark ? 'dark' : 'light');
         
         if (isDark) {
             document.documentElement.classList.remove('dark');
             localStorage.setItem('color-theme', 'light');
             if (darkIconMobile) darkIconMobile.classList.remove('hidden');
             if (lightIconMobile) lightIconMobile.classList.add('hidden');
+            console.log('Switched to light mode');
         } else {
             document.documentElement.classList.add('dark');
             localStorage.setItem('color-theme', 'dark');
             if (darkIconMobile) darkIconMobile.classList.add('hidden');
             if (lightIconMobile) lightIconMobile.classList.remove('hidden');
+            console.log('Switched to dark mode');
         }
     });
+} else {
+    console.error('Theme toggle button not found');
 }
 
 // Initialize mobile app
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('Mobile app initializing...');
     checkFirstTimeUserMobile();
     initializeTheme();
+    
+    // Debug theme elements
+    console.log('Theme toggle button:', themeToggleMobile);
+    console.log('Dark icon:', darkIconMobile);
+    console.log('Light icon:', lightIconMobile);
     
     // Initialize mobile-specific features
     initializeMobileFeatures();
