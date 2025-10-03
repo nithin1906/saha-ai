@@ -74,11 +74,11 @@ class MutualFundDataService:
     
     def search_mutual_funds(self, query):
         """
-        Search mutual funds with comprehensive filtering
+        Search mutual funds with intelligent filtering and relevance scoring
         """
         # Skip caching if Django settings not configured
         try:
-            cache_key = f"mf_search_{query.lower()}"
+            cache_key = f"mf_search_{query.lower().replace(' ', '_')}"
             cached_result = cache.get(cache_key)
             if cached_result:
                 logger.info(f"Cache hit for MF search: {query}")
@@ -92,68 +92,85 @@ class MutualFundDataService:
             return []
         
         print(f"=== MF Search Debug: Searching for '{query}' ===")
-        print(f"Database has {len(self.fund_database)} funds")
         logger.info(f"MF Search Debug: Searching for '{query}'")
-        logger.info(f"MF Search Debug: Database has {len(self.fund_database)} funds")
         
-        # Search in multiple fields with better matching
-        matching_funds = []
+        # Clean query - remove common variations that don't affect matching
+        clean_query = query_lower.replace(' direct', '').replace(' growth', '').replace(' dividend', '').replace(' regular', '').replace(' fund', '')
+        query_words = clean_query.split()
+        
+        # Calculate relevance scores for all funds
+        scored_funds = []
         for fund in self.fund_database:
-            # Search in fund name, AMC, category, and scheme ID
             fund_name_lower = fund['fund_name'].lower()
             amc_lower = fund['amc'].lower()
             category_lower = fund['category'].lower()
             scheme_id_lower = fund['scheme_id'].lower()
             
-            # Clean query - remove common variations that don't affect matching
-            clean_query = query_lower.replace(' direct', '').replace(' growth', '').replace(' dividend', '').replace(' regular', '')
-            
-            # More flexible matching
-            if (clean_query in fund_name_lower or 
-                clean_query in amc_lower or 
-                clean_query in category_lower or 
-                clean_query in scheme_id_lower or
-                # Handle common variations
-                clean_query.replace(' ', '') in fund_name_lower.replace(' ', '') or
-                clean_query.replace(' ', '') in amc_lower.replace(' ', '') or
-                # Handle partial matches
-                any(word in fund_name_lower for word in clean_query.split()) or
-                any(word in amc_lower for word in clean_query.split()) or
-                # Handle original query with variations
-                query_lower in fund_name_lower or
-                query_lower in amc_lower):
-                matching_funds.append(fund)
-                print(f"Found match: {fund['fund_name']} (AMC: {fund['amc']})")
-                logger.info(f"Found match: {fund['fund_name']} (AMC: {fund['amc']})")
-        
-        print(f"Total matches found: {len(matching_funds)}")
-        logger.info(f"Total matches found: {len(matching_funds)}")
-        
-        # Sort by relevance (exact matches first, then partial matches)
-        def relevance_score(fund):
             score = 0
-            if query_lower in fund['fund_name'].lower():
+            match_reasons = []
+            
+            # Exact phrase match (highest priority)
+            if clean_query in fund_name_lower:
+                score += 100
+                match_reasons.append("exact_name_match")
+            elif clean_query in amc_lower:
+                score += 80
+                match_reasons.append("exact_amc_match")
+            
+            # Word-by-word matching
+            fund_words = fund_name_lower.replace(' fund', '').replace(' scheme', '').split()
+            amc_words = amc_lower.split()
+            
+            # Count matching words
+            matching_words = 0
+            for word in query_words:
+                if word in fund_words:
+                    matching_words += 1
+                    score += 20
+                elif word in amc_words:
+                    matching_words += 1
+                    score += 15
+            
+            # Partial matches
+            if any(word in fund_name_lower for word in query_words):
                 score += 10
-            if query_lower in fund['amc'].lower():
+                match_reasons.append("partial_name_match")
+            if any(word in amc_lower for word in query_words):
+                score += 8
+                match_reasons.append("partial_amc_match")
+            
+            # Category matching
+            if any(word in category_lower for word in query_words):
                 score += 5
-            if query_lower in fund['category'].lower():
-                score += 3
-            if query_lower in fund['scheme_id'].lower():
-                score += 2
-            return score
+                match_reasons.append("category_match")
+            
+            # Only include funds with meaningful matches
+            if score > 0:
+                scored_funds.append({
+                    'fund': fund,
+                    'score': score,
+                    'matching_words': matching_words,
+                    'reasons': match_reasons
+                })
+                print(f"Scored: {fund['fund_name']} - Score: {score}, Words: {matching_words}, Reasons: {match_reasons}")
         
-        matching_funds.sort(key=relevance_score, reverse=True)
+        # Sort by score (highest first), then by number of matching words
+        scored_funds.sort(key=lambda x: (x['score'], x['matching_words']), reverse=True)
+        
+        # Return top 8 most relevant results
+        top_results = [item['fund'] for item in scored_funds[:8]]
+        
+        print(f"Total scored funds: {len(scored_funds)}, Returning top: {len(top_results)}")
+        logger.info(f"MF search completed for '{query}': {len(top_results)} results")
         
         # Cache the result (if Django settings configured)
         try:
-            cache.set(cache_key, matching_funds, self.cache_timeout)
+            cache.set(cache_key, top_results, self.cache_timeout)
         except Exception:
             # Django settings not configured, skip caching
             pass
         
-        logger.info(f"MF search completed for '{query}': {len(matching_funds)} results")
-        
-        return matching_funds
+        return top_results
     
     def get_fund_by_id(self, scheme_id):
         """
