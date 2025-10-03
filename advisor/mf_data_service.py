@@ -14,11 +14,8 @@ class MutualFundDataService:
     """
     
     def __init__(self):
-        # Cache timeout based on environment
-        if os.environ.get('DEBUG', 'False').lower() == 'true':
-            self.cache_timeout = 60  # 1 minute for development
-        else:
-            self.cache_timeout = 60  # 1 minute for production (reduced from 5 minutes)
+        # Cache timeout based on environment - DISABLED FOR DEBUGGING
+        self.cache_timeout = 0  # Disable caching to get fresh data
         
         logger.info("MutualFundDataService initialized")
         
@@ -83,17 +80,23 @@ class MutualFundDataService:
             category_lower = fund['category'].lower()
             scheme_id_lower = fund['scheme_id'].lower()
             
+            # Clean query - remove common variations that don't affect matching
+            clean_query = query_lower.replace(' direct', '').replace(' growth', '').replace(' dividend', '').replace(' regular', '')
+            
             # More flexible matching
-            if (query_lower in fund_name_lower or 
-                query_lower in amc_lower or 
-                query_lower in category_lower or 
-                query_lower in scheme_id_lower or
+            if (clean_query in fund_name_lower or 
+                clean_query in amc_lower or 
+                clean_query in category_lower or 
+                clean_query in scheme_id_lower or
                 # Handle common variations
-                query_lower.replace(' ', '') in fund_name_lower.replace(' ', '') or
-                query_lower.replace(' ', '') in amc_lower.replace(' ', '') or
+                clean_query.replace(' ', '') in fund_name_lower.replace(' ', '') or
+                clean_query.replace(' ', '') in amc_lower.replace(' ', '') or
                 # Handle partial matches
-                any(word in fund_name_lower for word in query_lower.split()) or
-                any(word in amc_lower for word in query_lower.split())):
+                any(word in fund_name_lower for word in clean_query.split()) or
+                any(word in amc_lower for word in clean_query.split()) or
+                # Handle original query with variations
+                query_lower in fund_name_lower or
+                query_lower in amc_lower):
                 matching_funds.append(fund)
         
         # Sort by relevance (exact matches first, then partial matches)

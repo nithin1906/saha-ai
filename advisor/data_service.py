@@ -16,11 +16,8 @@ class StockDataService:
     def __init__(self):
         self.alpha_vantage_key = os.environ.get('ALPHA_VANTAGE_API_KEY')
         self.iex_cloud_key = os.environ.get('IEX_CLOUD_API_KEY')
-        # Cache timeout based on environment
-        if os.environ.get('DEBUG', 'False').lower() == 'true':
-            self.cache_timeout = 60  # 1 minute for development
-        else:
-            self.cache_timeout = 60  # 1 minute for production (reduced from 5 minutes)
+        # Cache timeout based on environment - DISABLED FOR DEBUGGING
+        self.cache_timeout = 0  # Disable caching to get fresh data
         
         # Log API key status (without exposing keys)
         logger.info(f"Alpha Vantage API: {'Configured' if self.alpha_vantage_key else 'Not configured'}")
@@ -354,32 +351,44 @@ class StockDataService:
         # Try to get real market indices
         try:
             # NIFTY 50
+            print(f"=== Fetching NIFTY data ===")
             nifty_data = self._fetch_market_index('NIFTY')
             if nifty_data:
+                print(f"NIFTY: Got real data: {nifty_data}")
                 indices['NIFTY'] = nifty_data
             else:
+                print(f"NIFTY: Using fallback data")
                 # Use current realistic values based on Groww data
                 indices['NIFTY'] = {'price': 24836.30, 'change': 225.20, 'change_percent': 0.92}
             
             # SENSEX
+            print(f"=== Fetching SENSEX data ===")
             sensex_data = self._fetch_market_index('SENSEX')
             if sensex_data:
+                print(f"SENSEX: Got real data: {sensex_data}")
                 indices['SENSEX'] = sensex_data
             else:
+                print(f"SENSEX: Using fallback data")
                 indices['SENSEX'] = {'price': 80983.31, 'change': 715.69, 'change_percent': 0.89}
             
             # BANKNIFTY
+            print(f"=== Fetching BANKNIFTY data ===")
             banknifty_data = self._fetch_market_index('BANKNIFTY')
             if banknifty_data:
+                print(f"BANKNIFTY: Got real data: {banknifty_data}")
                 indices['BANKNIFTY'] = banknifty_data
             else:
+                print(f"BANKNIFTY: Using fallback data")
                 indices['BANKNIFTY'] = {'price': 55347.95, 'change': 712.10, 'change_percent': 1.30}
             
             # MIDCPNIFTY
+            print(f"=== Fetching MIDCPNIFTY data ===")
             midcpnifty_data = self._fetch_market_index('MIDCPNIFTY')
             if midcpnifty_data:
+                print(f"MIDCPNIFTY: Got real data: {midcpnifty_data}")
                 indices['MIDCPNIFTY'] = midcpnifty_data
             else:
+                print(f"MIDCPNIFTY: Using fallback data")
                 indices['MIDCPNIFTY'] = {'price': 12698.15, 'change': 98.90, 'change_percent': 0.78}
                 
         except Exception as e:
