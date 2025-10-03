@@ -13,10 +13,11 @@ class InviteOnlyMiddleware(MiddlewareMixin):
     """Middleware to enforce invite-only access"""
     
     def process_request(self, request):
-        # Skip middleware for static files, admin, auth pages, and health check
+        # Skip middleware for static files, admin, auth pages, health check, and API endpoints
         if (request.path.startswith('/static/') or 
             request.path.startswith('/admin/') or
             request.path.startswith('/users/') or
+            request.path.startswith('/api/') or  # Allow all API endpoints
             request.path == '/favicon.ico' or
             request.path == '/health/'):
             return None
