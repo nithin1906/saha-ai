@@ -487,15 +487,26 @@ class StockDataService:
                         "Referer": "https://finance.yahoo.com/"
                     }
                     
+                    print(f"Fetching {index_name} with symbol {symbol}")
+                    logger.info(f"Fetching {index_name} with symbol {symbol}")
                     response = requests.get(url, params=params, headers=headers, timeout=10)
+                    print(f"Response status: {response.status_code}")
+                    logger.info(f"Response status: {response.status_code}")
+                    
                     if response.status_code == 200:
                         data = response.json()
                         result = data.get("quoteResponse", {}).get("result", [])
+                        print(f"Result length: {len(result)}")
+                        logger.info(f"Result length: {len(result)}")
+                        
                         if result:
                             item = result[0]
                             price = item.get("regularMarketPrice")
                             change = item.get("regularMarketChange")
                             change_percent = item.get("regularMarketChangePercent")
+                            
+                            print(f"Price: {price}, Change: {change}, Change%: {change_percent}")
+                            logger.info(f"Price: {price}, Change: {change}, Change%: {change_percent}")
                             
                             if price and change is not None and change_percent is not None:
                                 return {
@@ -503,7 +514,14 @@ class StockDataService:
                                     'change': float(change),
                                     'change_percent': float(change_percent)
                                 }
+                        else:
+                            print(f"No data in response for {symbol}")
+                            logger.warning(f"No data in response for {symbol}")
+                    else:
+                        print(f"HTTP error {response.status_code} for {symbol}")
+                        logger.warning(f"HTTP error {response.status_code} for {symbol}")
                 except Exception as e:
+                    print(f"Yahoo Finance error for {symbol}: {e}")
                     logger.error(f"Yahoo Finance error for {symbol}: {e}")
                     continue
                     
