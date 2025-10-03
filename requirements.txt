@@ -24,6 +24,7 @@ nltk==3.8.1
 
 # Configuration packages
 python-decouple==3.8
+pytz==2023.3
 
 # Production server packages
 gunicorn==21.2.0

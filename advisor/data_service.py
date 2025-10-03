@@ -5,6 +5,9 @@ from datetime import datetime, timedelta
 from django.core.cache import cache
 from django.conf import settings
 import logging
+import time
+import re
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
@@ -116,12 +119,61 @@ class StockDataService:
             logger.info(f"Moneycontrol success for {clean_symbol}: {price}")
             return price
         
-        # Final fallback
-        fallback_price = self.fallback_prices.get(clean_symbol, 100.0)
-        logger.warning(f"All APIs failed for {clean_symbol}, using fallback: {fallback_price}")
-        # Cache fallback for shorter time to retry APIs sooner
-        cache.set(cache_key, fallback_price, 30)  # Cache fallback for 30 seconds
-        return fallback_price
+        # Method 8: Economic Times scraping
+        price = self._fetch_economic_times(clean_symbol)
+        if price:
+            cache.set(cache_key, price, self.cache_timeout)
+            logger.info(f"Economic Times success for {clean_symbol}: {price}")
+            return price
+        
+        # Method 9: Google Finance scraping
+        price = self._fetch_google_finance(clean_symbol)
+        if price:
+            cache.set(cache_key, price, self.cache_timeout)
+            logger.info(f"Google Finance success for {clean_symbol}: {price}")
+            return price
+        
+        # Method 10: Investing.com scraping
+        price = self._fetch_investing_com(clean_symbol)
+        if price:
+            cache.set(cache_key, price, self.cache_timeout)
+            logger.info(f"Investing.com success for {clean_symbol}: {price}")
+            return price
+        
+        # Method 11: MarketWatch scraping
+        price = self._fetch_marketwatch(clean_symbol)
+        if price:
+            cache.set(cache_key, price, self.cache_timeout)
+            logger.info(f"MarketWatch success for {clean_symbol}: {price}")
+            return price
+        
+        # Method 12: Retry with exponential backoff
+        price = self._retry_with_backoff(clean_symbol)
+        if price:
+            cache.set(cache_key, price, self.cache_timeout)
+            logger.info(f"Retry success for {clean_symbol}: {price}")
+            return price
+        
+        # Final fallback only if market is closed
+        if not self._is_market_open():
+            fallback_price = self.fallback_prices.get(clean_symbol, 100.0)
+            logger.warning(f"Market closed - All APIs failed for {clean_symbol}, using fallback: {fallback_price}")
+            cache.set(cache_key, fallback_price, 300)  # Cache fallback for 5 minutes when market is closed
+            return fallback_price
+        else:
+            # Market is open - try one more time with different approach
+            logger.warning(f"Market open - All APIs failed for {clean_symbol}, attempting emergency fetch")
+            price = self._emergency_price_fetch(clean_symbol)
+            if price:
+                cache.set(cache_key, price, self.cache_timeout)
+                logger.info(f"Emergency fetch success for {clean_symbol}: {price}")
+                return price
+            
+            # Last resort fallback
+            fallback_price = self.fallback_prices.get(clean_symbol, 100.0)
+            logger.error(f"CRITICAL: All methods failed for {clean_symbol} during market hours, using fallback: {fallback_price}")
+            cache.set(cache_key, fallback_price, 60)  # Cache fallback for only 1 minute during market hours
+            return fallback_price
     
     def _fetch_alpha_vantage(self, symbol):
         """Fetch from Alpha Vantage API"""
@@ -330,6 +382,282 @@ class StockDataService:
         except Exception as e:
             print(f"Moneycontrol error for {symbol}: {e}")
         return None
+    
+    def _fetch_economic_times(self, symbol):
+        """Fetch from Economic Times scraping"""
+        try:
+            # Economic Times stock page
+            url = f"https://economictimes.indiatimes.com/markets/stocks/stock-quotes/{symbol.lower()}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for price in various selectors
+                price_selectors = [
+                    '.lastPrice',
+                    '.ltp',
+                    '[class*="price"]',
+                    '.stock-price',
+                    '.current-price'
+                ]
+                
+                for selector in price_selectors:
+                    price_elem = soup.select_one(selector)
+                    if price_elem:
+                        price_text = price_elem.get_text().strip()
+                        # Extract numeric value
+                        price_match = re.search(r'[\d,]+\.?\d*', price_text.replace(',', ''))
+                        if price_match:
+                            price_float = float(price_match.group())
+                            if self._validate_price(price_float, symbol):
+                                print(f"Economic Times: Got price {price_float} for {symbol}")
+                                return price_float
+        except Exception as e:
+            print(f"Economic Times error for {symbol}: {e}")
+        return None
+    
+    def _fetch_google_finance(self, symbol):
+        """Fetch from Google Finance scraping"""
+        try:
+            # Google Finance search
+            search_query = f"{symbol} NSE stock price"
+            url = f"https://www.google.com/search?q={quote(search_query)}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for price in Google's knowledge panel or search results
+                price_selectors = [
+                    '.BNeawe.iBp4i.AP7Wnd',
+                    '.BNeawe.deIvCb.AP7Wnd',
+                    '[data-attrid="Price"]',
+                    '.knowledge-finance-wholepage-price'
+                ]
+                
+                for selector in price_selectors:
+                    price_elem = soup.select_one(selector)
+                    if price_elem:
+                        price_text = price_elem.get_text().strip()
+                        # Extract numeric value
+                        price_match = re.search(r'[\d,]+\.?\d*', price_text.replace(',', ''))
+                        if price_match:
+                            price_float = float(price_match.group())
+                            if self._validate_price(price_float, symbol):
+                                print(f"Google Finance: Got price {price_float} for {symbol}")
+                                return price_float
+        except Exception as e:
+            print(f"Google Finance error for {symbol}: {e}")
+        return None
+    
+    def _fetch_investing_com(self, symbol):
+        """Fetch from Investing.com scraping"""
+        try:
+            # Investing.com stock page
+            url = f"https://www.investing.com/equities/{symbol.lower()}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for price in various selectors
+                price_selectors = [
+                    '.last-price',
+                    '.instrument-price_last__KQzyA',
+                    '.text-5xl',
+                    '[data-test="instrument-price-last"]'
+                ]
+                
+                for selector in price_selectors:
+                    price_elem = soup.select_one(selector)
+                    if price_elem:
+                        price_text = price_elem.get_text().strip()
+                        # Extract numeric value
+                        price_match = re.search(r'[\d,]+\.?\d*', price_text.replace(',', ''))
+                        if price_match:
+                            price_float = float(price_match.group())
+                            if self._validate_price(price_float, symbol):
+                                print(f"Investing.com: Got price {price_float} for {symbol}")
+                                return price_float
+        except Exception as e:
+            print(f"Investing.com error for {symbol}: {e}")
+        return None
+    
+    def _fetch_marketwatch(self, symbol):
+        """Fetch from MarketWatch scraping"""
+        try:
+            # MarketWatch stock page
+            url = f"https://www.marketwatch.com/investing/stock/{symbol.lower()}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for price in various selectors
+                price_selectors = [
+                    '.value',
+                    '.last-value',
+                    '.intraday__price',
+                    '[data-module="MarketData"] .value'
+                ]
+                
+                for selector in price_selectors:
+                    price_elem = soup.select_one(selector)
+                    if price_elem:
+                        price_text = price_elem.get_text().strip()
+                        # Extract numeric value
+                        price_match = re.search(r'[\d,]+\.?\d*', price_text.replace(',', ''))
+                        if price_match:
+                            price_float = float(price_match.group())
+                            if self._validate_price(price_float, symbol):
+                                print(f"MarketWatch: Got price {price_float} for {symbol}")
+                                return price_float
+        except Exception as e:
+            print(f"MarketWatch error for {symbol}: {e}")
+        return None
+    
+    def _retry_with_backoff(self, symbol):
+        """Retry failed APIs with exponential backoff"""
+        try:
+            # Retry the most reliable APIs with delays
+            retry_methods = [
+                ('Yahoo Finance API', self._fetch_yahoo_finance_api),
+                ('NSE Official', self._fetch_nse_official),
+                ('BSE Official', self._fetch_bse_official),
+                ('IndianAPI', self._fetch_indian_api)
+            ]
+            
+            for delay in [1, 2, 4]:  # 1s, 2s, 4s delays
+                time.sleep(delay)
+                for method_name, method_func in retry_methods:
+                    try:
+                        price = method_func(symbol)
+                        if price:
+                            print(f"Retry success with {method_name} after {delay}s delay: {price}")
+                            return price
+                    except Exception as e:
+                        print(f"Retry failed with {method_name}: {e}")
+                        continue
+        except Exception as e:
+            print(f"Retry with backoff error for {symbol}: {e}")
+        return None
+    
+    def _emergency_price_fetch(self, symbol):
+        """Emergency price fetch using alternative methods"""
+        try:
+            # Try alternative symbol formats
+            symbol_variants = [
+                symbol,
+                f"{symbol}.NS",
+                f"{symbol}.BO",
+                f"{symbol}.NSE",
+                f"{symbol}.BSE"
+            ]
+            
+            # Try each variant with the most reliable methods
+            for variant in symbol_variants:
+                # Try Yahoo Finance with different headers
+                try:
+                    url = "https://query1.finance.yahoo.com/v7/finance/quote"
+                    params = {"symbols": variant}
+                    headers = {
+                        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+                        "Accept": "application/json",
+                        "Referer": "https://finance.yahoo.com/",
+                        "Accept-Language": "en-US,en;q=0.9"
+                    }
+                    
+                    response = requests.get(url, params=params, headers=headers, timeout=15)
+                    if response.status_code == 200:
+                        data = response.json()
+                        result = data.get("quoteResponse", {}).get("result", [])
+                        if result:
+                            item = result[0]
+                            price = item.get("regularMarketPrice")
+                            if price:
+                                price_float = float(price)
+                                if self._validate_price(price_float, symbol):
+                                    print(f"Emergency fetch success with Yahoo Finance for {variant}: {price_float}")
+                                    return price_float
+                except Exception as e:
+                    print(f"Emergency Yahoo Finance failed for {variant}: {e}")
+                    continue
+                
+                # Try NSE with session
+                try:
+                    session = requests.Session()
+                    session.headers.update({
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+                        'Accept': 'application/json',
+                        'Accept-Language': 'en-US,en;q=0.9'
+                    })
+                    
+                    # Get session first
+                    session.get('https://www.nseindia.com/', timeout=10)
+                    time.sleep(1)  # Small delay
+                    
+                    url = f"https://www.nseindia.com/api/quote-equity?symbol={variant}"
+                    response = session.get(url, timeout=15)
+                    if response.status_code == 200:
+                        data = response.json()
+                        price_info = data.get('priceInfo', {})
+                        price = price_info.get('lastPrice')
+                        if price:
+                            price_float = float(price)
+                            if self._validate_price(price_float, symbol):
+                                print(f"Emergency fetch success with NSE for {variant}: {price_float}")
+                                return price_float
+                except Exception as e:
+                    print(f"Emergency NSE failed for {variant}: {e}")
+                    continue
+        except Exception as e:
+            print(f"Emergency price fetch error for {symbol}: {e}")
+        return None
+    
+    def _is_market_open(self):
+        """Check if Indian stock market is currently open"""
+        try:
+            from datetime import datetime, time
+            import pytz
+            
+            # Get current time in IST
+            ist = pytz.timezone('Asia/Kolkata')
+            now = datetime.now(ist)
+            current_time = now.time()
+            current_date = now.date()
+            
+            # Market hours: 9:15 AM to 3:30 PM IST (Monday to Friday)
+            market_open = time(9, 15)  # 9:15 AM
+            market_close = time(15, 30)  # 3:30 PM
+            
+            # Check if it's a weekday
+            is_weekday = current_date.weekday() < 5  # Monday = 0, Sunday = 6
+            
+            return is_weekday and market_open <= current_time <= market_close
+        except Exception as e:
+            print(f"Error checking market status: {e}")
+            return True  # Assume market is open if we can't determine
     
     def _validate_price(self, price, symbol):
         """Validate if price is reasonable for the stock"""
