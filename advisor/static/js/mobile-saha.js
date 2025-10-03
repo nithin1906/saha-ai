@@ -264,7 +264,7 @@ class MobileSAHA {
         ];
         
         marketCards.innerHTML = cards.map(card => `
-            <div class="swipe-item mobile-card min-w-[200px] bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700">
+            <div class="swipe-item mobile-card min-w-[200px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center space-x-2">
                         <span class="text-lg">${card.icon}</span>

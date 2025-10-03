@@ -365,10 +365,24 @@ if (themeToggleMobile) {
             console.log('Switched to dark mode');
         }
         
-        // Force re-render to ensure theme applies
-        document.body.style.display = 'none';
-        document.body.offsetHeight; // Trigger reflow
-        document.body.style.display = '';
+        // Force theme application with multiple methods
+        setTimeout(() => {
+            // Method 1: Force class application
+            if (isDark) {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+            } else {
+                document.documentElement.classList.remove('light');
+                document.documentElement.classList.add('dark');
+            }
+            
+            // Method 2: Trigger style recalculation
+            document.documentElement.style.display = 'none';
+            document.documentElement.offsetHeight;
+            document.documentElement.style.display = '';
+            
+            console.log('Theme force-applied, current classes:', document.documentElement.className);
+        }, 10);
     });
 } else {
     console.error('Theme toggle button not found');
