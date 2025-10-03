@@ -465,9 +465,19 @@ class StockDataService:
             }
     
     def _fetch_market_index(self, index_name):
-        """Fetch specific market index data"""
+        """Fetch specific market index data from NSE API"""
         try:
-            # Try Yahoo Finance for indices
+            # Try NSE API first (most reliable for Indian markets)
+            nse_data = self._fetch_from_nse_api(index_name)
+            if nse_data:
+                print(f"NSE API: Got real data for {index_name}: {nse_data}")
+                logger.info(f"NSE API: Got real data for {index_name}: {nse_data}")
+                return nse_data
+            
+            # Fallback to Yahoo Finance if NSE fails
+            print(f"NSE API failed for {index_name}, trying Yahoo Finance")
+            logger.warning(f"NSE API failed for {index_name}, trying Yahoo Finance")
+            
             symbol_variants = {
                 'NIFTY': ['^NSEI', 'NIFTY.NS'],
                 'SENSEX': ['^BSESN', 'SENSEX.BO'],
@@ -527,6 +537,69 @@ class StockDataService:
                     
         except Exception as e:
             logger.error(f"Error fetching {index_name}: {e}")
+            
+        return None
+    
+    def _fetch_from_nse_api(self, index_name):
+        """Fetch data from NSE API - most reliable for Indian markets"""
+        try:
+            # NSE API mapping (SENSEX is BSE, not NSE)
+            nse_mapping = {
+                'NIFTY': 'NIFTY 50',
+                'BANKNIFTY': 'NIFTY BANK',
+                'MIDCPNIFTY': 'NIFTY MIDCAP 100'
+            }
+            
+            nse_symbol = nse_mapping.get(index_name)
+            if not nse_symbol:
+                return None
+            
+            url = "https://www.nseindia.com/api/allIndices"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Connection": "keep-alive",
+                "Referer": "https://www.nseindia.com/"
+            }
+            
+            print(f"NSE API: Fetching {index_name} ({nse_symbol})")
+            logger.info(f"NSE API: Fetching {index_name} ({nse_symbol})")
+            
+            response = requests.get(url, headers=headers, timeout=15)
+            print(f"NSE API Response status: {response.status_code}")
+            logger.info(f"NSE API Response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                indices = data.get('data', [])
+                
+                # Find the specific index
+                for index_data in indices:
+                    if index_data.get('index') == nse_symbol:
+                        price = index_data.get('last', 0)
+                        change = index_data.get('variation', 0)
+                        change_percent = index_data.get('percentChange', 0)
+                        
+                        print(f"NSE API: Found {nse_symbol} - Price: {price}, Change: {change}, Change%: {change_percent}")
+                        logger.info(f"NSE API: Found {nse_symbol} - Price: {price}, Change: {change}, Change%: {change_percent}")
+                        
+                        if price and price > 0:
+                            return {
+                                'price': float(price),
+                                'change': float(change),
+                                'change_percent': float(change_percent)
+                            }
+                
+                print(f"NSE API: Index {nse_symbol} not found in response")
+                logger.warning(f"NSE API: Index {nse_symbol} not found in response")
+            else:
+                print(f"NSE API: HTTP error {response.status_code}")
+                logger.warning(f"NSE API: HTTP error {response.status_code}")
+                
+        except Exception as e:
+            print(f"NSE API error for {index_name}: {e}")
+            logger.error(f"NSE API error for {index_name}: {e}")
             
         return None
 
