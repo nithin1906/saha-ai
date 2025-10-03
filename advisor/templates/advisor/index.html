@@ -587,7 +587,31 @@
             </div>
         </div>
         <div id="chat-window" class="flex-1 p-6 overflow-y-auto w-full max-w-3xl mx-auto bg-white dark:bg-gray-800 chat-window-mobile">
-            <!-- explicit initial greeting to avoid duplication -->
+            <!-- Beta Testing Welcome Message -->
+            <div id="beta-welcome" class="w-full max-w-2xl mx-auto mb-6" style="display: none;">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 shadow-lg border border-blue-200 dark:border-blue-700">
+                    <div class="text-center">
+                        <div class="text-4xl mb-3">🚀</div>
+                        <h3 class="text-xl font-bold text-blue-800 dark:text-blue-200 mb-3">Welcome to SAHA-AI Beta Testing!</h3>
+                        <p class="text-blue-700 dark:text-blue-300 mb-4">
+                            You're among the first users to experience our AI-powered investment assistant. This is a testing phase, and we're excited to have you on board!
+                        </p>
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-4">
+                            <p class="text-yellow-800 dark:text-yellow-200 text-sm font-medium">
+                                ⚠️ <strong>Important:</strong> If you encounter any bugs or issues, please report them directly to our development team. Your feedback is invaluable for improving the platform.
+                            </p>
+                        </div>
+                        <p class="text-blue-600 dark:text-blue-400 text-sm mb-4">
+                            By continuing to use SAHA-AI, you consent to participating in this beta testing program and understand that this is a work-in-progress platform.
+                        </p>
+                        <button onclick="acceptBetaTesting()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                            I Understand - Let's Start!
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Regular Welcome Message -->
             <div id="initial-greeting" class="w-full max-w-md p-3 rounded-xl mb-4 chat-bubble chat-bubble-bot">
                 Hi, I am SAHA-AI, How may I help you today?
             </div>
@@ -846,11 +870,151 @@ function showMobileUnderDevelopment() {
     return false;
 }
 
+// Security Functions - Mandatory Logout on Browser/Tab Close
+let sessionActive = true;
+let sessionCheckInterval;
+
+function initializeSessionSecurity() {
+    // Set up session monitoring
+    sessionCheckInterval = setInterval(checkSessionStatus, 30000); // Check every 30 seconds
+    
+    // Detect browser/tab close
+    window.addEventListener('beforeunload', handleBrowserClose);
+    window.addEventListener('unload', handleBrowserClose);
+    
+    // Detect tab visibility changes (tab switching)
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Detect page focus/blur
+    window.addEventListener('blur', handlePageBlur);
+    window.addEventListener('focus', handlePageFocus);
+    
+    // Detect idle time
+    let idleTimer;
+    const idleTimeout = 15 * 60 * 1000; // 15 minutes
+    
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(forceLogout, idleTimeout);
+    }
+    
+    // Reset idle timer on user activity
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+        document.addEventListener(event, resetIdleTimer, true);
+    });
+    
+    resetIdleTimer();
+}
+
+function handleBrowserClose(event) {
+    if (sessionActive) {
+        // Force logout before browser closes
+        forceLogout();
+    }
+}
+
+function handleVisibilityChange() {
+    if (document.hidden && sessionActive) {
+        // Tab became hidden - start logout timer
+        setTimeout(() => {
+            if (document.hidden && sessionActive) {
+                forceLogout();
+            }
+        }, 30000); // 30 seconds after tab becomes hidden
+    }
+}
+
+function handlePageBlur() {
+    if (sessionActive) {
+        // Page lost focus - start logout timer
+        setTimeout(() => {
+            if (!document.hasFocus() && sessionActive) {
+                forceLogout();
+            }
+        }, 60000); // 1 minute after losing focus
+    }
+}
+
+function handlePageFocus() {
+    // Page regained focus - check session status
+    checkSessionStatus();
+}
+
+function checkSessionStatus() {
+    if (!sessionActive) return;
+    
+    // Check if session is still valid by making a lightweight request
+    fetch('/api/portfolio/health/', {
+        method: 'GET',
+        credentials: 'include'
+    })
+    .then(response => {
+        if (response.status === 401 || response.status === 403) {
+            // Session expired
+            forceLogout();
+        }
+    })
+    .catch(error => {
+        console.log('Session check failed:', error);
+        // Don't logout on network errors, just log
+    });
+}
+
+function forceLogout() {
+    if (!sessionActive) return;
+    
+    sessionActive = false;
+    clearInterval(sessionCheckInterval);
+    
+    // Clear any sensitive data
+    localStorage.removeItem('saha-ai-beta-welcome');
+    
+    // Show logout message
+    alert('🔒 Security Notice: Your session has expired for security reasons. Please log in again to continue.');
+    
+    // Redirect to login
+    window.location.href = '/users/login/';
+}
+
+// Beta Testing Functions
+function checkFirstTimeUser() {
+    const hasSeenBetaWelcome = localStorage.getItem('saha-ai-beta-welcome');
+    if (!hasSeenBetaWelcome) {
+        // Show beta welcome message
+        const betaWelcome = document.getElementById('beta-welcome');
+        const initialGreeting = document.getElementById('initial-greeting');
+        if (betaWelcome && initialGreeting) {
+            betaWelcome.style.display = 'block';
+            initialGreeting.style.display = 'none';
+        }
+    }
+}
+
+function acceptBetaTesting() {
+    // Hide beta welcome and show regular greeting
+    const betaWelcome = document.getElementById('beta-welcome');
+    const initialGreeting = document.getElementById('initial-greeting');
+    
+    if (betaWelcome && initialGreeting) {
+        betaWelcome.style.display = 'none';
+        initialGreeting.style.display = 'block';
+    }
+    
+    // Mark as seen
+    localStorage.setItem('saha-ai-beta-welcome', 'true');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Check if mobile and show under development screen
     if (showMobileUnderDevelopment()) {
         return; // Stop execution for mobile devices
     }
+    
+    // Initialize security features
+    initializeSessionSecurity();
+    
+    // Check for first-time user and show beta welcome
+    checkFirstTimeUser();
     
     // DOM refs
     const chatWindow = document.getElementById('chat-window');

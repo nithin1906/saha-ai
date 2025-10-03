@@ -137,7 +137,113 @@
     check();
 })();
     function fmt(n){ return '₹' + Number(n||0).toFixed(2); }
+    // Security Functions - Mandatory Logout on Browser/Tab Close
+    let sessionActive = true;
+    let sessionCheckInterval;
+
+    function initializeSessionSecurity() {
+        // Set up session monitoring
+        sessionCheckInterval = setInterval(checkSessionStatus, 30000); // Check every 30 seconds
+        
+        // Detect browser/tab close
+        window.addEventListener('beforeunload', handleBrowserClose);
+        window.addEventListener('unload', handleBrowserClose);
+        
+        // Detect tab visibility changes (tab switching)
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Detect page focus/blur
+        window.addEventListener('blur', handlePageBlur);
+        window.addEventListener('focus', handlePageFocus);
+        
+        // Detect idle time
+        let idleTimer;
+        const idleTimeout = 15 * 60 * 1000; // 15 minutes
+        
+        function resetIdleTimer() {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(forceLogout, idleTimeout);
+        }
+        
+        // Reset idle timer on user activity
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetIdleTimer, true);
+        });
+        
+        resetIdleTimer();
+    }
+
+    function handleBrowserClose(event) {
+        if (sessionActive) {
+            // Force logout before browser closes
+            forceLogout();
+        }
+    }
+
+    function handleVisibilityChange() {
+        if (document.hidden && sessionActive) {
+            // Tab became hidden - start logout timer
+            setTimeout(() => {
+                if (document.hidden && sessionActive) {
+                    forceLogout();
+                }
+            }, 30000); // 30 seconds after tab becomes hidden
+        }
+    }
+
+    function handlePageBlur() {
+        if (sessionActive) {
+            // Page lost focus - start logout timer
+            setTimeout(() => {
+                if (!document.hasFocus() && sessionActive) {
+                    forceLogout();
+                }
+            }, 60000); // 1 minute after losing focus
+        }
+    }
+
+    function handlePageFocus() {
+        // Page regained focus - check session status
+        checkSessionStatus();
+    }
+
+    function checkSessionStatus() {
+        if (!sessionActive) return;
+        
+        // Check if session is still valid by making a lightweight request
+        fetch('/api/portfolio/health/', {
+            method: 'GET',
+            credentials: 'include'
+        })
+        .then(response => {
+            if (response.status === 401 || response.status === 403) {
+                // Session expired
+                forceLogout();
+            }
+        })
+        .catch(error => {
+            console.log('Session check failed:', error);
+            // Don't logout on network errors, just log
+        });
+    }
+
+    function forceLogout() {
+        if (!sessionActive) return;
+        
+        sessionActive = false;
+        clearInterval(sessionCheckInterval);
+        
+        // Show logout message
+        alert('🔒 Security Notice: Your session has expired for security reasons. Please log in again to continue.');
+        
+        // Redirect to login
+        window.location.href = '/users/login/';
+    }
+
     document.addEventListener('DOMContentLoaded', async function(){
+        // Initialize security features
+        initializeSessionSecurity();
+        
         const overlay = document.getElementById('loading-overlay');
         overlay.style.display = 'flex';
         const body = document.getElementById('portfolio-table-body');
