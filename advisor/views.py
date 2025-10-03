@@ -71,105 +71,105 @@ class ChatAPIView(View):
             # Stock analysis with real data
             if any(word in message_lower for word in ['analyze', 'stock', 'price', 'reliance', 'tata', 'hdfc', 'infosys', 'tcs']):
                 if 'reliance' in message_lower:
-                    response = """📊 **RELIANCE INDUSTRIES ANALYSIS**
+                    response = """📊 RELIANCE INDUSTRIES ANALYSIS
 
-**Current Price**: ₹2,450.75 (+1.2%)
-**Market Cap**: ₹16.5 Lakh Cr
-**52W High/Low**: ₹2,856 / ₹2,180
+Current Price: ₹2,450.75 (+1.2%)
+Market Cap: ₹16.5 Lakh Cr
+52W High/Low: ₹2,856 / ₹2,180
 
-**Key Metrics**:
+Key Metrics:
 • P/E Ratio: 24.5
 • ROE: 12.8%
 • Debt/Equity: 0.35
 
-**Analysis**: Reliance shows strong fundamentals with diversified business across petrochemicals, retail, and telecom. Recent Jio expansion and retail growth provide good long-term prospects.
+Analysis: Reliance shows strong fundamentals with diversified business across petrochemicals, retail, and telecom. Recent Jio expansion and retail growth provide good long-term prospects.
 
-**Recommendation**: HOLD with potential for gradual appreciation."""
+Recommendation: HOLD with potential for gradual appreciation."""
                 
                 elif 'tata' in message_lower:
-                    response = """📈 **TATA CONSULTANCY SERVICES ANALYSIS**
+                    response = """📈 TATA CONSULTANCY SERVICES ANALYSIS
 
-**Current Price**: ₹3,680.50 (+0.8%)
-**Market Cap**: ₹13.2 Lakh Cr
-**52W High/Low**: ₹4,100 / ₹3,200
+Current Price: ₹3,680.50 (+0.8%)
+Market Cap: ₹13.2 Lakh Cr
+52W High/Low: ₹4,100 / ₹3,200
 
-**Key Metrics**:
+Key Metrics:
 • P/E Ratio: 28.2
 • ROE: 35.4%
 • Debt/Equity: 0.05
 
-**Analysis**: TCS maintains leadership in IT services with strong client relationships and digital transformation capabilities. Consistent dividend payments and robust cash flows.
+Analysis: TCS maintains leadership in IT services with strong client relationships and digital transformation capabilities. Consistent dividend payments and robust cash flows.
 
-**Recommendation**: BUY for long-term growth in digital services."""
+Recommendation: BUY for long-term growth in digital services."""
                 
                 else:
-                    response = """📊 **STOCK ANALYSIS REQUEST**
+                    response = """📊 STOCK ANALYSIS REQUEST
 
 I can provide detailed analysis for:
-• **Reliance Industries** - Diversified conglomerate
-• **TCS** - IT services leader  
-• **HDFC Bank** - Banking sector
-• **Infosys** - IT services
-• **Tata Motors** - Automotive
+• Reliance Industries - Diversified conglomerate
+• TCS - IT services leader  
+• HDFC Bank - Banking sector
+• Infosys - IT services
+• Tata Motors - Automotive
 
 Please specify the stock name for detailed analysis with current prices, fundamentals, and recommendations."""
             
             # Market status with real data
             elif 'market' in message_lower or 'status' in message_lower:
-                response = """📈 **CURRENT MARKET STATUS**
+                response = """📈 CURRENT MARKET STATUS
 
-**NIFTY 50**: 19,850.25 (+125.50, +0.64%)
-**SENSEX**: 66,123.45 (+425.30, +0.65%)
-**BANK NIFTY**: 44,567.80 (+180.20, +0.41%)
+NIFTY 50: 19,850.25 (+125.50, +0.64%)
+SENSEX: 66,123.45 (+425.30, +0.65%)
+BANK NIFTY: 44,567.80 (+180.20, +0.41%)
 
-**Market Sentiment**: Bullish
-**Top Gainers**: Reliance, TCS, HDFC Bank
-**Volume**: Above average
+Market Sentiment: Bullish
+Top Gainers: Reliance, TCS, HDFC Bank
+Volume: Above average
 
-**Analysis**: Markets showing positive momentum with strong buying in large-cap stocks. Banking sector leading the rally."""
+Analysis: Markets showing positive momentum with strong buying in large-cap stocks. Banking sector leading the rally."""
             
             # Portfolio analysis
             elif 'portfolio' in message_lower:
-                response = """💼 **PORTFOLIO ANALYSIS**
+                response = """💼 PORTFOLIO ANALYSIS
 
-**Total Value**: ₹2,45,000 (+₹12,500, +5.4%)
-**Top Holdings**:
+Total Value: ₹2,45,000 (+₹12,500, +5.4%)
+Top Holdings:
 • Reliance: ₹85,000 (+3.2%)
 • TCS: ₹65,000 (+2.8%)
 • HDFC Bank: ₹45,000 (+4.1%)
 
-**Performance**: Outperforming market by 1.2%
-**Risk Level**: Moderate
-**Recommendation**: Consider adding mid-cap exposure for diversification."""
+Performance: Outperforming market by 1.2%
+Risk Level: Moderate
+Recommendation: Consider adding mid-cap exposure for diversification."""
             
             # General responses
             elif 'hello' in message_lower or 'hi' in message_lower:
-                response = """👋 **Welcome to SAHA-AI Mobile!**
+                response = """👋 Welcome to SAHA-AI Mobile!
 
 I can help you with:
-• 📊 **Stock Analysis** - Detailed company analysis
-• 💼 **Portfolio Review** - Performance tracking
-• 📈 **Market Updates** - Real-time market data
-• 💡 **Investment Advice** - Personalized recommendations
+• 📊 Stock Analysis - Detailed company analysis
+• 💼 Portfolio Review - Performance tracking
+• 📈 Market Updates - Real-time market data
+• 💡 Investment Advice - Personalized recommendations
 
 Try asking: "Analyze Reliance" or "Market status" """
             
             elif 'help' in message_lower:
-                response = """🆘 **HOW CAN I HELP?**
+                response = """🆘 HOW CAN I HELP?
 
-**Stock Analysis**: "Analyze [Stock Name]"
-**Market Data**: "Market status" or "Current prices"
-**Portfolio**: "Portfolio analysis" or "My holdings"
-**Recommendations**: "Best stocks to buy"
+Stock Analysis: "Analyze [Stock Name]"
+Market Data: "Market status" or "Current prices"
+Portfolio: "Portfolio analysis" or "My holdings"
+Recommendations: "Best stocks to buy"
 
-**Examples**:
+Examples:
 • "Analyze Reliance"
 • "Market status"
 • "Portfolio performance"
 • "Best mutual funds" """
             
             else:
-                response = f"""🤔 **I understand you're asking about: "{message}"**
+                response = f"""🤔 I understand you're asking about: "{message}"
 
 For detailed analysis, try:
 • "Analyze [Stock Name]" - Get comprehensive stock analysis
