@@ -328,6 +328,16 @@ function initializeTheme() {
     
     console.log('Theme initialization - savedTheme:', savedTheme, 'prefersDark:', prefersDark);
     
+    // Don't override if user just toggled theme
+    if (document.documentElement.classList.contains('dark') && savedTheme === 'light') {
+        console.log('Skipping initialization - user just toggled to dark');
+        return;
+    }
+    if (!document.documentElement.classList.contains('dark') && savedTheme === 'dark') {
+        console.log('Skipping initialization - user just toggled to light');
+        return;
+    }
+    
     if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
         document.documentElement.classList.add('dark');
         localStorage.setItem('color-theme', 'dark');
