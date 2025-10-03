@@ -365,24 +365,25 @@ if (themeToggleMobile) {
             console.log('Switched to dark mode');
         }
         
-        // Force theme application with multiple methods
+        // Force theme application with immediate DOM manipulation
+        // Remove all theme classes first
+        document.documentElement.classList.remove('dark', 'light');
+        
+        // Apply the new theme class immediately
+        if (isDark) {
+            document.documentElement.classList.add('light');
+            console.log('Applied light theme class');
+        } else {
+            document.documentElement.classList.add('dark');
+            console.log('Applied dark theme class');
+        }
+        
+        // Force browser to recalculate styles
+        document.documentElement.style.transform = 'translateZ(0)';
         setTimeout(() => {
-            // Method 1: Force class application
-            if (isDark) {
-                document.documentElement.classList.remove('dark');
-                document.documentElement.classList.add('light');
-            } else {
-                document.documentElement.classList.remove('light');
-                document.documentElement.classList.add('dark');
-            }
-            
-            // Method 2: Trigger style recalculation
-            document.documentElement.style.display = 'none';
-            document.documentElement.offsetHeight;
-            document.documentElement.style.display = '';
-            
+            document.documentElement.style.transform = '';
             console.log('Theme force-applied, current classes:', document.documentElement.className);
-        }, 10);
+        }, 1);
     });
 } else {
     console.error('Theme toggle button not found');
