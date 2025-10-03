@@ -373,7 +373,7 @@ async function loadPortfolioDataMobile() {
 
 async function fetchAndDisplayPortfolioHealthMobile() {
     try {
-        const response = await fetch('/api/portfolio/health/', {
+        const response = await fetch('/api/api/portfolio/health/', {
             method: 'GET',
             credentials: 'include'
         });
@@ -412,7 +412,7 @@ async function fetchAndDisplayPortfolioHealthMobile() {
 
 async function loadHoldingsMobile() {
     try {
-        const response = await fetch('/api/portfolio/', {
+        const response = await fetch('/api/api/portfolio/', {
             method: 'GET',
             credentials: 'include'
         });
@@ -602,7 +602,7 @@ async function removeHoldingMobile(ticker) {
     }
     
     try {
-        const response = await fetch(`/api/portfolio/remove/${ticker}/`, {
+        const response = await fetch(`/api/api/portfolio/remove/${ticker}/`, {
             method: 'POST',
             credentials: 'include'
         });

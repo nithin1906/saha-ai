@@ -145,7 +145,7 @@ class MobileSAHA {
         this.showTypingIndicator();
         
         try {
-            const response = await fetch('/api/chat/', {
+            const response = await fetch('/api/api/chat/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ class MobileSAHA {
         if (!this.isOnline) return;
         
         try {
-            const response = await fetch('/api/market-snapshot/', {
+            const response = await fetch('/api/api/market-snapshot/', {
                 method: 'GET',
                 credentials: 'include'
             });
