@@ -145,18 +145,30 @@ class MobileSAHA {
         this.showTypingIndicator();
         
         try {
+            const csrfToken = this.getCSRFToken();
+            console.log('CSRF Token:', csrfToken ? 'Found' : 'Not found');
+            
             const response = await fetch('/api/api/chat/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': this.getCSRFToken()
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 credentials: 'include',
                 body: JSON.stringify({ message: message })
             });
             
+            console.log('Chat API Response:', response.status, response.statusText);
+            
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                if (response.status === 403) {
+                    throw new Error('Authentication required. Please refresh the page and try again.');
+                } else if (response.status === 404) {
+                    throw new Error('API endpoint not found. Please check server configuration.');
+                } else {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
             }
             
             const data = await response.json();
@@ -246,21 +258,24 @@ class MobileSAHA {
         if (!marketCards) return;
         
         const cards = [
-            { name: 'NIFTY 50', value: data.nifty_price, change: data.nifty_change, change_pct: data.nifty_change_pct },
-            { name: 'SENSEX', value: data.sensex_price, change: data.sensex_change, change_pct: data.sensex_change_pct },
-            { name: 'BANK NIFTY', value: data.bank_nifty_price, change: data.bank_nifty_change, change_pct: data.bank_nifty_change_pct }
+            { name: 'NIFTY 50', value: data.nifty_price, change: data.nifty_change, change_pct: data.nifty_change_pct, icon: '📈' },
+            { name: 'SENSEX', value: data.sensex_price, change: data.sensex_change, change_pct: data.sensex_change_pct, icon: '📊' },
+            { name: 'BANK NIFTY', value: data.bank_nifty_price, change: data.bank_nifty_change, change_pct: data.bank_nifty_change_pct, icon: '🏦' }
         ];
         
         marketCards.innerHTML = cards.map(card => `
-            <div class="swipe-item mobile-card min-w-[280px]">
+            <div class="swipe-item mobile-card min-w-[200px] bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between mb-2">
-                    <h3 class="font-semibold text-gray-900 dark:text-gray-100">${card.name}</h3>
-                    <span class="text-xs px-2 py-1 rounded-full ${card.change >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-lg">${card.icon}</span>
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 text-sm">${card.name}</h3>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded-full ${card.change >= 0 ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'}">
                         ${card.change >= 0 ? '+' : ''}${card.change_pct}%
                     </span>
                 </div>
-                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">${card.value}</div>
-                <div class="text-sm text-gray-600 dark:text-gray-400">
+                <div class="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">${card.value}</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">
                     ${card.change >= 0 ? '+' : ''}${card.change}
                 </div>
             </div>
@@ -326,8 +341,27 @@ class MobileSAHA {
     }
     
     getCSRFToken() {
-        const token = document.querySelector('[name=csrfmiddlewaretoken]');
-        return token ? token.value : '';
+        // Try multiple ways to get CSRF token
+        let token = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (token) return token.value;
+        
+        token = document.querySelector('meta[name="csrf-token"]');
+        if (token) return token.getAttribute('content');
+        
+        token = document.cookie.match(/csrftoken=([^;]+)/);
+        if (token) return token[1];
+        
+        // Fallback: get from Django's CSRF cookie
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [name, value] = cookie.trim().split('=');
+            if (name === 'csrftoken') {
+                return value;
+            }
+        }
+        
+        console.warn('CSRF token not found');
+        return '';
     }
     
     async refreshPortfolio() {
