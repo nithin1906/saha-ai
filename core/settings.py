@@ -52,7 +52,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    'advisor.middleware.DeviceDetectionMiddleware',  # Add device detection
+    'advisor.middleware.DeviceDetectionMiddleware',  # Mobile device detection only
     'users.middleware.SecurityLoggingMiddleware',
     'users.middleware.InviteOnlyMiddleware',
 ]

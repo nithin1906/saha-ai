@@ -24,47 +24,29 @@ logger = logging.getLogger(__name__)
 # =====================
 
 def index(request):
-    """Main index view with device detection"""
+    """Main index view - Mobile version only"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
-    
-    # Serve appropriate template based on device
-    if getattr(request, 'is_mobile', False):
-        return render(request, 'advisor/mobile_index.html', {
-            'user_first_name': request.user.first_name if request.user.is_authenticated else '',
-            'csrf_token_value': request.META.get('CSRF_COOKIE', '')
-        })
-    else:
-        return render(request, 'advisor/index.html', {
-            'user_first_name': request.user.first_name if request.user.is_authenticated else '',
-            'csrf_token_value': request.META.get('CSRF_COOKIE', '')
-        })
+        return render(request, 'users/login.html', {'next': '/mobile/'})
+    return render(request, 'advisor/mobile_index.html', {
+        'user_first_name': request.user.first_name if request.user.is_authenticated else '',
+        'csrf_token_value': request.META.get('CSRF_COOKIE', '')
+    })
 
 def portfolio(request):
-    """Portfolio view with device detection"""
+    """Portfolio view - Mobile version only"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
-    
-    # Serve appropriate template based on device
-    if getattr(request, 'is_mobile', False):
-        return render(request, 'advisor/mobile_portfolio.html')
-    else:
-        return render(request, 'advisor/portfolio.html')
+        return render(request, 'users/login.html', {'next': '/mobile/portfolio/'})
+    return render(request, 'advisor/mobile_portfolio.html')
 
 def about(request):
     """About page view"""
     return render(request, 'advisor/about.html')
 
 def profile(request):
-    """User profile view with device detection"""
+    """User profile view - Mobile version only"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
-    
-    # Serve appropriate template based on device
-    if getattr(request, 'is_mobile', False):
-        return render(request, 'advisor/mobile_profile.html')
-    else:
-        return render(request, 'advisor/profile.html')
+        return render(request, 'users/login.html', {'next': '/mobile/profile/'})
+    return render(request, 'advisor/mobile_profile.html')
 
 # =====================
 # API Views
@@ -254,7 +236,6 @@ def chat_api(request):
         return view.post(request)
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
-@csrf_exempt
 def mobile_chat_api(request):
     """Mobile-specific chat API with intelligent conversational flow"""
     if request.method == 'POST':
@@ -265,29 +246,15 @@ def mobile_chat_api(request):
             if not message:
                 return JsonResponse({"error": "Message is required"}, status=400)
             
-            # Update fallback prices daily (run in background)
-            try:
-                from advisor.data_service import stock_data_service
-                stock_data_service.update_fallback_prices_daily()
-            except Exception as e:
-                logger.warning(f"Failed to update fallback prices: {e}")
-            
             # Enhanced mobile chat with intelligent conversation flow
             message_lower = message.lower()
             
             # Stock analysis with intelligent step-by-step flow
-            if any(word in message_lower for word in ['analyze', 'stock', 'analysis']) and not any(word in message_lower for word in ['shares', 'bought', 'own', 'have', 'at']):
+            if any(word in message_lower for word in ['analyze', 'stock', 'price', 'analysis']):
                 if any(word in message_lower for word in ['reliance', 'tata', 'hdfc', 'infosys', 'tcs', 'itc', 'bharti', 'asian', 'maruti']):
-                    # User specified a stock - extract just the stock name
-                    stock_name = None
-                    for stock in ['reliance', 'tata', 'hdfc', 'infosys', 'tcs', 'itc', 'bharti', 'asian', 'maruti']:
-                        if stock in message_lower:
-                            stock_name = stock.upper()
-                            break
-                    if stock_name:
-                        response = get_detailed_stock_analysis(stock_name)
-                    else:
-                        response = "I couldn't identify the stock name. Please try again."
+                    # User specified a stock - provide detailed analysis
+                    stock_name = message_lower
+                    response = get_detailed_stock_analysis(stock_name)
                 else:
                     # Start intelligent conversation flow
                     response = """I'd be happy to help you analyze a stock! 
@@ -303,15 +270,11 @@ Popular options:
 
 Just type the stock name and I'll guide you through the analysis step by step."""
             
-            # Handle position input - provide analysis for ANY stock (check this FIRST)
-            elif any(word in message_lower for word in ['shares', 'bought', 'own', 'average', 'price']) and any(word in message_lower for word in ['have', 'bought', 'own', 'at', '₹', 'rupees']):
-                # User provided position details - analyze
-                response = get_detailed_stock_analysis(message_lower)
-            
-            # Handle ANY stock name input - ask for position first
-            elif len(message.strip()) > 2 and not any(word in message_lower for word in ['portfolio', 'mutual', 'fund', 'help', 'hello', 'hi', 'thanks', 'thank you']):
-                # This could be a stock name - ask for position details first
-                response = f"""Great choice! I can analyze {message.title()} for you.
+            # Handle stock name input - ask for position details
+            elif any(word in message_lower for word in ['reliance', 'tata', 'hdfc', 'infosys', 'tcs', 'itc', 'bharti', 'asian', 'maruti']):
+                # User mentioned a stock name - ask for their position
+                stock_name = message_lower
+                response = f"""Great choice! I can analyze {stock_name.title()} for you.
 
 To give you personalized advice, I need to know about your current position:
 
@@ -319,11 +282,16 @@ To give you personalized advice, I need to know about your current position:
 2. What's your average buy price?
 
 For example, you can say:
-• "I have 50 shares of {message.title()} at ₹2,200"
-• "I don't own any {message.title()} shares yet"
-• "I bought 100 shares of {message.title()} at ₹2,100 average"
+• "I have 50 shares at ₹2,200"
+• "I don't own any shares yet"
+• "I bought 100 shares at ₹2,100 average"
 
 This helps me give you specific recommendations on whether to buy more, hold, or sell."""
+            
+            # Handle position input - provide analysis
+            elif any(word in message_lower for word in ['shares', 'bought', 'own', 'average', 'price']) and any(word in message_lower for word in ['reliance', 'tata', 'hdfc', 'infosys', 'tcs', 'itc', 'bharti', 'asian', 'maruti']):
+                # User provided position details - analyze
+                response = get_detailed_stock_analysis(message_lower)
             
             # Mutual fund analysis with intelligent flow
             elif any(word in message_lower for word in ['mutual fund', 'mf', 'fund', 'sip', 'bluechip', 'top 100', 'prudential', 'axis']):
@@ -381,229 +349,144 @@ Just tell me what you'd like to do, and I'll walk you through it!"""
 
 # Helper functions for mobile chat integration
 def get_detailed_stock_analysis(stock_name):
-    """Get detailed stock analysis using the same system as PC version"""
-    import re
+    """Get detailed stock analysis using backend services with personalized inputs"""
+    from .personalization_service import personalize_signal
     
     # Extract user's position data from the message if provided
-    shares_match = re.search(r'(\d+)\s*shares?', stock_name)
+    import re
     
-    # Try multiple price patterns (order matters - simplest first)
-    price_match = None
-    # Pattern 1: Just a number after "at" (most common case)
-    price_match = re.search(r'at\s+(\d+)', stock_name)
-    if not price_match:
-        # Pattern 2: "at 163" or "at ₹163" (with currency symbol)
-        price_match = re.search(r'at\s+₹?([\d,]+\.?\d*)', stock_name)
-    if not price_match:
-        # Pattern 3: "average 163" or "avg 163"
-        price_match = re.search(r'(?:average|avg)\s+₹?([\d,]+\.?\d*)', stock_name)
-    if not price_match:
-        # Pattern 4: "₹163 average" or "163 average"
-        price_match = re.search(r'₹?([\d,]+\.?\d*)\s*(?:average|avg)', stock_name)
+    # Look for share quantity and average price in the message
+    shares_match = re.search(r'(\d+)\s*shares?', stock_name)
+    price_match = re.search(r'₹?([\d,]+\.?\d*)\s*(?:average|avg)', stock_name)
     
     # Default values if not provided
     user_shares = int(shares_match.group(1)) if shares_match else 0
     avg_buy_price = float(price_match.group(1).replace(',', '')) if price_match else None
     
-    # Clean the stock name for search - more direct approach
-    clean_stock_name = stock_name.lower()
+    # Mock stock data - in production, integrate with real stock API
+    stock_data = {
+        'reliance': {
+            'name': 'Reliance Industries Ltd',
+            'symbol': 'RELIANCE',
+            'price': 2450.75,
+            'change': 29.50,
+            'change_pct': 1.22,
+            'pe_ratio': 24.5,
+            'roe': 12.8,
+            'debt_equity': 0.35,
+            'market_cap': '₹16.5 Lakh Cr',
+            'ml_signal': 'BUY'
+        },
+        'tcs': {
+            'name': 'Tata Consultancy Services Ltd',
+            'symbol': 'TCS',
+            'price': 3680.50,
+            'change': 29.20,
+            'change_pct': 0.80,
+            'pe_ratio': 28.2,
+            'roe': 35.4,
+            'debt_equity': 0.05,
+            'market_cap': '₹13.2 Lakh Cr',
+            'ml_signal': 'BUY'
+        },
+        'hdfc': {
+            'name': 'HDFC Bank Ltd',
+            'symbol': 'HDFCBANK',
+            'price': 1650.25,
+            'change': 34.75,
+            'change_pct': 2.15,
+            'pe_ratio': 18.5,
+            'roe': 16.2,
+            'npa': 1.1,
+            'market_cap': '₹12.8 Lakh Cr',
+            'ml_signal': 'BUY'
+        }
+    }
     
-    # Remove common position phrases
-    clean_stock_name = re.sub(r'i have \d+\s*shares?\s*of\s*', '', clean_stock_name, flags=re.IGNORECASE)
-    clean_stock_name = re.sub(r'\d+\s*shares?\s*of\s*', '', clean_stock_name, flags=re.IGNORECASE)
-    clean_stock_name = re.sub(r'\d+\s*shares?\s*at\s*', '', clean_stock_name, flags=re.IGNORECASE)
-    clean_stock_name = re.sub(r'at\s+\d+.*', '', clean_stock_name, flags=re.IGNORECASE)
-    clean_stock_name = re.sub(r'₹?[\d,]+\.?\d*\s*(?:average|avg).*', '', clean_stock_name, flags=re.IGNORECASE)
-    clean_stock_name = clean_stock_name.strip()
+    # Find matching stock
+    stock_info = None
+    for key, data in stock_data.items():
+        if key in stock_name:
+            stock_info = data
+            break
     
-    # Use our symbol mapping system instead of Yahoo search
-    from advisor.data_service import StockDataService
-    data_service = StockDataService()
-    stock_ticker = data_service._normalize_symbol(clean_stock_name.upper())
+    if not stock_info:
+        return "❌ Stock not found. Please try: Reliance, TCS, or HDFC Bank"
     
-    try:
-        # Use full API for production deployment
-        current_price = data_service.get_stock_price(stock_ticker)
+    # Get personalized recommendation using personalization service
+    if avg_buy_price and user_shares > 0:
+        # User provided their position - get personalized analysis
+        personalized_signal, personalized_advice = personalize_signal(
+            stock_info['ml_signal'], 
+            avg_buy_price,
+            stock_info['price'], 
+            user_shares
+        )
         
-        if not current_price:
-            return f"I found {stock_ticker} but couldn't get current price data. Please try again later."
+        # Calculate P&L
+        current_value = stock_info['price'] * user_shares
+        investment_value = avg_buy_price * user_shares
+        pnl = current_value - investment_value
+        pnl_percent = (pnl / investment_value) * 100
         
-        # Set default values for analysis if not provided
-        if not avg_buy_price:
-            avg_buy_price = current_price * 0.95  # Assume 5% below current price
-        if not user_shares:
-            user_shares = 1  # Default shares for analysis
-        
-        # Calculate metrics
-        total_investment = avg_buy_price * user_shares
-        current_value = current_price * user_shares
-        profit_loss = current_value - total_investment
-        profit_loss_percent = (profit_loss / total_investment * 100) if total_investment > 0 else 0
-        
-        # Get comprehensive analysis with full API data
-        stock_data = data_service._fetch_stock_data(stock_ticker)
-        if stock_data:
-            # Generate comprehensive analysis with real data
-            analysis = f"Based on current market data, {stock_ticker} shows strong fundamentals. "
-            if profit_loss_percent > 0:
-                analysis += f"Your position is profitable with {profit_loss_percent:.1f}% gains. "
-            else:
-                analysis += f"Your position is down {abs(profit_loss_percent):.1f}%. "
-            analysis += "Consider reviewing your investment strategy based on current market conditions."
-        else:
-            # Fallback to simple analysis
-            analysis = get_quick_stock_analysis(stock_ticker, current_price, avg_buy_price)
-        
-        # Format the response for production
-        response = f"""**{stock_ticker.upper()} ANALYSIS**
+        response = f"""📊 **{stock_info['name'].upper()} ANALYSIS**
 
-**Current Price:** ₹{current_price:,.2f}
+**Current Price:** ₹{stock_info['price']:,.2f} ({stock_info['change']:+.2f}, {stock_info['change_pct']:+.2f}%)
+**Market Cap:** {stock_info['market_cap']}
 
 **Your Position:**
-• Shares: {user_shares:,}
+• Shares Owned: {user_shares:,}
 • Average Buy Price: ₹{avg_buy_price:,.2f}
 • Current Value: ₹{current_value:,.2f}
-• P&L: ₹{profit_loss:+,.2f} ({profit_loss_percent:+.2f}%)
+• P&L: ₹{pnl:+,.2f} ({pnl_percent:+.2f}%)
 
-**AI Analysis:**
-{analysis}
+**Key Metrics:**
+• P/E Ratio: {stock_info['pe_ratio']}
+• ROE: {stock_info['roe']}%
+• Debt/Equity: {stock_info['debt_equity']}
+
+**Personalized Recommendation:**
+🎯 **{personalized_signal}**
+{personalized_advice}
 
 **Portfolio Action:**
-[Add to Portfolio] [Set Alert] [Compare Stocks]"""
-        
-        return response
-        
-    except Exception as e:
-        logger.error(f"Stock analysis error: {e}")
-        return f"Sorry, I encountered an error while analyzing '{clean_stock_name}'. Please try again later."
-
-def get_mobile_stock_price(stock_ticker):
-    """Get stock price optimized for mobile with fast fallback"""
-    try:
-        # Try cached price first
-        from django.core.cache import cache
-        cache_key = f"stock_price_{stock_ticker}"
-        cached_price = cache.get(cache_key)
-        if cached_price:
-            return cached_price
-        
-        # Use fallback prices for mobile performance
-        fallback_prices = {
-            "RELIANCE": 2450.75,
-            "TCS": 3680.50,
-            "INFY": 1420.80,
-            "INFOSYS": 1420.80,
-            "HDFC": 1650.25,
-            "HDFCBANK": 1650.25,
-            "ICICIBANK": 950.30,
-            "SBIN": 580.45,
-            "BHARTIARTL": 980.45,
-            "BHARTI": 980.45,
-            "ITC": 450.20,
-            "TATASTEEL": 120.80,
-            "WIPRO": 380.90,
-            "HINDUNILVR": 2400.50,
-            "KOTAKBANK": 1800.25,
-            "KOTAK": 1800.25,
-            "ASIANPAINT": 3200.75,
-            "ASIAN": 3200.75,
-            "MARUTI": 10500.00,
-            "NESTLEIND": 18000.50,
-            "ULTRACEMCO": 8500.25,
-            "TITAN": 3200.80,
-            "BAJFINANCE": 7500.50,
-            "TATAMOTORS": 650.30,
-            "TATAPOWER": 280.45,
-            "TATACONSUM": 850.75,
-            "TATAELXSI": 4200.50,
-            "MOTHERSON": 180.25,
-            "MOTHERSONSUMI": 95.80,
-            "AXISBANK": 950.30,
-            "AXIS": 950.30,
-            "SBI": 580.45,
-            "ICICI": 950.30
-        }
-        
-        # Return fallback price if available
-        if stock_ticker in fallback_prices:
-            price = fallback_prices[stock_ticker]
-            # Cache for 5 minutes
-            cache.set(cache_key, price, 300)
-            return price
-        
-        # If no fallback, try one quick API call with short timeout
-        try:
-            from advisor.data_service import StockDataService
-            data_service = StockDataService()
-            price = data_service.get_stock_price(stock_ticker)
-            if price:
-                cache.set(cache_key, price, 300)
-                return price
-        except:
-            pass
-        
-        return None
-        
-    except Exception as e:
-        logger.error(f"Mobile stock price error: {e}")
-        return None
-
-def get_quick_stock_analysis(stock_ticker, current_price, avg_buy_price):
-    """Generate quick analysis without heavy API calls"""
-    # Simple analysis based on price movement
-    price_change_percent = ((current_price - avg_buy_price) / avg_buy_price * 100) if avg_buy_price > 0 else 0
-    
-    if price_change_percent > 10:
-        return f"Strong performance! {stock_ticker} is up {price_change_percent:.1f}% from your average price. Consider taking partial profits if you're satisfied with gains."
-    elif price_change_percent > 5:
-        return f"Good performance! {stock_ticker} is up {price_change_percent:.1f}% from your average price. Hold for further upside potential."
-    elif price_change_percent > -5:
-        return f"Stable performance. {stock_ticker} is {price_change_percent:+.1f}% from your average price. Monitor for better entry/exit opportunities."
+[Add More Shares] [Sell Shares] [Set Price Alert]"""
     else:
-        return f"Underperforming. {stock_ticker} is down {abs(price_change_percent):.1f}% from your average price. Consider averaging down or reviewing your investment thesis."
+        # No position data - general analysis
+        personalized_signal, personalized_advice = personalize_signal(
+            stock_info['ml_signal'], 
+            stock_info['price'] * 0.95,  # Mock avg buy price (5% lower)
+            stock_info['price'], 
+            100  # Mock shares
+        )
+        
+        response = f"""📊 **{stock_info['name'].upper()} ANALYSIS**
 
-def search_stock_ticker(stock_name):
-    """Search for stock ticker using Yahoo Finance API"""
-    try:
-        import requests
-        
-        # Search for the stock using Yahoo Finance API
-        search_url = "https://query1.finance.yahoo.com/v1/finance/search"
-        params = {
-            "q": stock_name,
-            "quotesCount": 5,
-            "newsCount": 0
-        }
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
-            "Referer": "https://finance.yahoo.com/"
-        }
-        
-        response = requests.get(search_url, params=params, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            data = response.json()
-            quotes = data.get("quotes", [])
-            
-            if quotes:
-                # Get the first matching quote and extract ticker
-                quote = quotes[0]
-                symbol = quote.get('symbol', '')
-                
-                # Remove exchange suffixes for Indian stocks
-                if symbol.endswith('.NS'):
-                    return symbol[:-3]  # Remove .NS
-                elif symbol.endswith('.BO'):
-                    return symbol[:-3]  # Remove .BO
-                else:
-                    return symbol
-        
-        return None
-        
-    except Exception as e:
-        logger.error(f"Stock search error: {e}")
-        return None
+**Current Price:** ₹{stock_info['price']:,.2f} ({stock_info['change']:+.2f}, {stock_info['change_pct']:+.2f}%)
+**Market Cap:** {stock_info['market_cap']}
+
+**Key Metrics:**
+• P/E Ratio: {stock_info['pe_ratio']}
+• ROE: {stock_info['roe']}%
+• Debt/Equity: {stock_info['debt_equity']}
+
+**Technical Analysis:**
+• Trend: Bullish
+• Support: ₹{stock_info['price'] * 0.95:,.2f}
+• Resistance: ₹{stock_info['price'] * 1.05:,.2f}
+
+**Recommendation:**
+🎯 **{personalized_signal}**
+{personalized_advice}
+
+💡 **For personalized advice, tell me:**
+• How many shares you own
+• Your average buy price
+
+**Portfolio Action:**
+[Add to Portfolio] [View Similar Stocks] [Set Price Alert]"""
+    
+    return response
 
 def get_detailed_mutual_fund_analysis(fund_name):
     """Get detailed mutual fund analysis using mf_data_service"""
@@ -894,72 +777,61 @@ def stock_analysis(request):
 @method_decorator(csrf_exempt, name="dispatch")
 class PortfolioView(View):
     def get(self, request):
-        try:
-            # Check if user is authenticated
-            if not hasattr(request, 'user') or not request.user.is_authenticated:
-                return JsonResponse({"error": "Authentication required"}, status=401)
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+        
+        from decimal import Decimal
+        
+        holdings = Holding.objects.filter(portfolio__user=request.user)
+        total_value = sum(Decimal(h.quantity) * h.average_buy_price for h in holdings)
+        
+        # Check if this is a details request (for portfolio page)
+        if request.path.endswith('/details/'):
+            holdings_data = []
+            total_current_value = 0
             
-            from decimal import Decimal
-            
-            holdings = Holding.objects.filter(portfolio__user=request.user)
-            total_value = sum(Decimal(h.quantity) * h.average_buy_price for h in holdings)
-            
-            # Check if this is a details request (for portfolio page)
-            if request.path.endswith('/details/'):
-                holdings_data = []
-                total_current_value = 0
+            for h in holdings:
+                # Fetch real-time current price
+                current_price = self._fetch_current_price(h.ticker)
+                current_value = Decimal(h.quantity) * Decimal(str(current_price))
+                net_profit = current_value - (Decimal(h.quantity) * h.average_buy_price)
+                total_current_value += float(current_value)
                 
-                for h in holdings:
-                    # Fetch real-time current price
-                    current_price = self._fetch_current_price(h.ticker)
-                    if current_price is None:
-                        # Use average buy price as fallback if current price unavailable
-                        current_price = float(h.average_buy_price)
-                    
-                    current_value = Decimal(h.quantity) * Decimal(str(current_price))
-                    net_profit = current_value - (Decimal(h.quantity) * h.average_buy_price)
-                    total_current_value += float(current_value)
-                
-                    holdings_data.append({
-                        "ticker": h.ticker,
-                        "quantity": h.quantity,
-                        "average_buy_price": float(h.average_buy_price),
-                        "current_price": current_price,
-                        "current_value": float(current_value),
-                        "net_profit": float(net_profit)
-                    })
-                
-                return JsonResponse({
-                    "holdings": holdings_data,
-                    "total_invested": float(total_value),
-                    "total_current_value": total_current_value,
-                    "net_profit": total_current_value - float(total_value)
+                holdings_data.append({
+                    "ticker": h.ticker,
+                    "quantity": h.quantity,
+                    "average_buy_price": float(h.average_buy_price),
+                    "current_price": current_price,
+                    "current_value": float(current_value),
+                    "net_profit": float(net_profit)
                 })
             
-            # Default response for other portfolio requests
             return JsonResponse({
-                "holdings": [
-                    {
-                        "ticker": h.ticker,
-                        "quantity": h.quantity,
-                        "buy_price": float(h.average_buy_price),
-                        "current_value": float(Decimal(h.quantity) * h.average_buy_price)
-                    }
-                    for h in holdings
-                ],
-                "total_value": float(total_value)
+                "holdings": holdings_data,
+                "total_invested": float(total_value),
+                "total_current_value": total_current_value,
+                "net_profit": total_current_value - float(total_value)
             })
-            
-        except Exception as e:
-            logger.error(f"Portfolio API error: {e}")
-            return JsonResponse({"error": "Internal server error"}, status=500)
+        
+        # Default response for other portfolio requests
+        return JsonResponse({
+            "holdings": [
+                {
+                    "ticker": h.ticker,
+                    "quantity": h.quantity,
+                    "buy_price": float(h.average_buy_price),
+                    "current_value": float(Decimal(h.quantity) * h.average_buy_price)
+                }
+                for h in holdings
+            ],
+            "total_value": float(total_value)
+        })
     
     def post(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Authentication required"}, status=401)
+        
         try:
-            # Check if user is authenticated
-            if not hasattr(request, 'user') or not request.user.is_authenticated:
-                return JsonResponse({"error": "Authentication required"}, status=401)
-            
             from decimal import Decimal
             
             data = json.loads(request.body.decode("utf-8"))
@@ -1156,14 +1028,19 @@ class MarketSnapshotView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class PortfolioHealthView(View):
     def get(self, request):
+        print(f"PortfolioHealthView: User authenticated: {request.user.is_authenticated}")
+        print(f"PortfolioHealthView: User: {request.user}")
+        
         try:
-            # Check if user is authenticated
-            if not hasattr(request, 'user') or not request.user.is_authenticated:
+            if not request.user.is_authenticated:
+                print("PortfolioHealthView: User not authenticated, returning 401")
                 return JsonResponse({"error": "Authentication required"}, status=401)
             
             holdings = Holding.objects.filter(portfolio__user=request.user)
+            print(f"PortfolioHealthView: Found {holdings.count()} holdings for user {request.user}")
             
             if not holdings.exists():
+                print("PortfolioHealthView: No holdings found, returning empty portfolio response")
                 return JsonResponse({
                     "overall_score": 0,
                     "diversification": {
@@ -1344,21 +1221,21 @@ def portfolio_page_view(request):
 def mobile_index(request):
     """Mobile-optimized index page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html', {'next': '/mobile/'})
+        return render(request, 'users/login.html')
     
     return render(request, 'advisor/mobile_index.html')
 
 def mobile_portfolio(request):
     """Mobile-optimized portfolio page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html', {'next': '/mobile/portfolio/'})
+        return render(request, 'users/login.html')
     
     return render(request, 'advisor/mobile_portfolio.html')
 
 def mobile_profile(request):
     """Mobile-optimized profile page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html', {'next': '/mobile/profile/'})
+        return render(request, 'users/login.html')
     
     return render(request, 'advisor/mobile_profile.html')
 
@@ -1704,10 +1581,6 @@ class StockAnalysisView(View):
         
         # Get current price from the robust data service
         current_price = stock_data_service.get_stock_price(ticker)
-        
-        if not current_price:
-            print(f"StockAnalysisView: No price data available for {ticker} - all APIs failed")
-            return None, None
         
         # Try to get fundamentals from yfinance if available
         fundamentals = {
@@ -2231,3 +2104,31 @@ def portfolio_page_view(request):
     """Portfolio page view"""
     return render(request, 'advisor/portfolio.html')
 
+# =====================
+# Mobile Views
+# =====================
+
+def mobile_index(request):
+    """Mobile-optimized index page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_index.html')
+
+def mobile_portfolio(request):
+    """Mobile-optimized portfolio page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_portfolio.html')
+
+def mobile_profile(request):
+    """Mobile-optimized profile page"""
+    if not request.user.is_authenticated:
+        return render(request, 'users/login.html')
+    
+    return render(request, 'advisor/mobile_profile.html')
+
+def mobile_about(request):
+    """Mobile-optimized about page"""
+    return render(request, 'advisor/mobile_about.html')
