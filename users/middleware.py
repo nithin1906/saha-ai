@@ -26,7 +26,9 @@ class InviteOnlyMiddleware(MiddlewareMixin):
         if not request.user.is_authenticated:
             if request.path in ['/users/login/', '/users/register/', '/users/logout/']:
                 return None
-            return redirect('/users/login/')
+            # Preserve the next parameter for mobile redirects
+            next_param = f"?next={request.path}" if request.path.startswith('/mobile/') else ""
+            return redirect(f'/users/login/{next_param}')
         
         # Check if user is approved
         try:

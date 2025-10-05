@@ -224,11 +224,11 @@ def custom_login(request):
                 if not profile.is_approved:
                     log_access(user, request, 'login_attempt_unapproved', False)
                     messages.error(request, 'Your account is pending admin approval.')
-                    return render(request, 'users/login.html', {'form': None})
+                    return render(request, 'users/login.html', {'form': None, 'next': request.GET.get('next', '')})
             except UserProfile.DoesNotExist:
                 log_access(user, request, 'login_attempt_no_profile', False)
                 messages.error(request, 'Account not found. Please register first.')
-                return render(request, 'users/login.html', {'form': None})
+                return render(request, 'users/login.html', {'form': None, 'next': request.GET.get('next', '')})
             
             login(request, user)
             
@@ -244,12 +244,19 @@ def custom_login(request):
             if is_admin(user):
                 return redirect('admin_dashboard')
             else:
-                return redirect('home')
+                # Check if user came from mobile and redirect accordingly
+                next_url = request.GET.get('next') or request.POST.get('next')
+                if next_url and 'mobile' in next_url:
+                    return redirect(next_url)
+                elif request.META.get('HTTP_REFERER', '').endswith('/mobile/'):
+                    return redirect('mobile_index')
+                else:
+                    return redirect('home')
         else:
             log_access(None, request, 'login_failed', False)
             messages.error(request, 'Invalid username or password.')
     
-    return render(request, 'users/login.html', {'form': None})
+    return render(request, 'users/login.html', {'form': None, 'next': request.GET.get('next', '')})
 
 @login_required
 def access_logs(request):

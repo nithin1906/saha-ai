@@ -52,6 +52,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'advisor.middleware.DeviceDetectionMiddleware',  # Add device detection
     'users.middleware.SecurityLoggingMiddleware',
     'users.middleware.InviteOnlyMiddleware',
 ]
@@ -123,6 +124,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Add MIME type for service worker
+import mimetypes
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('application/json', '.json')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SAHA-AI Mobile</title>
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SAHA-AI">
+    <link rel="apple-touch-icon" href="{% static 'manifest.json' %}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{% static 'css/mobile-saha.css' %}">
     <script>
@@ -193,6 +200,159 @@
         #theme-toggle-mobile:checked {
             /* This will be handled by JavaScript to add 'dark' class to html */
         }
+        
+        /* Enhanced mobile responsiveness */
+        @media (max-width: 480px) {
+            .mobile-container {
+                padding-left: 4px;
+                padding-right: 4px;
+            }
+            
+            .mobile-card {
+                margin: 4px;
+                padding: 12px;
+            }
+            
+            .chat-bubble {
+                max-width: 90%;
+                font-size: 14px;
+            }
+            
+            .mobile-button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+        }
+        
+        /* Improved touch targets */
+        .touch-target {
+            min-height: 48px;
+            min-width: 48px;
+        }
+        
+        /* Better focus indicators for accessibility */
+        .mobile-focus:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        
+        /* Visual Component Styles */
+        .stock-analysis-card, .mf-analysis-card, .portfolio-analysis-card, .structured-response {
+            animation: slideInUp 0.3s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .metric-card {
+            transition: all 0.2s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .action-btn {
+            transition: all 0.2s ease;
+            transform: translateY(0);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .action-btn:active {
+            transform: translateY(0);
+        }
+        
+        .recommendation-card {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+            }
+        }
+        
+        /* Typing indicator animation */
+        .typing-dots {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 0;
+        }
+        
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #6b7280;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dots span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .holding-item {
+            transition: all 0.2s ease;
+        }
+        
+        .holding-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Chart placeholder styles */
+        .chart-placeholder {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            margin: 16px 0;
+        }
+        
+        /* Professional card shadows */
+        .stock-analysis-card, .mf-analysis-card, .portfolio-analysis-card {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .dark .stock-analysis-card, .dark .mf-analysis-card, .dark .portfolio-analysis-card {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 mobile-container">
@@ -227,21 +387,66 @@
 
 <!-- Main Content -->
 <main class="pb-4">
-    <!-- Market Overview Cards -->
-    <div id="market-cards-mobile" class="px-4 py-4">
-        <div class="swipe-container hide-scrollbar flex space-x-4">
+    <!-- Portfolio Overview -->
+    {% if has_holdings %}
+    <div class="px-4 py-4">
+        <div class="mobile-card">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Portfolio Overview</h2>
+                <a href="/mobile/portfolio/" class="text-blue-600 dark:text-blue-400 text-sm font-medium">View All</a>
+            </div>
+            
+            <div class="mb-4">
+                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">₹{{ total_current_value|floatformat:2 }}</div>
+                <div class="text-sm {% if total_pnl >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                    {% if total_pnl >= 0 %}+{% endif %}₹{{ total_pnl|floatformat:2 }} ({% if total_pnl_percent >= 0 %}+{% endif %}{{ total_pnl_percent|floatformat:2 }}%)
+                </div>
+            </div>
+            
+            <div class="space-y-3">
+                {% for holding in holdings|slice:":3" %}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 rounded-full {% cycle 'bg-blue-500' 'bg-green-500' 'bg-purple-500' %}"></div>
+                        <div>
+                            <div class="font-medium text-gray-900 dark:text-gray-100">{{ holding.ticker }}</div>
+                            <div class="text-sm text-gray-600 dark:text-gray-400">₹{{ holding.current_value|floatformat:2 }}</div>
+                        </div>
+                    </div>
+                    <div class="text-sm {% if holding.pnl >= 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                        {% if holding.pnl >= 0 %}+{% endif %}{{ holding.pnl_percent|floatformat:1 }}%
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-4 flex space-x-2">
+                <button onclick="handleQuickAction('portfolio')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium">
+                    + Add Stock
+                </button>
+                <button onclick="handleQuickAction('portfolio')" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg text-sm font-medium">
+                    Rebalance
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Market Overview Cards - Fixed Position -->
+    <div id="market-cards-mobile" class="fixed top-16 left-0 right-0 z-30 px-2 py-2 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-b border-gray-200 dark:border-gray-700">
+        <div class="flex space-x-2">
             <!-- Market cards will be populated here -->
-            <div class="swipe-item mobile-card min-w-[280px] mobile-skeleton h-24"></div>
-            <div class="swipe-item mobile-card min-w-[280px] mobile-skeleton h-24"></div>
-            <div class="swipe-item mobile-card min-w-[280px] mobile-skeleton h-24"></div>
+            <div class="flex-1 mobile-card mobile-skeleton h-16"></div>
+            <div class="flex-1 mobile-card mobile-skeleton h-16"></div>
+            <div class="flex-1 mobile-card mobile-skeleton h-16"></div>
         </div>
     </div>
 
     <!-- Chat Area -->
-    <div id="chat-window-mobile" class="px-4 pb-20">
+    <div id="chat-window-mobile" class="px-4 pb-24 overflow-y-auto" style="max-height: calc(100vh - 200px); margin-top: 80px;">
         {% csrf_token %}
         <!-- Beta Testing Welcome Message -->
-        <div id="beta-welcome-mobile" class="mobile-card mb-4" style="display: none;">
+        <div id="beta-welcome-mobile" class="mobile-card mb-6" style="display: none;">
             <div class="text-center">
                 <div class="text-4xl mb-3">🚀</div>
                 <h3 class="text-lg font-bold text-blue-800 dark:text-blue-200 mb-3">Welcome to SAHA-AI Mobile Beta!</h3>
@@ -260,16 +465,23 @@
         </div>
         
         <!-- Regular Welcome Message -->
-        <div id="initial-greeting-mobile" class="chat-bubble chat-bubble-bot">
+        <div id="initial-greeting-mobile" class="chat-bubble chat-bubble-bot mb-4">
             👋 Hi! I'm SAHA-AI Mobile. I can help you analyze stocks, mutual funds, and manage your portfolio. Try asking me something!
         </div>
     </div>
 
     <!-- Input Area -->
-    <div class="fixed bottom-20 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-t border-gray-200 dark:border-gray-700 p-4">
-        <div class="flex space-x-3">
-            <input id="user-input-mobile" type="text" class="flex-1 mobile-input bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100" placeholder="Ask about stocks, mutual funds...">
-            <button id="send-button-mobile" class="mobile-button bg-blue-600 hover:bg-blue-700 text-white touch-target">
+    <div class="fixed bottom-20 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur border-t border-gray-200 dark:border-gray-700 p-4 pb-6">
+        <div class="flex space-x-3 mb-3">
+            <input id="user-input-mobile" type="text" 
+                   class="flex-1 mobile-input bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 mobile-focus" 
+                   placeholder="Type stock name (e.g., 'Reliance' or 'Analyze TCS, I have 50 shares at ₹2,200')"
+                   autocomplete="off"
+                   autocorrect="off"
+                   autocapitalize="off"
+                   spellcheck="false">
+            <button id="send-button-mobile" class="mobile-button bg-blue-600 hover:bg-blue-700 text-white touch-target mobile-focus" 
+                    aria-label="Send message">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
@@ -277,16 +489,28 @@
         </div>
         
         <!-- Quick Suggestions -->
-        <div id="quick-suggestions-mobile" class="mt-3 flex space-x-2 overflow-x-auto hide-scrollbar">
-            <button class="suggestion-chip-mobile bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full text-sm whitespace-nowrap">
-                Analyze Stock
+        <div id="quick-suggestions-mobile" class="mt-4 flex flex-wrap gap-2 justify-center">
+            <button onclick="handleQuickAction('analyze-stock')" class="quick-action-btn bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 shadow-lg transition-all duration-200 transform hover:scale-105">
+                <span class="text-lg">📊</span>
+                <span>Analyze Stock</span>
             </button>
-            <button class="suggestion-chip-mobile bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full text-sm whitespace-nowrap">
-                Portfolio
+            <button onclick="handleQuickAction('mutual-funds')" class="quick-action-btn bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 shadow-lg transition-all duration-200 transform hover:scale-105">
+                <span class="text-lg">💰</span>
+                <span>Mutual Funds</span>
             </button>
-            <button class="suggestion-chip-mobile bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-2 rounded-full text-sm whitespace-nowrap">
-                Market Status
+            <button onclick="handleQuickAction('portfolio')" class="quick-action-btn bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 shadow-lg transition-all duration-200 transform hover:scale-105">
+                <span class="text-lg">💼</span>
+                <span>Portfolio</span>
             </button>
+            <button onclick="handleQuickAction('investment-tips')" class="quick-action-btn bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 shadow-lg transition-all duration-200 transform hover:scale-105">
+                <span class="text-lg">💡</span>
+                <span>Investment Tips</span>
+            </button>
+        </div>
+        
+        <!-- Connection Status -->
+        <div id="connection-status-mobile" class="mt-2 text-center text-xs text-gray-500 dark:text-gray-400 hidden">
+            <span id="connection-text-mobile">Checking connection...</span>
         </div>
     </div>
 </main>

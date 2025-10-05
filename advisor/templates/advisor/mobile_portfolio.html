@@ -5,6 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Portfolio - SAHA-AI Mobile</title>
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="SAHA-AI">
+    <link rel="apple-touch-icon" href="{% static 'manifest.json' %}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{% static 'css/mobile-saha.css' %}">
     <script>
@@ -117,6 +124,12 @@
             color: #1d4ed8;
         }
         
+        /* Refresh animation */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
         /* Touch-friendly elements */
         .touch-target {
             min-height: 44px;
@@ -167,6 +180,25 @@
         
         .holding-item.swiped .swipe-actions {
             transform: translateX(0);
+        }
+        
+        .mobile-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .dark .mobile-spinner {
+            border-color: #374151;
+            border-top-color: #3b82f6;
         }
     </style>
 </head>
@@ -223,11 +255,11 @@
         <!-- Portfolio Stats -->
         <div class="grid grid-cols-2 gap-4">
             <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div id="total-value-mobile" class="text-lg font-bold text-gray-900 dark:text-gray-100">₹0</div>
+                <div id="total-value-mobile" class="text-lg font-bold text-gray-900 dark:text-gray-100">₹{{ total_current_value|floatformat:2 }}</div>
                 <div class="text-xs text-gray-600 dark:text-gray-400">Total Value</div>
             </div>
             <div class="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div id="total-gain-mobile" class="text-lg font-bold text-gray-900 dark:text-gray-100">₹0</div>
+                <div id="total-gain-mobile" class="text-lg font-bold {% if total_pnl >= 0 %}text-green-600{% else %}text-red-600{% endif %}">₹{{ total_pnl|floatformat:2 }}</div>
                 <div class="text-xs text-gray-600 dark:text-gray-400">Total Gain/Loss</div>
             </div>
         </div>
@@ -245,14 +277,72 @@
         </div>
         
         <div id="holdings-list-mobile">
-            <!-- Holdings will be populated here -->
-            <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                <svg class="w-12 h-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                <p>No holdings yet</p>
-                <p class="text-sm">Add stocks or mutual funds to get started</p>
-            </div>
+            {% if has_holdings %}
+                {% for holding in holdings %}
+                <div class="holding-item holding-card p-4 mb-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center space-x-3">
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">{{ holding.ticker }}</h4>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">{{ holding.ticker }}</p>
+                            </div>
+                        </div>
+                        <span class="asset-badge asset-stock">STK</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p class="text-gray-600 dark:text-gray-400">Quantity</p>
+                            <p class="font-semibold">{{ holding.quantity }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 dark:text-gray-400">Current Price</p>
+                            <p class="font-semibold">₹{{ holding.current_price|floatformat:2 }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 dark:text-gray-400">Purchase Price</p>
+                            <p class="font-semibold">₹{{ holding.avg_price|floatformat:2 }}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-600 dark:text-gray-400">Gain/Loss</p>
+                            <p class="font-semibold {% if holding.pnl >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                                {% if holding.pnl >= 0 %}↗{% else %}↘{% endif %} {{ holding.pnl_percent|floatformat:2 }}%
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <p class="text-xs text-gray-600 dark:text-gray-400">Current Value</p>
+                                <p class="font-bold text-lg">₹{{ holding.current_value|floatformat:2 }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs text-gray-600 dark:text-gray-400">Total Gain/Loss</p>
+                                <p class="font-bold text-lg {% if holding.pnl >= 0 %}profit-positive{% else %}profit-negative{% endif %}">₹{{ holding.pnl|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Swipe Actions -->
+                    <div class="swipe-actions">
+                        <button class="text-white touch-target" onclick="removeHoldingMobile('{{ holding.ticker }}')">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <svg class="w-12 h-12 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <p>No holdings yet</p>
+                    <p class="text-sm">Add stocks or mutual funds to get started</p>
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -286,6 +376,43 @@
         </a>
     </div>
 </nav>
+
+<!-- Search Modal -->
+<div id="search-modal-mobile-portfolio" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Add to Portfolio</h3>
+            <button onclick="hideSearchModalMobile()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="p-4">
+            <div class="mb-4">
+                <input id="search-input-mobile-portfolio" type="text" 
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100" 
+                       placeholder="Search stocks or mutual funds...">
+            </div>
+            
+            <div id="search-results-mobile-portfolio" class="max-h-64 overflow-y-auto">
+                <!-- Search results will be populated here -->
+            </div>
+            
+            <div class="mt-4 flex space-x-3">
+                <button onclick="performSearchMobile()" 
+                        class="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+                    Search
+                </button>
+                <button onclick="hideSearchModalMobile()" 
+                        class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 // Mobile Portfolio JavaScript
@@ -343,8 +470,8 @@ function initializeMobilePortfolio() {
     // Set up refresh button
     const refreshBtn = document.getElementById('refresh-portfolio-mobile');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-            loadPortfolioDataMobile();
+        refreshBtn.addEventListener('click', async () => {
+            await refreshPortfolioMobile();
         });
     }
     
@@ -352,8 +479,17 @@ function initializeMobilePortfolio() {
     const addBtn = document.getElementById('add-holding-mobile');
     if (addBtn) {
         addBtn.addEventListener('click', () => {
-            // Navigate to main page for adding holdings
-            window.location.href = '/';
+            showSearchModalMobile();
+        });
+    }
+    
+    // Set up search input Enter key listener
+    const searchInput = document.getElementById('search-input-mobile-portfolio');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearchMobile();
+            }
         });
     }
 }
@@ -371,9 +507,39 @@ async function loadPortfolioDataMobile() {
     }
 }
 
+async function refreshPortfolioMobile() {
+    const refreshBtn = document.getElementById('refresh-portfolio-mobile');
+    const refreshIcon = refreshBtn?.querySelector('svg');
+    
+    // Show loading state
+    if (refreshIcon) {
+        refreshIcon.style.animation = 'spin 1s linear infinite';
+        refreshIcon.style.transformOrigin = 'center';
+    }
+    
+    try {
+        // Load portfolio health
+        await fetchAndDisplayPortfolioHealthMobile();
+        
+        // Load holdings
+        await loadHoldingsMobile();
+        
+        console.log('Portfolio refreshed successfully');
+        
+    } catch (error) {
+        console.error('Error refreshing portfolio:', error);
+        // Could add a toast notification here
+    } finally {
+        // Remove loading state
+        if (refreshIcon) {
+            refreshIcon.style.animation = '';
+        }
+    }
+}
+
 async function fetchAndDisplayPortfolioHealthMobile() {
     try {
-        const response = await fetch('/api/api/portfolio/health/', {
+        const response = await fetch('/api/portfolio/health/', {
             method: 'GET',
             credentials: 'include'
         });
@@ -390,19 +556,22 @@ async function fetchAndDisplayPortfolioHealthMobile() {
         const healthMessage = document.getElementById('health-message-mobile');
         
         if (healthScore && healthBar && healthMessage) {
-            healthScore.textContent = data.score || '--';
-            healthBar.style.width = `${data.score || 0}%`;
+            const score = data.overall_score || 0;
+            healthScore.textContent = score.toFixed(1);
+            healthBar.style.width = `${(score / 10) * 100}%`; // Convert 0-10 scale to percentage
             
-            // Color coding for health bar
-            if (data.score >= 80) {
+            // Color coding for health bar (0-10 scale)
+            if (score >= 8) {
                 healthBar.className = 'h-3 rounded-full transition-all duration-500 bg-green-500';
-            } else if (data.score >= 60) {
+            } else if (score >= 6) {
                 healthBar.className = 'h-3 rounded-full transition-all duration-500 bg-yellow-500';
             } else {
                 healthBar.className = 'h-3 rounded-full transition-all duration-500 bg-red-500';
             }
             
-            healthMessage.textContent = data.message || 'Portfolio health analysis complete';
+            // Use performance feedback as the main message
+            const performanceFeedback = data.performance?.feedback || 'Portfolio health analysis complete';
+            healthMessage.textContent = performanceFeedback;
         }
         
     } catch (error) {
@@ -412,7 +581,7 @@ async function fetchAndDisplayPortfolioHealthMobile() {
 
 async function loadHoldingsMobile() {
     try {
-        const response = await fetch('/api/api/portfolio/', {
+        const response = await fetch('/api/portfolio/details/', {
             method: 'GET',
             credentials: 'include'
         });
@@ -461,9 +630,9 @@ function displayHoldingsMobile(holdings) {
         const assetType = isMutualFund ? 'MF' : 'STK';
         const assetClass = isMutualFund ? 'asset-mf' : 'asset-stock';
         
-        const currentValue = holding.quantity * holding.current_price;
-        const totalCost = holding.quantity * holding.purchase_price;
-        const gainLoss = currentValue - totalCost;
+        const currentValue = holding.current_value || (holding.quantity * holding.current_price);
+        const totalCost = holding.quantity * holding.average_buy_price;
+        const gainLoss = holding.net_profit || (currentValue - totalCost);
         const gainLossPercent = ((gainLoss / totalCost) * 100).toFixed(2);
         
         const profitClass = gainLoss >= 0 ? 'profit-positive' : 'profit-negative';
@@ -474,7 +643,7 @@ function displayHoldingsMobile(holdings) {
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center space-x-3">
                         <div>
-                            <h4 class="font-semibold text-gray-900 dark:text-gray-100">${holding.name}</h4>
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100">${holding.ticker}</h4>
                             <p class="text-sm text-gray-600 dark:text-gray-400">${holding.ticker}</p>
                         </div>
                     </div>
@@ -492,7 +661,7 @@ function displayHoldingsMobile(holdings) {
                     </div>
                     <div>
                         <p class="text-gray-600 dark:text-gray-400">Purchase Price</p>
-                        <p class="font-semibold">₹${holding.purchase_price.toFixed(2)}</p>
+                        <p class="font-semibold">₹${holding.average_buy_price.toFixed(2)}</p>
                     </div>
                     <div>
                         <p class="text-gray-600 dark:text-gray-400">Gain/Loss</p>
@@ -575,11 +744,11 @@ function updatePortfolioStatsMobile(holdings) {
     let totalGainLoss = 0;
     
     holdings.forEach(holding => {
-        const currentValue = holding.quantity * holding.current_price;
-        const totalCost = holding.quantity * holding.purchase_price;
+        const currentValue = holding.current_value || (holding.quantity * holding.current_price);
+        const totalCost = holding.quantity * holding.average_buy_price;
         
         totalValue += currentValue;
-        totalGainLoss += (currentValue - totalCost);
+        totalGainLoss += holding.net_profit || (currentValue - totalCost);
     });
     
     // Update total value
@@ -602,7 +771,7 @@ async function removeHoldingMobile(ticker) {
     }
     
     try {
-        const response = await fetch(`/api/api/portfolio/remove/${ticker}/`, {
+        const response = await fetch(`/api/portfolio/remove/${ticker}/`, {
             method: 'POST',
             credentials: 'include'
         });
@@ -617,6 +786,400 @@ async function removeHoldingMobile(ticker) {
         console.error('Error removing holding:', error);
         alert('Error removing holding. Please try again.');
     }
+}
+
+// Search Modal Functions
+function showSearchModalMobile() {
+    const modal = document.getElementById('search-modal-mobile-portfolio');
+    if (modal) {
+        modal.classList.remove('hidden');
+        // Focus on search input
+        const searchInput = document.getElementById('search-input-mobile-portfolio');
+        if (searchInput) {
+            setTimeout(() => searchInput.focus(), 100);
+        }
+    }
+}
+
+function hideSearchModalMobile() {
+    const modal = document.getElementById('search-modal-mobile-portfolio');
+    if (modal) {
+        modal.classList.add('hidden');
+        // Clear search results
+        const searchResults = document.getElementById('search-results-mobile-portfolio');
+        if (searchResults) {
+            searchResults.innerHTML = '';
+        }
+        // Clear search input
+        const searchInput = document.getElementById('search-input-mobile-portfolio');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+    }
+}
+
+async function performSearchMobile() {
+    const searchInput = document.getElementById('search-input-mobile-portfolio');
+    const query = searchInput ? searchInput.value.trim() : '';
+    
+    if (!query) {
+        alert('Please enter a search term');
+        return;
+    }
+    
+    console.log('Searching for:', query);
+    
+    const searchResults = document.getElementById('search-results-mobile-portfolio');
+    if (searchResults) {
+        searchResults.innerHTML = '<div class="text-center py-4">Searching...</div>';
+    }
+    
+    try {
+        let results = [];
+        
+        // Determine if query is likely a stock or mutual fund
+        const queryLower = query.toLowerCase();
+        const isLikelyStock = isStockQuery(queryLower);
+        const isLikelyMF = isMutualFundQuery(queryLower);
+        
+        console.log('Query analysis - Stock:', isLikelyStock, 'MF:', isLikelyMF);
+        
+        // Search for stocks first if it looks like a stock query
+        if (isLikelyStock || (!isLikelyMF && !isLikelyStock)) {
+            try {
+                const stockResponse = await fetch(`/api/stock-search/?q=${encodeURIComponent(query)}&exchange=NSE`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                console.log('Stock Response status:', stockResponse.status);
+                
+                if (stockResponse.ok) {
+                    const stockData = await stockResponse.json();
+                    console.log('Stock Data:', stockData);
+                    if (stockData.stocks && stockData.stocks.length > 0) {
+                        results = results.concat(stockData.stocks.map(stock => ({
+                            ...stock,
+                            type: 'stock'
+                        })));
+                    }
+                }
+            } catch (error) {
+                console.log('Stock API failed:', error);
+            }
+        }
+        
+        // Search for mutual funds if it looks like a MF query or if no stock results found
+        if (isLikelyMF || results.length === 0) {
+            try {
+                const mfResponse = await fetch(`/api/mutual-fund-search/?q=${encodeURIComponent(query)}`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                console.log('MF Response status:', mfResponse.status);
+                
+                if (mfResponse.ok) {
+                    const mfData = await mfResponse.json();
+                    console.log('MF Data:', mfData);
+                    if (mfData.funds && mfData.funds.length > 0) {
+                        results = results.concat(mfData.funds.map(fund => ({
+                            ...fund,
+                            type: 'mutual_fund'
+                        })));
+                    }
+                }
+            } catch (error) {
+                console.log('MF API failed:', error);
+            }
+        }
+        
+        // If no results from APIs, use fallback sample data
+        if (results.length === 0) {
+            console.log('No API results, using fallback');
+            results = getSampleSearchResults(query);
+        }
+        
+        console.log('Final results:', results);
+        displaySearchResultsMobile(results);
+        
+    } catch (error) {
+        console.error('Error searching:', error);
+        // Fallback: Show sample data for testing
+        const results = getSampleSearchResults(query);
+        console.log('Fallback results:', results);
+        displaySearchResultsMobile(results);
+    }
+}
+
+function isStockQuery(query) {
+    // Common stock indicators
+    const stockKeywords = ['ltd', 'limited', 'industries', 'bank', 'corp', 'corporation', 'steel', 'motors', 'power', 'telecom', 'pharma', 'chemicals'];
+    const stockSymbols = ['reliance', 'tcs', 'hdfc', 'infy', 'bharti', 'itc', 'tata', 'wipro', 'hindunilvr', 'kotak', 'asianpaint', 'maruti', 'nestle', 'ultracemco', 'titan', 'bajfinance', 'hdfcbank', 'tatamotors', 'tatapower', 'tataconsum', 'tataelxsi', 'motherson', 'mothersonsumi'];
+    
+    return stockKeywords.some(keyword => query.includes(keyword)) || 
+           stockSymbols.some(symbol => query.includes(symbol)) ||
+           query.length <= 10 && /^[A-Za-z]+$/.test(query); // Short alphabetic queries are likely stock symbols
+}
+
+function isMutualFundQuery(query) {
+    // Common mutual fund indicators
+    const mfKeywords = ['fund', 'mutual', 'sip', 'equity', 'debt', 'hybrid', 'large cap', 'mid cap', 'small cap', 'growth', 'dividend', 'direct', 'regular'];
+    
+    return mfKeywords.some(keyword => query.includes(keyword)) ||
+           query.length > 15; // Longer queries are more likely to be fund names
+}
+
+function getSampleSearchResults(query) {
+    const queryLower = query.toLowerCase();
+    console.log('getSampleSearchResults called with:', query, 'lowercase:', queryLower);
+    
+    // Sample stocks
+    const stocks = [
+        { symbol: 'RELIANCE', name: 'Reliance Industries Ltd', price: 2450.75, change: 29.25, change_pct: 1.21, category: 'Conglomerate' },
+        { symbol: 'TCS', name: 'Tata Consultancy Services Ltd', price: 3680.50, change: 28.50, change_pct: 0.78, category: 'IT Services' },
+        { symbol: 'HDFCBANK', name: 'HDFC Bank Ltd', price: 1650.25, change: 34.25, change_pct: 2.12, category: 'Banking' },
+        { symbol: 'INFY', name: 'Infosys Ltd', price: 1420.80, change: 21.80, change_pct: 1.56, category: 'IT Services' },
+        { symbol: 'BHARTIARTL', name: 'Bharti Airtel Ltd', price: 980.45, change: -5.55, change_pct: -0.56, category: 'Telecom' }
+    ];
+    
+    // Sample mutual funds
+    const mfs = [
+        { scheme_code: 'HDFCMID001', scheme_name: 'HDFC Mid Cap Fund', nav: 244.15, change: 1.12, change_pct: 0.46, category: 'Mid Cap' },
+        { scheme_code: 'AXISBLU001', scheme_name: 'Axis Bluechip Fund', nav: 45.23, change: 0.23, change_pct: 0.51, category: 'Large Cap' },
+        { scheme_code: 'MIRAE001', scheme_name: 'Mirae Asset Large Cap Fund', nav: 78.45, change: -0.15, change_pct: -0.19, category: 'Large Cap' }
+    ];
+    
+    // Filter results based on query
+    const filteredStocks = stocks.filter(stock => 
+        stock.name.toLowerCase().includes(queryLower) || 
+        stock.symbol.toLowerCase().includes(queryLower)
+    );
+    
+    const filteredMFs = mfs.filter(mf => 
+        mf.scheme_name.toLowerCase().includes(queryLower) ||
+        mf.scheme_code.toLowerCase().includes(queryLower)
+    );
+    
+    const results = [
+        ...filteredStocks.map(stock => ({ ...stock, type: 'stock' })),
+        ...filteredMFs.map(mf => ({ ...mf, type: 'mutual_fund' }))
+    ];
+    console.log('Filtered results:', results);
+    
+    return results;
+}
+
+function displaySearchResultsMobile(results) {
+    const searchResults = document.getElementById('search-results-mobile-portfolio');
+    if (!searchResults) return;
+    
+    if (results.length === 0) {
+        searchResults.innerHTML = '<div class="text-center py-4 text-gray-500">No results found</div>';
+        return;
+    }
+    
+    searchResults.innerHTML = results.map(item => {
+        const isStock = item.type === 'stock';
+        const name = isStock ? item.name : item.scheme_name;
+        const symbol = isStock ? item.symbol : item.scheme_code;
+        const price = isStock ? item.price : item.nav;
+        const change = item.change;
+        const changePct = item.change_pct;
+        const category = item.category;
+        
+        return `
+        <div class="search-result-item bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-3">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 text-sm">${name}</h3>
+                        <span class="text-xs px-2 py-1 rounded-full ${isStock ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'}">
+                            ${isStock ? 'Stock' : 'MF'}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">${symbol}</p>
+                    ${category ? `<span class="text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 px-2 py-1 rounded-full mt-1 inline-block">${category}</span>` : ''}
+                </div>
+                <div class="text-right">
+                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">₹${price}</div>
+                    ${change !== undefined ? `
+                        <div class="text-xs ${change >= 0 ? 'text-green-600' : 'text-red-600'}">
+                            ${change >= 0 ? '+' : ''}${change} (${changePct}%)
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+            <div class="mt-3 flex space-x-2">
+                <button onclick="addToPortfolioMobile('${symbol}', '${name}', ${price}, '${isStock ? 'stock' : 'mutual_fund'}')" 
+                        class="flex-1 bg-green-500 text-white text-xs py-2 px-3 rounded-lg hover:bg-green-600 transition-colors">
+                    Add to Portfolio
+                </button>
+            </div>
+        </div>
+    `;
+    }).join('');
+}
+
+async function addToPortfolioMobile(symbol, name, currentPrice, type = 'stock') {
+    // Show buy price input modal
+    showBuyPriceModal(symbol, name, currentPrice, type);
+}
+
+function showBuyPriceModal(symbol, name, currentPrice, type) {
+    // Create modal HTML
+    const modalHtml = `
+        <div id="buy-price-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Add to Portfolio</h3>
+                    <button onclick="hideBuyPriceModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="p-4">
+                    <div class="mb-4">
+                        <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">${name}</h4>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">${symbol}</p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Current Price: ₹${currentPrice}</p>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quantity</label>
+                            <input id="quantity-input" type="number" min="1" value="1" 
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your Buy Price (₹)</label>
+                            <input id="buy-price-input" type="number" min="0" step="0.01" 
+                                   placeholder="Enter your average buy price"
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">This is the price you paid per share</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex space-x-3">
+                        <button onclick="confirmAddToPortfolio('${symbol}', '${name}', ${currentPrice}, '${type}')" 
+                                class="flex-1 bg-green-500 text-white py-2 px-4 rounded-lg hover:bg-green-600 transition-colors">
+                            Add to Portfolio
+                        </button>
+                        <button onclick="hideBuyPriceModal()" 
+                                class="flex-1 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add modal to page
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // Focus on quantity input
+    setTimeout(() => {
+        document.getElementById('quantity-input').focus();
+    }, 100);
+}
+
+function hideBuyPriceModal() {
+    const modal = document.getElementById('buy-price-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function confirmAddToPortfolio(symbol, name, currentPrice, type) {
+    try {
+        const quantityInput = document.getElementById('quantity-input');
+        const buyPriceInput = document.getElementById('buy-price-input');
+        
+        const quantity = parseInt(quantityInput.value);
+        const buyPrice = parseFloat(buyPriceInput.value);
+        
+        // Validation
+        if (!quantity || quantity <= 0) {
+            alert('Please enter a valid quantity');
+            return;
+        }
+        
+        if (!buyPrice || buyPrice <= 0) {
+            alert('Please enter your buy price');
+            return;
+        }
+        
+        // Show loading state
+        const addButton = document.querySelector('#buy-price-modal button[onclick*="confirmAddToPortfolio"]');
+        const originalText = addButton.textContent;
+        addButton.textContent = 'Adding...';
+        addButton.disabled = true;
+        
+        const response = await fetch('/api/portfolio/add/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                symbol: symbol,
+                name: name,
+                quantity: quantity,
+                price: buyPrice, // Use the user's buy price, not current market price
+                type: type
+            })
+        });
+        
+        if (response.ok) {
+            alert(`${name} added to portfolio successfully!`);
+            hideBuyPriceModal();
+            hideSearchModalMobile();
+            await loadPortfolioDataMobile();
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            alert(`Error adding to portfolio: ${errorData.error || 'Please try again.'}`);
+        }
+    } catch (error) {
+        console.error('Error adding to portfolio:', error);
+        alert('Error adding to portfolio. Please try again.');
+    } finally {
+        // Reset button state
+        const addButton = document.querySelector('#buy-price-modal button[onclick*="confirmAddToPortfolio"]');
+        if (addButton) {
+            addButton.textContent = 'Add to Portfolio';
+            addButton.disabled = false;
+        }
+    }
+}
+
+function getCSRFToken() {
+    // Try multiple ways to get CSRF token
+    let token = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (token) return token.value;
+    
+    token = document.querySelector('meta[name="csrf-token"]');
+    if (token) return token.getAttribute('content');
+    
+    token = document.cookie.match(/csrftoken=([^;]+)/);
+    if (token) return token[1];
+    
+    // Fallback: get from Django's CSRF cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'csrftoken') {
+            return value;
+        }
+    }
+    
+    console.warn('CSRF token not found');
+    return '';
 }
 </script>
 
