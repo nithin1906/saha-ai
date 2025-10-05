@@ -20,7 +20,7 @@ urlpatterns = [
     path("", advisor_views.chat_view, name="home"),
     path("profile/", advisor_views.profile_view, name="profile"),
     path("about/", advisor_views.about_view, name="about"),
-    path("portfolio-page/", advisor_views.portfolio_page_view, name="portfolio-page"),
+    path("portfolio/", advisor_views.portfolio_page_view, name="portfolio"),
 
     # APIs
     path("api/", include("advisor.urls")),
