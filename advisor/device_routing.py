@@ -17,14 +17,19 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
         import os
         self.mobile_service_url = os.environ.get('MOBILE_SERVICE_URL')
         
+        # Debug logging
+        print(f"DEBUG: MOBILE_SERVICE_URL = {self.mobile_service_url}")
+        
         # Only proceed with mobile redirection if mobile service URL is configured
         if not self.mobile_service_url:
             # No mobile service configured, skip redirection
             request.is_mobile = False
+            print("DEBUG: No mobile service URL configured, skipping redirection")
             return None
         
         # Get user agent
         user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+        print(f"DEBUG: User Agent = {user_agent}")
         
         # Mobile device patterns
         mobile_patterns = [
@@ -34,6 +39,7 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
         
         # Check if it's a mobile device
         is_mobile = any(pattern in user_agent for pattern in mobile_patterns)
+        print(f"DEBUG: Is mobile device = {is_mobile}")
         
         # Check for manual override in URL parameters
         if 'mobile' in request.GET:
@@ -64,6 +70,8 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
             if request.GET:
                 redirect_url += f"?{request.GET.urlencode()}"
             
+            print(f"DEBUG: Redirecting mobile user to {redirect_url}")
             return redirect(redirect_url)
         
+        print(f"DEBUG: No redirect needed - is_mobile={is_mobile}, path={request.path}")
         return None
