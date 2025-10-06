@@ -244,11 +244,19 @@ def custom_login(request):
             if is_admin(user):
                 return redirect('admin_dashboard')
             else:
-                # Check if user came from mobile and redirect accordingly
+                # Check if user came from mobile service and redirect accordingly
                 next_url = request.GET.get('next') or request.POST.get('next')
-                if next_url and 'mobile' in next_url:
-                    return redirect(next_url)
-                elif request.META.get('HTTP_REFERER', '').endswith('/mobile/'):
+                referer = request.META.get('HTTP_REFERER', '')
+                
+                # Check if this is a mobile service request
+                is_mobile_service = (
+                    'mobile' in next_url or 
+                    '/mobile/' in referer or
+                    'saha-ai-mobile.up.railway.app' in referer or
+                    request.META.get('HTTP_HOST', '').endswith('mobile.up.railway.app')
+                )
+                
+                if is_mobile_service:
                     return redirect('mobile_index')
                 else:
                     return redirect('home')
