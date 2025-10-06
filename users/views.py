@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
 from .models import InviteCode, UserProfile, AccessLog
 from .forms import InviteCodeForm, UserRegistrationForm
@@ -169,6 +170,7 @@ def manage_users(request):
         'approved_users': approved_users
     })
 
+@csrf_exempt
 def register_with_invite(request):
     """User registration with invite code"""
     if request.method == 'POST':
@@ -211,8 +213,9 @@ def register_with_invite(request):
     
     return render(request, 'users/register.html', {'form': form})
 
+@csrf_exempt
 def custom_login(request):
-    """Custom login with access logging"""
+    """Custom login with access logging - CSRF exempt for cross-domain compatibility"""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')

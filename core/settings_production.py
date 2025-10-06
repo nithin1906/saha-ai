@@ -53,13 +53,20 @@ SECURE_SSL_REDIRECT = False  # Railway handles SSL termination
 SESSION_COOKIE_SECURE = False  # Allow HTTP for Railway
 CSRF_COOKIE_SECURE = False  # Allow HTTP for Railway
 
-# CSRF settings - more permissive for cross-domain scenarios
+# CSRF settings - comprehensive for cross-domain scenarios
 CSRF_TRUSTED_ORIGINS = [
     'https://web-production-db25.up.railway.app',
     'https://saha-ai.up.railway.app',
     'https://saha-ai-mobile.up.railway.app',  # Mobile service
     'http://saha-ai.up.railway.app',  # Allow HTTP for Railway
     'http://saha-ai-mobile.up.railway.app',  # Allow HTTP for Railway mobile
+    # Add all possible Railway subdomain variations
+    'https://web-production-db25.up.railway.app',
+    'https://web-production-db26.up.railway.app',
+    'https://web-production-db27.up.railway.app',
+    'https://web-production-db28.up.railway.app',
+    'https://web-production-db29.up.railway.app',
+    'https://web-production-db30.up.railway.app',
 ]
 
 # Additional CSRF settings for cross-domain compatibility
@@ -69,6 +76,12 @@ CSRF_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests
 CSRF_COOKIE_AGE = 3600  # 1 hour
 CSRF_USE_SESSIONS = False  # Use cookies instead of sessions for CSRF
 CSRF_FAILURE_VIEW = 'advisor.csrf_views.custom_csrf_failure'
+
+# Disable CSRF for specific views that need cross-domain access
+CSRF_EXEMPT_VIEWS = [
+    'users.views.custom_login',
+    'users.views.custom_register',
+]
 
 # CORS settings - more permissive
 CORS_ALLOWED_ORIGINS = [
