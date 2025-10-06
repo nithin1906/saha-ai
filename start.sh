@@ -3,7 +3,14 @@
 echo "=== SAHA-AI STARTUP SCRIPT ==="
 echo "Starting at: $(date)"
 echo "Working directory: $(pwd)"
+
+# Activate virtual environment
+echo "=== Activating Virtual Environment ==="
+source /opt/venv/bin/activate
+echo "Virtual environment activated"
 echo "Python version: $(python --version)"
+echo "Python path: $(which python)"
+echo "Pip path: $(which pip)"
 echo "Django settings: $DJANGO_SETTINGS_MODULE"
 
 # Set Django settings

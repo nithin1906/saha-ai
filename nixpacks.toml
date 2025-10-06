@@ -9,5 +9,13 @@ cmds = [
     "source /opt/venv/bin/activate && python -c 'import django; print(f\"Django {django.get_version()} installed successfully\")'"
 ]
 
+[phases.build]
+cmds = [
+    "echo 'Build phase: Verifying virtual environment'",
+    "ls -la /opt/venv/bin/",
+    "source /opt/venv/bin/activate && python -c 'import sys; print(\"Python path:\", sys.path)'",
+    "source /opt/venv/bin/activate && python -c 'import django; print(\"Django version:\", django.get_version())'"
+]
+
 [start]
-cmd = "source /opt/venv/bin/activate && bash start.sh"
+cmd = "bash start.sh"
