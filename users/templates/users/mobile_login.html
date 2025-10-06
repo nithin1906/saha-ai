@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Login - SAHA-AI Mobile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Mobile-specific styles */
+        .mobile-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        
+        .mobile-card {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+        }
+        
+        .mobile-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .mobile-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .mobile-button {
+            width: 100%;
+            padding: 16px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .mobile-button:hover {
+            background: #2563eb;
+        }
+        
+        .mobile-button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        
+        .success-message {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+        
+        .loading {
+            display: none;
+        }
+        
+        .loading.show {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 mobile-container">
+    <div class="mobile-card">
+        <div class="text-center mb-8">
+            <div class="flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                    <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
+            <p class="text-gray-600">Log in to continue to SAHA-AI Mobile</p>
+        </div>
+        
+        <div id="error-container">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="error-message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if form.non_field_errors %}
+                {% for error in form.non_field_errors %}
+                    <div class="error-message">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div id="success-container"></div>
+
+        <form id="login-form" class="space-y-6" method="post" action="/users/login/">
+            {% csrf_token %}
+            {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+            
+            <div>
+                <label for="username" class="block text-sm font-medium text-gray-700 mb-2">Username</label>
+                <input type="text" name="username" id="username" 
+                       class="mobile-input" 
+                       placeholder="Enter your username"
+                       required
+                       autocomplete="username">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input type="password" name="password" id="password"
+                       class="mobile-input" 
+                       placeholder="Enter your password"
+                       required
+                       autocomplete="current-password">
+            </div>
+
+            <button type="submit" id="login-button" class="mobile-button">
+                <span id="button-text">Login</span>
+                <span id="loading-spinner" class="loading">⏳ Logging in...</span>
+            </button>
+        </form>
+        
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                Don't have an account? 
+                <a href="{% url 'register' %}" class="font-medium text-blue-600 hover:underline">Sign up</a>
+            </p>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <p class="text-xs text-gray-500">
+                Having trouble? Contact support
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('login-form');
+            const loginButton = document.getElementById('login-button');
+            const buttonText = document.getElementById('button-text');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const errorContainer = document.getElementById('error-container');
+            
+            // Clear any existing messages
+            errorContainer.innerHTML = '';
+            
+            form.addEventListener('submit', function(e) {
+                // Show loading state
+                loginButton.disabled = true;
+                buttonText.style.display = 'none';
+                loadingSpinner.classList.add('show');
+                
+                // Clear previous messages
+                errorContainer.innerHTML = '';
+                
+                // Let the form submit normally - Django will handle the authentication
+                // and redirect to the mobile app if successful
+            });
+            
+            // Handle Enter key press
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    form.dispatchEvent(new Event('submit'));
+                }
+            });
+        });
+    </script>
+</body>
+</html>

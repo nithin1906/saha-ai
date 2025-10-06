@@ -617,9 +617,9 @@ class MobileSAHA {
                 userInput.placeholder = "Type fund name (e.g., 'SBI Bluechip' or 'HDFC Top 100')";
                 break;
             case 'portfolio':
-                userInput.value = 'Portfolio';
-                userInput.placeholder = "Ask about your portfolio or holdings";
-                break;
+                // Show portfolio overview instead of sending message
+                this.showPortfolioOverview();
+                return; // Don't send message for portfolio
             case 'investment-tips':
                 userInput.value = 'Investment Tips';
                 userInput.placeholder = "Ask for investment advice or tips";
@@ -627,6 +627,20 @@ class MobileSAHA {
         }
         
         this.sendMessage();
+    }
+    
+    // Function to show/hide portfolio overview
+    showPortfolioOverview() {
+        const portfolioOverview = document.getElementById('portfolio-overview-mobile');
+        if (portfolioOverview) {
+            if (portfolioOverview.style.display === 'none') {
+                portfolioOverview.style.display = 'block';
+                // Scroll to portfolio overview
+                portfolioOverview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                portfolioOverview.style.display = 'none';
+            }
+        }
     }
     
     async loadMarketData() {

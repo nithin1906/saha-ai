@@ -2159,7 +2159,7 @@ def portfolio_page_view(request):
 def mobile_index(request):
     """Mobile-optimized index page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html', {'next': '/mobile/'})
+        return render(request, 'users/mobile_login.html', {'next': '/mobile/'})
     
     # Get user's portfolio data for mobile display
     holdings = []
@@ -2212,7 +2212,7 @@ def mobile_index(request):
 def mobile_portfolio(request):
     """Mobile-optimized portfolio page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html', {'next': '/mobile/portfolio/'})
+        return render(request, 'users/mobile_login.html', {'next': '/mobile/portfolio/'})
     
     # Get user's portfolio data for mobile display
     holdings = []
@@ -2265,7 +2265,7 @@ def mobile_portfolio(request):
 def mobile_profile(request):
     """Mobile-optimized profile page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html', {'next': '/mobile/profile/'})
+        return render(request, 'users/mobile_login.html', {'next': '/mobile/profile/'})
     
     return render(request, 'advisor/mobile_profile.html', {
         'user': request.user,
