@@ -50,12 +50,13 @@ SECURE_HSTS_PRELOAD = True
 
 # HTTPS settings for Railway
 SECURE_SSL_REDIRECT = False  # Railway handles SSL termination
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False  # Allow HTTP for Railway
+CSRF_COOKIE_SECURE = False  # Allow HTTP for Railway
 CSRF_TRUSTED_ORIGINS = [
     'https://web-production-db25.up.railway.app',
     'https://saha-ai.up.railway.app',
     'https://*.up.railway.app',
+    'http://*.up.railway.app',  # Allow HTTP for Railway
 ]
 
 # CORS settings

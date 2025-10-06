@@ -466,7 +466,7 @@
         </div>
 
         <nav class="space-y-2">
-            <a href="{% url 'portfolio-page' %}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            <a href="{% url 'portfolio' %}" class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
                 <svg class="w-6 h-6 text-gray-600 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7c0-1.1.9-2 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 <span class="font-medium text-gray-900 dark:text-gray-100">My Portfolio</span>
             </a>
@@ -2153,7 +2153,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 conversationState = 'SEARCHING_MF';
                 await findAndConfirmMutualFund(nlu.entity || text);
             } else if (nlu.intent === 'view_portfolio') {
-                window.location.href = "{% url 'portfolio-page' %}";
+                window.location.href = "{% url 'portfolio' %}";
             } else if (nlu.intent === 'greeting') {
                 addMessage(getGreeting(), 'bot');
                 setTimeout(() => {
