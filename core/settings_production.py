@@ -68,7 +68,7 @@ CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access for better handling
 CSRF_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests
 CSRF_COOKIE_AGE = 3600  # 1 hour
 CSRF_USE_SESSIONS = False  # Use cookies instead of sessions for CSRF
-CSRF_FAILURE_VIEW = 'advisor.csrf_views.CustomCSRFFailureView'
+CSRF_FAILURE_VIEW = 'advisor.csrf_views.custom_csrf_failure'
 
 # CORS settings - more permissive
 CORS_ALLOWED_ORIGINS = [

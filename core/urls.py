@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
 from advisor import views as advisor_views
-from advisor.csrf_views import CustomCSRFFailureView
 from django.contrib.auth import views as auth_views
 from django.http import JsonResponse
 
@@ -13,9 +12,6 @@ urlpatterns = [
 
     # Health check endpoint
     path("health/", health_check, name="health"),
-
-    # CSRF failure handling
-    path("csrf-failure/", CustomCSRFFailureView.as_view(), name="csrf_failure"),
 
     # Authentication
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
