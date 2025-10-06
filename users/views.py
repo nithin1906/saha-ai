@@ -253,11 +253,12 @@ def custom_login(request):
                     'mobile' in next_url or 
                     '/mobile/' in referer or
                     'saha-ai-mobile.up.railway.app' in referer or
-                    request.META.get('HTTP_HOST', '').endswith('mobile.up.railway.app')
+                    request.META.get('HTTP_HOST', '').endswith('mobile.up.railway.app') or
+                    '/mobile/' in next_url
                 )
                 
                 if is_mobile_service:
-                    return redirect('mobile_index')
+                    return redirect('/mobile/')
                 else:
                     return redirect('home')
         else:

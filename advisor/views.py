@@ -1215,35 +1215,6 @@ def portfolio_page_view(request):
     return render(request, 'advisor/portfolio.html')
 
 # =====================
-# Mobile Views
-# =====================
-
-def mobile_index(request):
-    """Mobile-optimized index page"""
-    if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
-    
-    return render(request, 'advisor/mobile_index.html')
-
-def mobile_portfolio(request):
-    """Mobile-optimized portfolio page"""
-    if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
-    
-    return render(request, 'advisor/mobile_portfolio.html')
-
-def mobile_profile(request):
-    """Mobile-optimized profile page"""
-    if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
-    
-    return render(request, 'advisor/mobile_profile.html')
-
-def mobile_about(request):
-    """Mobile-optimized about page"""
-    return render(request, 'advisor/mobile_about.html')
-
-# =====================
 # Natural Language Understanding (NLU)
 # =====================
 
@@ -2111,21 +2082,51 @@ def portfolio_page_view(request):
 def mobile_index(request):
     """Mobile-optimized index page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
+        return render(request, 'users/login.html', {'next': '/mobile/'})
     
-    return render(request, 'advisor/mobile_index.html')
+    # Get user's portfolio data for mobile display
+    try:
+        holdings = Holding.objects.filter(user=request.user)
+        has_holdings = holdings.exists()
+        
+        if has_holdings:
+            total_current_value = sum(holding.current_value for holding in holdings)
+            total_invested_value = sum(holding.invested_value for holding in holdings)
+            total_pnl = total_current_value - total_invested_value
+            total_pnl_percent = (total_pnl / total_invested_value * 100) if total_invested_value > 0 else 0
+        else:
+            total_current_value = 0
+            total_pnl = 0
+            total_pnl_percent = 0
+            
+    except Exception as e:
+        logger.error(f"Error loading portfolio data for mobile: {e}")
+        has_holdings = False
+        total_current_value = 0
+        total_pnl = 0
+        total_pnl_percent = 0
+    
+    return render(request, 'advisor/mobile_index.html', {
+        'user_first_name': request.user.first_name if request.user.is_authenticated else '',
+        'csrf_token_value': request.META.get('CSRF_COOKIE', ''),
+        'has_holdings': has_holdings,
+        'holdings': holdings[:3] if has_holdings else [],
+        'total_current_value': total_current_value,
+        'total_pnl': total_pnl,
+        'total_pnl_percent': total_pnl_percent,
+    })
 
 def mobile_portfolio(request):
     """Mobile-optimized portfolio page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
+        return render(request, 'users/login.html', {'next': '/mobile/portfolio/'})
     
     return render(request, 'advisor/mobile_portfolio.html')
 
 def mobile_profile(request):
     """Mobile-optimized profile page"""
     if not request.user.is_authenticated:
-        return render(request, 'users/login.html')
+        return render(request, 'users/login.html', {'next': '/mobile/profile/'})
     
     return render(request, 'advisor/mobile_profile.html')
 
