@@ -56,8 +56,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://web-production-db25.up.railway.app',
     'https://saha-ai.up.railway.app',
     'https://saha-ai-mobile.up.railway.app',  # Mobile service
-    'https://*.up.railway.app',
-    'http://*.up.railway.app',  # Allow HTTP for Railway
+    'http://saha-ai.up.railway.app',  # Allow HTTP for Railway
+    'http://saha-ai-mobile.up.railway.app',  # Allow HTTP for Railway mobile
 ]
 
 # CORS settings

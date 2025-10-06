@@ -65,17 +65,12 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
             not request.path.startswith('/admin/') and
             not request.path.startswith('/api/')):
             
-            # Check if user is authenticated
-            if hasattr(request, 'user') and request.user.is_authenticated:
-                # User is logged in, redirect to mobile home page
-                redirect_url = f"{self.mobile_service_url}/"
-                print(f"DEBUG: Redirecting authenticated mobile user to {redirect_url}")
-            else:
-                # User is not logged in, preserve the current path
-                redirect_url = f"{self.mobile_service_url}{request.path}"
-                if request.GET:
-                    redirect_url += f"?{request.GET.urlencode()}"
-                print(f"DEBUG: Redirecting unauthenticated mobile user to {redirect_url}")
+            # Always redirect mobile users to mobile service (including login page)
+            # This ensures they log in on the mobile service and get proper sessions
+            redirect_url = f"{self.mobile_service_url}{request.path}"
+            if request.GET:
+                redirect_url += f"?{request.GET.urlencode()}"
+            print(f"DEBUG: Redirecting mobile user to {redirect_url}")
             
             return redirect(redirect_url)
         
