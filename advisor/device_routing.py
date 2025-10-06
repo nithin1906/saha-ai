@@ -9,6 +9,8 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
         self.get_response = get_response
         # Mobile service URL - will be set via environment variable
         self.mobile_service_url = None
+        # Required for Django 4.0+
+        self.async_mode = False
 
     def process_request(self, request):
         # Get mobile service URL from environment

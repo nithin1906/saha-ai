@@ -1,60 +1,130 @@
 {
   "summary": {
-    "total": 10,
+    "total": 17,
     "passed": 0,
-    "failed": 10,
-    "success_rate": 0.0
+    "failed": 17,
+    "success_rate": 0.0,
+    "total_time": 61.264986515045166
   },
   "results": [
     {
-      "test": "Market Snapshot",
+      "test": "POST /users/register/",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /users/register/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB8D10>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.10002064704895,
+      "timestamp": "2025-10-06T14:13:51.092122"
     },
     {
-      "test": "Stock Search NSE",
+      "test": "POST /users/login/",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /users/login/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB90D0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.094178676605225,
+      "timestamp": "2025-10-06T14:13:55.186301"
     },
     {
-      "test": "Stock Analysis",
+      "test": "User Login",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Login failed or no token received",
+      "response_time": 0,
+      "timestamp": "2025-10-06T14:13:55.186301"
     },
     {
-      "test": "Get All Mutual Funds",
+      "test": "GET /advisor/market/snapshot/",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/market/snapshot/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB9460>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.083479166030884,
+      "timestamp": "2025-10-06T14:13:59.269780"
     },
     {
-      "test": "Get Categories",
+      "test": "GET /advisor/search/NSE/RELIANCE",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/search/NSE/RELIANCE (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB97C0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.074713468551636,
+      "timestamp": "2025-10-06T14:14:03.344493"
     },
     {
-      "test": "Mutual Fund Search",
+      "test": "GET /advisor/analyze/RELIANCE/2500/10",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/analyze/RELIANCE/2500/10 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB9AC0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.089754343032837,
+      "timestamp": "2025-10-06T14:14:07.434248"
     },
     {
-      "test": "Fund Details",
+      "test": "GET /advisor/history/RELIANCE/?period=1y",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/history/RELIANCE/?period=1y (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB9E80>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.078912973403931,
+      "timestamp": "2025-10-06T14:14:11.513161"
     },
     {
-      "test": "Parse Intent",
+      "test": "GET /advisor/mutual-fund/",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/mutual-fund/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CBA210>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.094146490097046,
+      "timestamp": "2025-10-06T14:14:15.607307"
     },
     {
-      "test": "Chat",
+      "test": "GET /advisor/mutual-fund/categories/",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/mutual-fund/categories/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CBA600>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.084043741226196,
+      "timestamp": "2025-10-06T14:14:19.691351"
     },
     {
-      "test": "Version Info",
+      "test": "GET /advisor/search/MF/HDFC",
       "status": "FAIL",
-      "message": "Status code: 302"
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/search/MF/HDFC (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CBA990>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.071974754333496,
+      "timestamp": "2025-10-06T14:14:23.763326"
+    },
+    {
+      "test": "GET /advisor/mutual-fund/HDFC002/",
+      "status": "FAIL",
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/mutual-fund/HDFC002/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CBA810>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.089820384979248,
+      "timestamp": "2025-10-06T14:14:27.853146"
+    },
+    {
+      "test": "GET /advisor/analyze_mf/HDFC002/75.50/100",
+      "status": "FAIL",
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/analyze_mf/HDFC002/75.50/100 (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CBA4B0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.078103065490723,
+      "timestamp": "2025-10-06T14:14:31.931249"
+    },
+    {
+      "test": "GET /advisor/history_mf/HDFC002/?period=1y",
+      "status": "FAIL",
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/history_mf/HDFC002/?period=1y (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CBA2D0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.07663631439209,
+      "timestamp": "2025-10-06T14:14:36.007885"
+    },
+    {
+      "test": "Portfolio Tests",
+      "status": "FAIL",
+      "message": "No auth token available",
+      "response_time": 0,
+      "timestamp": "2025-10-06T14:14:36.007885"
+    },
+    {
+      "test": "POST /advisor/parse/",
+      "status": "FAIL",
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/parse/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB9970>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.09813117980957,
+      "timestamp": "2025-10-06T14:14:40.106016"
+    },
+    {
+      "test": "POST /advisor/chat/",
+      "status": "FAIL",
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/chat/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB9640>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.072169303894043,
+      "timestamp": "2025-10-06T14:14:44.178186"
+    },
+    {
+      "test": "GET /advisor/dev/version/",
+      "status": "FAIL",
+      "message": "Request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /advisor/dev/version/ (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000001F385CB8F50>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))",
+      "response_time": 4.078902006149292,
+      "timestamp": "2025-10-06T14:14:48.257088"
     }
   ]
 }
