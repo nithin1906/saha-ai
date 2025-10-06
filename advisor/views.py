@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Avg
+from django.utils import timezone
 from .models import Holding, Portfolio
 from .data_service import stock_data_service
 from .mf_data_service import mf_data_service
@@ -230,11 +231,46 @@ I'm here to help with your investment decisions! 💡"""
             logger.error(f"Chat API error: {e}")
             return JsonResponse({"error": "Internal server error"}, status=500)
 
+def stock_price_api(request, ticker):
+    """Stock price API endpoint"""
+    if request.method == 'GET':
+        try:
+            from .data_service import StockDataService
+            data_service = StockDataService()
+            price = data_service.get_stock_price(ticker)
+            
+            if price:
+                return JsonResponse({
+                    'ticker': ticker.upper(),
+                    'price': float(price),
+                    'currency': 'INR',
+                    'timestamp': timezone.now().isoformat()
+                })
+            else:
+                return JsonResponse({
+                    'error': f'Could not fetch price for {ticker}',
+                    'ticker': ticker.upper()
+                }, status=404)
+        except Exception as e:
+            logger.error(f"Error fetching stock price for {ticker}: {e}")
+            return JsonResponse({
+                'error': 'Internal server error',
+                'ticker': ticker.upper()
+            }, status=500)
+    return JsonResponse({"error": "Method not allowed"}, status=405)
+
 def chat_api(request):
     """Chat API endpoint"""
     if request.method == 'POST':
         view = ChatAPIView()
         return view.post(request)
+    elif request.method == 'GET':
+        # Return API info for GET requests
+        return JsonResponse({
+            'message': 'Chat API is available',
+            'method': 'POST',
+            'description': 'Send a POST request with JSON data containing a "message" field'
+        })
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 def mobile_chat_api(request):
@@ -692,6 +728,13 @@ def portfolio_api(request):
     if request.method == 'GET':
         view = PortfolioView()
         return view.get(request)
+    elif request.method == 'POST':
+        # Handle POST requests for portfolio updates
+        return JsonResponse({
+            'message': 'Portfolio API is available',
+            'methods': ['GET', 'POST'],
+            'description': 'GET for portfolio data, POST for updates'
+        })
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 def add_to_portfolio(request):

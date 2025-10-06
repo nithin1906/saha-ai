@@ -22,6 +22,32 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'advisor', 'static'),
 ]
 
+# WhiteNoise configuration for proper MIME types
+WHITENOISE_USE_FINDERS = True
+WHITENOISE_AUTOREFRESH = True
+
+# MIME type configuration
+import mimetypes
+mimetypes.add_type('text/css', '.css')
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('application/json', '.json')
+mimetypes.add_type('application/manifest+json', '.webmanifest')
+
+# Add whitenoise middleware for static file serving
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add whitenoise middleware
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'advisor.middleware.DeviceDetectionMiddleware',
+    'users.middleware.SecurityLoggingMiddleware',
+]
+
 # Security settings for production
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True

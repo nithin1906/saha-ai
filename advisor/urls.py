@@ -19,6 +19,7 @@ urlpatterns = [
     # API URLs
     path('chat/', views.chat_api, name='chat_api'),
     path('mobile-chat/', views.mobile_chat_api, name='mobile_chat_api'),
+    path('stock-price/<str:ticker>/', views.stock_price_api, name='stock_price_api'),
     path('portfolio/', views.portfolio_api, name='portfolio_api'),
     path('portfolio/details/', views.portfolio_api, name='portfolio_details'),
     path('portfolio/add/', views.add_to_portfolio, name='add_to_portfolio'),

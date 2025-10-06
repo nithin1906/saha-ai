@@ -194,33 +194,40 @@ class StockDataService:
             logger.info(f"Cache hit for {clean_symbol}: {cached_price}")
             return cached_price
         
-        # Try multiple APIs
+        # Try multiple APIs in order of reliability
         price = None
         
-        # Method 1: Groww API (Professional broker API)
-        if self._check_rate_limit('groww', 10):
-            self._throttle_request('groww', 6)
-            self._track_api_usage('groww')
-            price = self._fetch_groww_api(normalized_symbol)
+        # Method 1: NSE Official API (Most reliable for Indian stocks)
+        if self._check_rate_limit('nse', 3):
+            self._throttle_request('nse', 10)
+            self._track_api_usage('nse')
+            price = self._fetch_nse_official(normalized_symbol)
             if price:
                 cache.set(cache_key, price, self.cache_timeout)
-                logger.info(f"Groww API success for {normalized_symbol}: {price}")
+                logger.info(f"NSE Official API success for {normalized_symbol}: {price}")
                 return price
         
-        # Method 2: Alpha Vantage (with throttling and usage monitoring)
-        if self.alpha_vantage_key and self.alpha_vantage_key != 'demo':
-            if self._check_rate_limit('alpha_vantage', 2):  # Only 2 requests per minute to stay under daily limit
-                self._throttle_request('alpha_vantage', 30)  # 30 seconds between requests
-                self._track_api_usage('alpha_vantage')
-                price = self._fetch_alpha_vantage(normalized_symbol)
+        # Method 2: BSE Official API (Reliable for Indian stocks)
+        if self._check_rate_limit('bse', 3):
+            self._throttle_request('bse', 10)
+            self._track_api_usage('bse')
+            price = self._fetch_bse_official(clean_symbol)
             if price:
                 cache.set(cache_key, price, self.cache_timeout)
-                logger.info(f"Alpha Vantage success for {normalized_symbol}: {price}")
+                logger.info(f"BSE Official API success for {clean_symbol}: {price}")
                 return price
-            else:
-                logger.warning(f"Skipping Alpha Vantage for {normalized_symbol} - daily limit reached (25/day)")
         
-        # Method 3: NSE Direct WebSocket (Real-time)
+        # Method 3: Yahoo Finance API (Reliable with proper session handling)
+        if self._check_rate_limit('yahoo', 5):
+            self._throttle_request('yahoo', 8)
+            self._track_api_usage('yahoo')
+            price = self._fetch_yahoo_finance_api(normalized_symbol)
+            if price:
+                cache.set(cache_key, price, self.cache_timeout)
+                logger.info(f"Yahoo Finance API success for {normalized_symbol}: {price}")
+                return price
+        
+        # Method 4: NSE WebSocket (Real-time data)
         if self._check_rate_limit('nse_websocket', 5):
             self._throttle_request('nse_websocket', 12)
             self._track_api_usage('nse_websocket')
@@ -230,77 +237,53 @@ class StockDataService:
                 logger.info(f"NSE WebSocket success for {normalized_symbol}: {price}")
                 return price
         
-        # Method 4: IEX Cloud (with throttling)
+        # Method 5: Groww API (Professional broker API)
+        if self._check_rate_limit('groww', 10):
+            self._throttle_request('groww', 6)
+            self._track_api_usage('groww')
+            price = self._fetch_groww_api(normalized_symbol)
+            if price:
+                cache.set(cache_key, price, self.cache_timeout)
+                logger.info(f"Groww API success for {normalized_symbol}: {price}")
+                return price
+        
+        # Method 6: Alpha Vantage (with throttling and usage monitoring)
+        if self.alpha_vantage_key and self.alpha_vantage_key != 'demo':
+            if self._check_rate_limit('alpha_vantage', 2):  # Only 2 requests per minute to stay under daily limit
+                self._throttle_request('alpha_vantage', 30)  # 30 seconds between requests
+                self._track_api_usage('alpha_vantage')
+                price = self._fetch_alpha_vantage(normalized_symbol)
+                if price:
+                    cache.set(cache_key, price, self.cache_timeout)
+                    logger.info(f"Alpha Vantage success for {normalized_symbol}: {price}")
+                    return price
+            else:
+                logger.warning(f"Skipping Alpha Vantage for {normalized_symbol} - daily limit reached (25/day)")
+        
+        # Method 7: IEX Cloud (with throttling)
         if self.iex_cloud_key and self.iex_cloud_key != 'demo':
             if self._check_rate_limit('iex_cloud', 10):  # 10 requests per minute
                 self._throttle_request('iex_cloud', 6)  # 6 seconds between requests
                 self._track_api_usage('iex_cloud')
                 price = self._fetch_iex_cloud(normalized_symbol)
-            if price:
-                cache.set(cache_key, price, self.cache_timeout)
-                logger.info(f"IEX Cloud success for {normalized_symbol}: {price}")
-                return price
+                if price:
+                    cache.set(cache_key, price, self.cache_timeout)
+                    logger.info(f"IEX Cloud success for {normalized_symbol}: {price}")
+                    return price
             else:
                 logger.warning(f"Skipping IEX Cloud for {normalized_symbol} - rate limit reached")
         
-        # Method 3: Financial Modeling Prep (more reliable)
-        if self._check_rate_limit('fmp', 10):
-            self._throttle_request('fmp', 6)
-            self._track_api_usage('fmp')
-            price = self._fetch_fmp_api(normalized_symbol)
-        if price:
-            cache.set(cache_key, price, self.cache_timeout)
-            logger.info(f"FMP API success for {normalized_symbol}: {price}")
-            return price
-        
-        # Method 4: Twelve Data API (more reliable)
-        if self._check_rate_limit('twelve_data', 8):
-            self._throttle_request('twelve_data', 8)
-            self._track_api_usage('twelve_data')
-            price = self._fetch_twelve_data_api(normalized_symbol)
-        if price:
-            cache.set(cache_key, price, self.cache_timeout)
-            logger.info(f"Twelve Data API success for {normalized_symbol}: {price}")
-            return price
-        
-        # Method 5: Polygon.io API (more reliable)
-        if self._check_rate_limit('polygon', 5):
-            self._throttle_request('polygon', 12)
-            self._track_api_usage('polygon')
-            price = self._fetch_polygon_api(normalized_symbol)
+        # Method 8: Web Scraping Fallback (Simple and reliable)
+        if self._check_rate_limit('web_scraping', 3):
+            self._throttle_request('web_scraping', 15)
+            self._track_api_usage('web_scraping')
+            price = self._fetch_web_scraping(clean_symbol)
             if price:
                 cache.set(cache_key, price, self.cache_timeout)
-                logger.info(f"Polygon API success for {normalized_symbol}: {price}")
+                logger.info(f"Web scraping success for {clean_symbol}: {price}")
                 return price
         
-        # Method 6: Yahoo Finance API (less reliable, try last)
-        if self._check_rate_limit('yahoo', 3):
-            self._throttle_request('yahoo', 20)  # Longer delay for Yahoo
-            self._track_api_usage('yahoo')
-            price = self._fetch_yahoo_finance_api(normalized_symbol)
-            if price:
-                cache.set(cache_key, price, self.cache_timeout)
-                logger.info(f"Yahoo Finance API success for {normalized_symbol}: {price}")
-                return price
-        
-        # Method 7: NSE Official API (session-based, less reliable)
-        if self._check_rate_limit('nse', 2):
-            self._throttle_request('nse', 30)  # Longer delay for NSE
-            self._track_api_usage('nse')
-            price = self._fetch_nse_official(normalized_symbol)
-            if price:
-                cache.set(cache_key, price, self.cache_timeout)
-                logger.info(f"NSE Official API success for {normalized_symbol}: {price}")
-            return price
-        
-        # Method 5: BSE Official API
-        price = self._fetch_bse_official(clean_symbol)
-        if price:
-            cache.set(cache_key, price, self.cache_timeout)
-            logger.info(f"BSE Official success for {clean_symbol}: {price}")
-            return price
-        
-        # Method 6: IndianAPI.in
+        # Method 9: IndianAPI.in
         price = self._fetch_indian_api(clean_symbol)
         if price:
             cache.set(cache_key, price, self.cache_timeout)
@@ -722,155 +705,131 @@ class StockDataService:
             return None
 
     def _fetch_yahoo_finance_api(self, symbol):
-        """Fetch from Yahoo Finance API with proper session and cookie handling"""
+        """Fetch from Yahoo Finance API with proper session handling"""
         try:
             # Create a session for proper cookie handling
             session = requests.Session()
             
-            # First, visit the main Yahoo Finance page to establish session
-            main_url = "https://finance.yahoo.com/"
-            main_headers = {
+            # Set up session headers
+            session.headers.update({
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.5",
                 "Accept-Encoding": "gzip, deflate, br",
                 "Connection": "keep-alive",
                 "Upgrade-Insecure-Requests": "1",
-            }
+            })
             
-            # Establish session
-            session.get(main_url, headers=main_headers, timeout=10)
+            # Step 1: Visit Yahoo Finance homepage to establish session
+            logger.info(f"Yahoo Finance: Establishing session for {symbol}")
+            main_response = session.get("https://finance.yahoo.com/", timeout=10)
             
-            # Try different symbol formats
+            if main_response.status_code != 200:
+                logger.warning(f"Yahoo Finance: Failed to establish session - HTTP {main_response.status_code}")
+                return None
+            
+            # Step 2: Wait briefly
+            time.sleep(1)
+            
+            # Step 3: Try different symbol formats
             symbol_variants = [f"{symbol}.NS", f"{symbol}.BO", symbol]
             
             for sym in symbol_variants:
-                url = "https://query1.finance.yahoo.com/v7/finance/quote"
-                params = {"symbols": sym}
-                quote_headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                    "Accept": "application/json",
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "Accept-Encoding": "gzip, deflate, br",
-                    "Referer": "https://finance.yahoo.com/",
-                    "Origin": "https://finance.yahoo.com",
-                    "Sec-Fetch-Dest": "empty",
-                    "Sec-Fetch-Mode": "cors",
-                    "Sec-Fetch-Site": "same-site",
-                    "X-Requested-With": "XMLHttpRequest",
-                }
-                
-                # Add delay to avoid rate limiting
-                time.sleep(0.5)
-                
-                response = session.get(url, params=params, headers=quote_headers, timeout=15)
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    result = data.get("quoteResponse", {}).get("result", [])
-                    if result:
-                        item = result[0]
-                        price = item.get("regularMarketPrice")
-                        if price:
-                            price_float = float(price)
-                            if self._validate_price(price_float, symbol):
-                                logger.info(f"Yahoo Finance API success for {symbol}: {price_float}")
-                                return price_float
-                elif response.status_code == 401:
-                    logger.warning(f"Yahoo Finance API: Unauthorized (401) for {symbol} - session issue")
-                    break
-                elif response.status_code == 403:
-                    logger.warning(f"Yahoo Finance API: Forbidden (403) for {symbol} - blocked")
-                    break
-                elif response.status_code == 429:
-                    logger.warning(f"Yahoo Finance API: Rate limited (429) for {symbol}")
-                    break
-                else:
-                    logger.debug(f"Yahoo Finance API: HTTP {response.status_code} for {symbol}")
+                try:
+                    url = "https://query1.finance.yahoo.com/v7/finance/quote"
+                    params = {"symbols": sym}
+                    
+                    # Update headers for API request
+                    api_headers = {
+                        "Accept": "application/json",
+                        "Referer": "https://finance.yahoo.com/",
+                        "Origin": "https://finance.yahoo.com",
+                        "X-Requested-With": "XMLHttpRequest",
+                    }
+                    
+                    # Add delay to avoid rate limiting
+                    time.sleep(0.5)
+                    
+                    response = session.get(url, params=params, headers=api_headers, timeout=15)
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        result = data.get("quoteResponse", {}).get("result", [])
+                        if result:
+                            item = result[0]
+                            price = item.get("regularMarketPrice")
+                            if price:
+                                price_float = float(price)
+                                if self._validate_price(price_float, symbol):
+                                    logger.info(f"Yahoo Finance API success for {symbol}: {price_float}")
+                                    return price_float
+                    elif response.status_code == 401:
+                        logger.warning(f"Yahoo Finance API: Unauthorized (401) for {symbol} - session issue")
+                        break
+                    elif response.status_code == 403:
+                        logger.warning(f"Yahoo Finance API: Forbidden (403) for {symbol} - blocked")
+                        break
+                    elif response.status_code == 429:
+                        logger.warning(f"Yahoo Finance API: Rate limited (429) for {symbol}")
+                        break
+                    else:
+                        logger.debug(f"Yahoo Finance API: HTTP {response.status_code} for {symbol}")
+                        
+                except Exception as e:
+                    logger.debug(f"Yahoo Finance API error for {sym}: {e}")
+                    continue
                     
         except Exception as e:
             logger.debug(f"Yahoo Finance API error for {symbol}: {e}")
         return None
 
     def _fetch_nse_official(self, symbol):
-        """Fetch from NSE Official API with enhanced legal session management"""
+        """Fetch from NSE Official API with proper session management"""
         try:
-            # Create a persistent session with enhanced legal session management
+            # Create a session with proper headers
             session = requests.Session()
             
-            # Enhanced session configuration for better compatibility
+            # Set up session headers
             session.headers.update({
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Connection': 'keep-alive',
                 'Upgrade-Insecure-Requests': '1',
-                'Cache-Control': 'max-age=0',
-                'DNT': '1',
-                'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-                'Sec-Ch-Ua-Mobile': '?0',
-                'Sec-Ch-Ua-Platform': '"Windows"',
             })
             
-            # Step 1: Establish session with homepage visit (legal method)
+            # Step 1: Visit NSE homepage to establish session
             logger.info(f"NSE: Establishing session for {symbol}")
-            main_response = session.get('https://www.nseindia.com/', timeout=15)
+            main_response = session.get('https://www.nseindia.com/', timeout=10)
             
             if main_response.status_code != 200:
                 logger.warning(f"NSE: Failed to establish session - HTTP {main_response.status_code}")
                 return None
             
-            # Step 2: Simulate realistic user behavior with proper delays
-            time.sleep(random.uniform(2, 4))  # Random delay to simulate human behavior
+            # Step 2: Wait briefly
+            time.sleep(1)
             
-            # Step 3: Visit market overview page (common user behavior)
+            # Step 3: Try to get market status first (this helps establish session)
             try:
-                overview_response = session.get('https://www.nseindia.com/market-data/live-equity-market', timeout=10)
-                if overview_response.status_code == 200:
-                    logger.info("NSE: Market overview page visited successfully")
-                time.sleep(random.uniform(1, 2))
-            except Exception as e:
-                logger.debug(f"NSE: Market overview visit failed: {e}")
-            
-            # Step 4: Visit the specific stock page (realistic user flow)
-            stock_page_url = f'https://www.nseindia.com/get-quotes/equity?symbol={symbol}'
-            stock_page_response = session.get(stock_page_url, timeout=15)
-            
-            if stock_page_response.status_code == 200:
-                logger.info(f"NSE: Stock page visit successful for {symbol}")
-            else:
-                logger.warning(f"NSE: Stock page visit failed - HTTP {stock_page_response.status_code}")
-            
-            # Step 5: Wait for page to fully load (realistic timing)
-            time.sleep(random.uniform(2, 3))
-            
-            # Step 6: Check market status (legitimate API call)
-            try:
-                market_status_url = 'https://www.nseindia.com/api/marketStatus'
-                status_response = session.get(market_status_url, timeout=10)
+                status_response = session.get('https://www.nseindia.com/api/marketStatus', timeout=10)
                 if status_response.status_code == 200:
-                    logger.info("NSE: Market status check successful - session fully established")
-                time.sleep(random.uniform(0.5, 1))
+                    logger.info("NSE: Market status check successful")
             except Exception as e:
                 logger.debug(f"NSE: Market status check failed: {e}")
             
-            # Step 7: Make the actual quote request with proper session context
+            # Step 4: Make the quote request
             quote_url = f"https://www.nseindia.com/api/quote-equity?symbol={symbol}"
             
-            # Enhanced headers for the API request
+            # Update headers for API request
             api_headers = {
                 'Accept': 'application/json, text/plain, */*',
-                'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
-                'Referer': stock_page_url,
+                'Referer': 'https://www.nseindia.com/',
                 'Origin': 'https://www.nseindia.com',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-origin',
                 'X-Requested-With': 'XMLHttpRequest',
             }
             
-            response = session.get(quote_url, headers=api_headers, timeout=20)
+            response = session.get(quote_url, headers=api_headers, timeout=15)
             
             if response.status_code == 200:
                 try:
@@ -890,116 +849,65 @@ class StockDataService:
                     logger.debug(f"NSE: JSON parsing error for {symbol}: {json_error}")
                     
             elif response.status_code == 401:
-                logger.warning(f"NSE Official API: Unauthorized (401) for {symbol} - session expired")
+                logger.warning(f"NSE Official API: Unauthorized (401) for {symbol}")
             elif response.status_code == 403:
-                logger.warning(f"NSE Official API: Forbidden (403) for {symbol} - access denied")
-            elif response.status_code == 429:
-                logger.warning(f"NSE Official API: Rate limited (429) for {symbol}")
+                logger.warning(f"NSE Official API: Forbidden (403) for {symbol}")
             else:
                 logger.warning(f"NSE Official API: HTTP {response.status_code} for {symbol}")
                 
-        except requests.exceptions.Timeout:
-            logger.warning(f"NSE Official API: Timeout for {symbol}")
-        except requests.exceptions.ConnectionError:
-            logger.warning(f"NSE Official API: Connection error for {symbol}")
         except Exception as e:
             logger.debug(f"NSE Official error for {symbol}: {e}")
             
         return None
 
     def _fetch_bse_official(self, symbol):
-        """Fetch from BSE Official API with enhanced legal session management"""
+        """Fetch from BSE Official API with proper session management"""
         try:
-            # Create a session with advanced browser simulation
+            # Create a session with proper headers
             session = requests.Session()
             
-            # Step 1: Simulate a real browser visit to BSE homepage
-            main_url = 'https://www.bseindia.com/'
-            main_headers = {
+            # Set up session headers
+            session.headers.update({
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9',
                 'Accept-Encoding': 'gzip, deflate, br',
                 'Connection': 'keep-alive',
                 'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
-                'Cache-Control': 'max-age=0',
-                'DNT': '1',
-            }
+            })
             
-            # Get main page to establish session
-            main_response = session.get(main_url, headers=main_headers, timeout=15)
+            # Step 1: Visit BSE homepage to establish session
+            logger.info(f"BSE: Establishing session for {symbol}")
+            main_response = session.get('https://www.bseindia.com/', timeout=10)
+            
             if main_response.status_code != 200:
                 logger.warning(f"BSE: Failed to establish session - HTTP {main_response.status_code}")
                 return None
             
-            # Step 2: Wait and simulate user behavior
-            time.sleep(2)
+            # Step 2: Wait briefly
+            time.sleep(1)
             
-            # Step 3: Visit the specific stock page first (more realistic)
-            stock_page_url = f'https://www.bseindia.com/stock-share-price/{symbol}/'
-            stock_page_headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Referer': 'https://www.bseindia.com/',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'same-origin',
-                'Sec-Fetch-User': '?1',
-                'Cache-Control': 'max-age=0',
-                'DNT': '1',
-                'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-                'Sec-Ch-Ua-Mobile': '?0',
-                'Sec-Ch-Ua-Platform': '"Windows"',
-            }
-            
-            # Visit stock page first
-            stock_page_response = session.get(stock_page_url, headers=stock_page_headers, timeout=15)
-            if stock_page_response.status_code == 200:
-                logger.info(f"BSE: Stock page visit successful for {symbol}")
-            
-            # Step 4: Wait a bit more
-            time.sleep(2)
-            
-            # Step 5: Try BSE's stock quote API
+            # Step 3: Try BSE's stock quote API
             quote_url = f"https://www.bseindia.com/api/stockReachGraph/w?scripcode={symbol}&flag=0&fromdate=&todate=&seriesid="
-            quote_headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            
+            # Update headers for API request
+            api_headers = {
                 'Accept': 'application/json, text/plain, */*',
-                'Accept-Language': 'en-US,en;q=0.9,hi;q=0.8',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Referer': f'https://www.bseindia.com/stock-share-price/{symbol}/',
+                'Referer': 'https://www.bseindia.com/',
                 'Origin': 'https://www.bseindia.com',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-origin',
                 'X-Requested-With': 'XMLHttpRequest',
-                'DNT': '1',
-                'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-                'Sec-Ch-Ua-Mobile': '?0',
-                'Sec-Ch-Ua-Platform': '"Windows"',
             }
             
-            response = session.get(quote_url, headers=quote_headers, timeout=20)
+            response = session.get(quote_url, headers=api_headers, timeout=15)
             
             if response.status_code == 200:
                 try:
                     data = response.json()
                     
-                    # Enhanced parsing for different BSE data structures
+                    # Parse BSE data structure
                     price = None
                     
-                    # Try different possible data structures
                     if isinstance(data, dict):
-                        price = None
-                        
                         # Check for price in various possible keys
                         if 'data' in data and isinstance(data['data'], list) and len(data['data']) > 0:
                             latest_data = data['data'][-1]
@@ -1032,6 +940,161 @@ class StockDataService:
                 
         except Exception as e:
             logger.debug(f"BSE Official error for {symbol}: {e}")
+        return None
+
+    def _fetch_web_scraping(self, symbol):
+        """Simple web scraping fallback using multiple sources"""
+        try:
+            # Try Google Finance first (most reliable for scraping)
+            price = self._scrape_google_finance_simple(symbol)
+            if price:
+                logger.info(f"Google Finance scraping success for {symbol}: {price}")
+                return price
+            
+            # Try Moneycontrol
+            price = self._scrape_moneycontrol_simple(symbol)
+            if price:
+                logger.info(f"Moneycontrol scraping success for {symbol}: {price}")
+                return price
+            
+            # Try Economic Times
+            price = self._scrape_economic_times_simple(symbol)
+            if price:
+                logger.info(f"Economic Times scraping success for {symbol}: {price}")
+                return price
+                
+        except Exception as e:
+            logger.debug(f"Web scraping error for {symbol}: {e}")
+        
+        return None
+
+    def _scrape_google_finance_simple(self, symbol):
+        """Simple Google Finance scraping"""
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            
+            # Google Finance search URL
+            url = f"https://www.google.com/search?q={symbol}+NSE+stock+price"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for price in Google's knowledge panel
+                price_selectors = [
+                    '.BNeawe.iBp4i.AP7Wnd',
+                    '.BNeawe.deIvCb.AP7Wnd',
+                    '[data-attrid="Price"]',
+                    '.knowledge-finance-wholepage-price'
+                ]
+                
+                for selector in price_selectors:
+                    price_elem = soup.select_one(selector)
+                    if price_elem:
+                        price_text = price_elem.get_text().strip()
+                        # Extract numeric value
+                        import re
+                        price_match = re.search(r'[\d,]+\.?\d*', price_text.replace(',', ''))
+                        if price_match:
+                            price = float(price_match.group())
+                            if self._validate_price(price, symbol):
+                                return price
+                                
+        except Exception as e:
+            logger.debug(f"Google Finance scraping error for {symbol}: {e}")
+        
+        return None
+
+    def _scrape_moneycontrol_simple(self, symbol):
+        """Simple Moneycontrol scraping"""
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            
+            url = f"https://www.moneycontrol.com/india/stockpricequote/{symbol.lower()}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for price in various selectors
+                price_selectors = [
+                    '.lastprice',
+                    '.last-price',
+                    '.price',
+                    '.current-price',
+                    '[data-price]',
+                    '.bse-price',
+                    '.nse-price'
+                ]
+                
+                for selector in price_selectors:
+                    price_elem = soup.select_one(selector)
+                    if price_elem:
+                        price_text = price_elem.get_text().strip()
+                        # Extract numeric value
+                        import re
+                        price_match = re.search(r'[\d,]+\.?\d*', price_text.replace(',', ''))
+                        if price_match:
+                            price = float(price_match.group())
+                            if self._validate_price(price, symbol):
+                                return price
+                                
+        except Exception as e:
+            logger.debug(f"Moneycontrol scraping error for {symbol}: {e}")
+        
+        return None
+
+    def _scrape_economic_times_simple(self, symbol):
+        """Simple Economic Times scraping"""
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            
+            url = f"https://economictimes.indiatimes.com/markets/stocks/stock-quotes/{symbol.lower()}"
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            }
+            
+            response = requests.get(url, headers=headers, timeout=10)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                
+                # Look for price in various selectors
+                price_selectors = [
+                    '.lastPrice',
+                    '.current-price',
+                    '.price',
+                    '.last-price',
+                    '[data-price]'
+                ]
+                
+                for selector in price_selectors:
+                    price_elem = soup.select_one(selector)
+                    if price_elem:
+                        price_text = price_elem.get_text().strip()
+                        # Extract numeric value
+                        import re
+                        price_match = re.search(r'[\d,]+\.?\d*', price_text.replace(',', ''))
+                        if price_match:
+                            price = float(price_match.group())
+                            if self._validate_price(price, symbol):
+                                return price
+                                
+        except Exception as e:
+            logger.debug(f"Economic Times scraping error for {symbol}: {e}")
+        
         return None
 
     def _fetch_indian_api(self, symbol):
