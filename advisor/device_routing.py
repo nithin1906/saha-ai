@@ -57,9 +57,6 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
             self.mobile_service_url and
             not request.path.startswith('/static/') and 
             not request.path.startswith('/admin/') and
-            not request.path.startswith('/users/login/') and
-            not request.path.startswith('/users/register/') and
-            not request.path.startswith('/users/logout/') and
             not request.path.startswith('/api/')):
             
             # Build redirect URL with current path
