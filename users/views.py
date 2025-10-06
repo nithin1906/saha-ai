@@ -12,6 +12,7 @@ from django.db.models import Q
 from .models import InviteCode, UserProfile, AccessLog
 from .forms import InviteCodeForm, UserRegistrationForm
 import uuid
+import os
 from datetime import timedelta
 
 def is_admin(user):
@@ -244,6 +245,20 @@ def custom_login(request):
             if is_admin(user):
                 return redirect('admin_dashboard')
             else:
+                # Check if user is on mobile device and redirect to mobile service
+                user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+                mobile_patterns = [
+                    'mobile', 'android', 'iphone', 'ipad', 'tablet',
+                    'blackberry', 'windows phone', 'opera mini', 'iemobile'
+                ]
+                is_mobile = any(pattern in user_agent for pattern in mobile_patterns)
+                
+                if is_mobile:
+                    # Redirect to mobile service home page
+                    mobile_service_url = os.environ.get('MOBILE_SERVICE_URL')
+                    if mobile_service_url:
+                        return redirect(f"{mobile_service_url}/")
+                
                 return redirect('home')
         else:
             log_access(None, request, 'login_failed', False)
