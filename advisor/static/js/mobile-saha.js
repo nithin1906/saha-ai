@@ -133,7 +133,7 @@ class MobileSAHA {
             this.updateConnectionStatus('checking');
             
             // Try to fetch a small resource to test connectivity
-            const response = await fetch('/api/market-snapshot/', {
+            const response = await fetch('/market-snapshot/', {
                 method: 'HEAD',
                 cache: 'no-cache'
             });
@@ -225,7 +225,7 @@ class MobileSAHA {
             const csrfToken = this.getCSRFToken();
             console.log('CSRF Token:', csrfToken ? 'Found' : 'Not found');
             
-            const response = await fetch('/api/mobile-chat/', {
+            const response = await fetch('/mobile-chat/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -647,7 +647,7 @@ class MobileSAHA {
         if (!this.isOnline) return;
         
         try {
-            const response = await fetch('/api/market-snapshot/', {
+            const response = await fetch('/market-snapshot/', {
                 method: 'GET',
                 credentials: 'include'
             });
@@ -900,7 +900,7 @@ class MobileSAHA {
             }
             
             const csrfToken = this.getCSRFToken();
-            const response = await fetch('/api/portfolio/add/', {
+            const response = await fetch('/portfolio/add/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

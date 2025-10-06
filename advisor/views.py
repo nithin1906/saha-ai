@@ -273,6 +273,7 @@ def chat_api(request):
         })
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
+@csrf_exempt
 def mobile_chat_api(request):
     """Mobile-specific chat API with intelligent conversational flow"""
     if request.method == 'POST':
