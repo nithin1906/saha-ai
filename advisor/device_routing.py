@@ -13,7 +13,13 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
     def process_request(self, request):
         # Get mobile service URL from environment
         import os
-        self.mobile_service_url = os.environ.get('MOBILE_SERVICE_URL', 'https://saha-ai-mobile.up.railway.app')
+        self.mobile_service_url = os.environ.get('MOBILE_SERVICE_URL')
+        
+        # Only proceed with mobile redirection if mobile service URL is configured
+        if not self.mobile_service_url:
+            # No mobile service configured, skip redirection
+            request.is_mobile = False
+            return None
         
         # Get user agent
         user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
@@ -44,7 +50,9 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
             request.is_mobile = is_mobile
         
         # If this is the PC service and user is on mobile, redirect to mobile service
+        # Only redirect if mobile service URL is properly configured
         if (is_mobile and 
+            self.mobile_service_url and
             not request.path.startswith('/static/') and 
             not request.path.startswith('/admin/') and
             not request.path.startswith('/users/login/') and
