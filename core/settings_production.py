@@ -52,6 +52,8 @@ SECURE_HSTS_PRELOAD = True
 SECURE_SSL_REDIRECT = False  # Railway handles SSL termination
 SESSION_COOKIE_SECURE = False  # Allow HTTP for Railway
 CSRF_COOKIE_SECURE = False  # Allow HTTP for Railway
+
+# CSRF settings - more permissive for cross-domain scenarios
 CSRF_TRUSTED_ORIGINS = [
     'https://web-production-db25.up.railway.app',
     'https://saha-ai.up.railway.app',
@@ -64,14 +66,37 @@ CSRF_TRUSTED_ORIGINS = [
 CSRF_COOKIE_DOMAIN = None  # Allow cookies to work across subdomains
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access for better handling
 CSRF_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests
+CSRF_COOKIE_AGE = 3600  # 1 hour
+CSRF_USE_SESSIONS = False  # Use cookies instead of sessions for CSRF
+CSRF_FAILURE_VIEW = 'advisor.csrf_views.CustomCSRFFailureView'
 
-# CORS settings
+# CORS settings - more permissive
 CORS_ALLOWED_ORIGINS = [
     "https://saha-ai.up.railway.app",
     "https://saha-ai-mobile.up.railway.app",
     "http://saha-ai.up.railway.app",
     "http://saha-ai-mobile.up.railway.app",
 ]
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Keep this False for security
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Session settings for cross-domain compatibility
+SESSION_COOKIE_DOMAIN = None  # Allow sessions across subdomains
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_SAVE_EVERY_REQUEST = True
 
 # Email settings (configure for production)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Use console backend for now

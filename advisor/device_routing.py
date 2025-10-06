@@ -89,6 +89,10 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
             response.delete_cookie('csrftoken')
             response.delete_cookie('sessionid')
             
+            # Add headers to help with cross-domain issues
+            response['Access-Control-Allow-Origin'] = self.mobile_service_url
+            response['Access-Control-Allow-Credentials'] = 'true'
+            
             return response
         
         print(f"DEBUG: No redirect needed - is_mobile={is_mobile}, path={request.path}")
