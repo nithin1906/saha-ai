@@ -14,6 +14,7 @@ import random
 import math
 import re
 import logging
+import decimal
 from datetime import datetime, timedelta
 from decimal import Decimal
 
@@ -793,7 +794,18 @@ class PortfolioView(View):
             for h in holdings:
                 # Fetch real-time current price
                 current_price = self._fetch_current_price(h.ticker)
-                current_value = Decimal(h.quantity) * Decimal(str(current_price))
+                
+                # Handle invalid current_price
+                if current_price is None or current_price == '' or str(current_price).lower() in ['none', 'null', 'error']:
+                    current_price = h.average_buy_price  # Fallback to average buy price
+                
+                try:
+                    current_value = Decimal(h.quantity) * Decimal(str(current_price))
+                except (ValueError, TypeError, decimal.InvalidOperation):
+                    # If conversion fails, use average buy price
+                    current_price = h.average_buy_price
+                    current_value = Decimal(h.quantity) * Decimal(str(current_price))
+                
                 net_profit = current_value - (Decimal(h.quantity) * h.average_buy_price)
                 total_current_value += float(current_value)
                 
@@ -1063,7 +1075,18 @@ class PortfolioHealthView(View):
             
             for holding in holdings:
                 current_price = self._fetch_current_price(holding.ticker)
-                current_value = Decimal(str(current_price)) * holding.quantity
+                
+                # Handle invalid current_price
+                if current_price is None or current_price == '' or str(current_price).lower() in ['none', 'null', 'error']:
+                    current_price = holding.average_buy_price  # Fallback to average buy price
+                
+                try:
+                    current_value = Decimal(str(current_price)) * holding.quantity
+                except (ValueError, TypeError, decimal.InvalidOperation):
+                    # If conversion fails, use average buy price
+                    current_price = holding.average_buy_price
+                    current_value = Decimal(str(current_price)) * holding.quantity
+                
                 invested_value = holding.average_buy_price * holding.quantity
                 
                 total_invested += invested_value
@@ -1992,7 +2015,18 @@ class ChatView(View):
             
             for holding in holdings:
                 current_price = stock_data_service.get_stock_price(holding.ticker)
-                current_value = Decimal(str(current_price)) * holding.quantity
+                
+                # Handle invalid current_price
+                if current_price is None or current_price == '' or str(current_price).lower() in ['none', 'null', 'error']:
+                    current_price = holding.average_buy_price  # Fallback to average buy price
+                
+                try:
+                    current_value = Decimal(str(current_price)) * holding.quantity
+                except (ValueError, TypeError, decimal.InvalidOperation):
+                    # If conversion fails, use average buy price
+                    current_price = holding.average_buy_price
+                    current_value = Decimal(str(current_price)) * holding.quantity
+                
                 invested_value = holding.average_buy_price * holding.quantity
                 
                 total_invested += invested_value
@@ -2085,19 +2119,34 @@ def mobile_index(request):
         return render(request, 'users/login.html', {'next': '/mobile/'})
     
     # Get user's portfolio data for mobile display
+    holdings = []
+    has_holdings = False
+    total_current_value = 0
+    total_pnl = 0
+    total_pnl_percent = 0
+    
     try:
-        holdings = Holding.objects.filter(user=request.user)
+        # Get user's portfolio first, then holdings
+        try:
+            portfolio = Portfolio.objects.get(user=request.user)
+            holdings = Holding.objects.filter(portfolio=portfolio)
+        except Portfolio.DoesNotExist:
+            holdings = []
+        
         has_holdings = holdings.exists()
         
         if has_holdings:
-            total_current_value = sum(holding.current_value for holding in holdings)
-            total_invested_value = sum(holding.invested_value for holding in holdings)
+            # Calculate values for each holding
+            total_invested_value = 0
+            for holding in holdings:
+                invested_value = float(holding.quantity) * float(holding.average_buy_price)
+                total_invested_value += invested_value
+                # For now, use average_buy_price as current_value (you can update this with real-time data)
+                current_value = invested_value
+                total_current_value += current_value
+                
             total_pnl = total_current_value - total_invested_value
             total_pnl_percent = (total_pnl / total_invested_value * 100) if total_invested_value > 0 else 0
-        else:
-            total_current_value = 0
-            total_pnl = 0
-            total_pnl_percent = 0
             
     except Exception as e:
         logger.error(f"Error loading portfolio data for mobile: {e}")
@@ -2123,19 +2172,34 @@ def mobile_portfolio(request):
         return render(request, 'users/login.html', {'next': '/mobile/portfolio/'})
     
     # Get user's portfolio data for mobile display
+    holdings = []
+    has_holdings = False
+    total_current_value = 0
+    total_pnl = 0
+    total_pnl_percent = 0
+    
     try:
-        holdings = Holding.objects.filter(user=request.user)
+        # Get user's portfolio first, then holdings
+        try:
+            portfolio = Portfolio.objects.get(user=request.user)
+            holdings = Holding.objects.filter(portfolio=portfolio)
+        except Portfolio.DoesNotExist:
+            holdings = []
+        
         has_holdings = holdings.exists()
         
         if has_holdings:
-            total_current_value = sum(holding.current_value for holding in holdings)
-            total_invested_value = sum(holding.invested_value for holding in holdings)
+            # Calculate values for each holding
+            total_invested_value = 0
+            for holding in holdings:
+                invested_value = float(holding.quantity) * float(holding.average_buy_price)
+                total_invested_value += invested_value
+                # For now, use average_buy_price as current_value (you can update this with real-time data)
+                current_value = invested_value
+                total_current_value += current_value
+                
             total_pnl = total_current_value - total_invested_value
             total_pnl_percent = (total_pnl / total_invested_value * 100) if total_invested_value > 0 else 0
-        else:
-            total_current_value = 0
-            total_pnl = 0
-            total_pnl_percent = 0
             
     except Exception as e:
         logger.error(f"Error loading portfolio data for mobile portfolio: {e}")
