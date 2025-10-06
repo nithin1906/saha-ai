@@ -60,10 +60,17 @@ CSRF_TRUSTED_ORIGINS = [
     'http://saha-ai-mobile.up.railway.app',  # Allow HTTP for Railway mobile
 ]
 
+# Additional CSRF settings for cross-domain compatibility
+CSRF_COOKIE_DOMAIN = None  # Allow cookies to work across subdomains
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access for better handling
+CSRF_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests
+
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    "https://your-domain.com",
-    "https://www.your-domain.com",
+    "https://saha-ai.up.railway.app",
+    "https://saha-ai-mobile.up.railway.app",
+    "http://saha-ai.up.railway.app",
+    "http://saha-ai-mobile.up.railway.app",
 ]
 
 # Email settings (configure for production)

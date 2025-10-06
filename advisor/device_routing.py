@@ -1,5 +1,6 @@
 from django.utils.deprecation import MiddlewareMixin
 from django.shortcuts import redirect
+from django.http import HttpResponseRedirect
 import re
 
 class DeviceDetectionMiddleware(MiddlewareMixin):
@@ -68,11 +69,27 @@ class DeviceDetectionMiddleware(MiddlewareMixin):
             # Always redirect mobile users to mobile service (including login page)
             # This ensures they log in on the mobile service and get proper sessions
             redirect_url = f"{self.mobile_service_url}{request.path}"
-            if request.GET:
+            
+            # Clean up query parameters to avoid CSRF conflicts
+            clean_params = {}
+            for key, value in request.GET.items():
+                # Skip CSRF-related parameters
+                if key not in ['csrfmiddlewaretoken', 'csrf_token']:
+                    clean_params[key] = value
+            
+            if clean_params:
                 redirect_url += f"?{request.GET.urlencode()}"
+            
             print(f"DEBUG: Redirecting mobile user to {redirect_url}")
             
-            return redirect(redirect_url)
+            # Create a clean redirect response that clears any existing CSRF tokens
+            response = HttpResponseRedirect(redirect_url)
+            
+            # Clear any existing CSRF cookies to prevent conflicts
+            response.delete_cookie('csrftoken')
+            response.delete_cookie('sessionid')
+            
+            return response
         
         print(f"DEBUG: No redirect needed - is_mobile={is_mobile}, path={request.path}")
         return None
