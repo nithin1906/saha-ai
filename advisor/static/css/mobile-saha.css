@@ -354,3 +354,162 @@ html.dark .mobile-scrollbar::-webkit-scrollbar-thumb {
 html.dark .mobile-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 255, 255, 0.3);
 }
+
+/* Mobile-specific classes for template */
+.mobile-container {
+    min-height: 100vh;
+    background-color: #f9fafb;
+}
+
+html.dark .mobile-container {
+    background-color: #111827;
+}
+
+.mobile-card {
+    background-color: white;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+html.dark .mobile-card {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+.mobile-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: 16px;
+    background-color: white;
+    transition: border-color 0.2s ease;
+}
+
+.mobile-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+html.dark .mobile-input {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+}
+
+.mobile-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+    min-height: 44px;
+    min-width: 44px;
+    border: none;
+    cursor: pointer;
+}
+
+.mobile-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+html.dark .mobile-skeleton {
+    background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
+    background-size: 200% 100%;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.chat-bubble {
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    margin-bottom: 8px;
+    word-wrap: break-word;
+}
+
+.chat-bubble-user {
+    background-color: #3b82f6;
+    color: white;
+    margin-left: auto;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-bubble-bot {
+    background-color: #f3f4f6;
+    color: #374151;
+    margin-right: auto;
+    border-bottom-left-radius: 4px;
+}
+
+html.dark .chat-bubble-bot {
+    background-color: #374151;
+    color: #f9fafb;
+}
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 8px 0;
+    z-index: 50;
+}
+
+html.dark .bottom-nav {
+    background-color: #1f2937;
+    border-top-color: #374151;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 12px;
+    text-decoration: none;
+    color: #6b7280;
+    transition: color 0.2s ease;
+    min-height: 44px;
+    justify-content: center;
+}
+
+.nav-item.active {
+    color: #3b82f6;
+}
+
+.nav-item svg {
+    width: 24px;
+    height: 24px;
+    margin-bottom: 4px;
+}
+
+.quick-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    touch-action: manipulation;
+    min-height: 44px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}

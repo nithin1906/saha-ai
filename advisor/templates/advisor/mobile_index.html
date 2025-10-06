@@ -19,38 +19,6 @@
         html.dark { color-scheme: dark; }
         body { font-family: 'Inter', sans-serif; }
         
-        /* CSS-only theme toggle */
-        #theme-toggle-mobile:checked ~ * {
-            /* When checkbox is checked, apply dark theme */
-        }
-        
-        /* Show/hide icons based on checkbox state */
-        #theme-toggle-mobile:checked ~ label .theme-icon-light {
-            display: none;
-        }
-        
-        #theme-toggle-mobile:checked ~ label .theme-icon-dark {
-            display: block;
-        }
-        
-        #theme-toggle-mobile:not(:checked) ~ label .theme-icon-light {
-            display: block;
-        }
-        
-        #theme-toggle-mobile:not(:checked) ~ label .theme-icon-dark {
-            display: none;
-        }
-        
-        /* Apply dark theme when checkbox is checked */
-        #theme-toggle-mobile:checked ~ * {
-            color-scheme: dark;
-        }
-        
-        /* Force dark theme on html element when checkbox is checked */
-        #theme-toggle-mobile:checked {
-            /* This will be handled by JavaScript to add 'dark' class to html */
-        }
-        
         /* Enhanced mobile responsiveness */
         @media (max-width: 480px) {
             .mobile-container {
@@ -102,18 +70,17 @@
                 <p class="text-xs text-gray-600 dark:text-gray-400">Mobile</p>
             </div>
         </div>
-        <!-- CSS-only theme toggle -->
-        <input type="checkbox" id="theme-toggle-mobile" class="hidden" />
-        <label for="theme-toggle-mobile" class="touch-target p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">
-            <!-- Dark mode icon (shown when checkbox is unchecked = light mode) -->
-            <svg class="w-6 h-6 text-gray-600 dark:text-gray-400 theme-icon-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <!-- Theme toggle button -->
+        <button id="theme-toggle-mobile" class="touch-target p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">
+            <!-- Dark mode icon (shown when in light mode) -->
+            <svg id="theme-icon-light" class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
             </svg>
-            <!-- Light mode icon (shown when checkbox is checked = dark mode) -->
-            <svg class="w-6 h-6 text-gray-600 dark:text-gray-400 theme-icon-dark hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <!-- Light mode icon (shown when in dark mode) -->
+            <svg id="theme-icon-dark" class="w-6 h-6 text-gray-600 dark:text-gray-400 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
             </svg>
-        </label>
+        </button>
     </div>
 </header>
 
@@ -308,7 +275,7 @@ function acceptBetaTestingMobile() {
 }
 
 // CSS-only theme toggle with minimal JavaScript
-const themeToggleCheckbox = document.getElementById('theme-toggle-mobile');
+const themeToggleButton = document.getElementById('theme-toggle-mobile');
 
 // Initialize theme from localStorage
 function initializeTheme() {
@@ -318,37 +285,54 @@ function initializeTheme() {
     console.log('Theme initialization - savedTheme:', savedTheme, 'prefersDark:', prefersDark);
     
     if (savedTheme === 'dark' || (savedTheme === null && prefersDark)) {
-        // Set checkbox to checked (dark mode)
-        if (themeToggleCheckbox) {
-            themeToggleCheckbox.checked = true;
-        }
+        // Set dark theme
         document.documentElement.className = 'dark';
         localStorage.setItem('color-theme', 'dark');
+        updateThemeIcons(true);
         console.log('Applied dark theme');
     } else {
-        // Set checkbox to unchecked (light mode)
-        if (themeToggleCheckbox) {
-            themeToggleCheckbox.checked = false;
-        }
+        // Set light theme
         document.documentElement.className = '';
         localStorage.setItem('color-theme', 'light');
+        updateThemeIcons(false);
         console.log('Applied light theme');
     }
 }
 
-// Handle checkbox change
-if (themeToggleCheckbox) {
-    themeToggleCheckbox.addEventListener('change', (e) => {
-        if (e.target.checked) {
-            // Checkbox checked = dark mode
-            document.documentElement.className = 'dark';
-            localStorage.setItem('color-theme', 'dark');
-            console.log('Switched to dark mode');
+// Update theme icons based on current theme
+function updateThemeIcons(isDark) {
+    const lightIcon = document.getElementById('theme-icon-light');
+    const darkIcon = document.getElementById('theme-icon-dark');
+    
+    if (lightIcon && darkIcon) {
+        if (isDark) {
+            lightIcon.classList.add('hidden');
+            darkIcon.classList.remove('hidden');
         } else {
-            // Checkbox unchecked = light mode
-            document.documentElement.className = '';
+            lightIcon.classList.remove('hidden');
+            darkIcon.classList.add('hidden');
+        }
+    }
+}
+
+// Handle button click
+if (themeToggleButton) {
+    themeToggleButton.addEventListener('click', () => {
+        const html = document.documentElement;
+        const isDark = html.classList.contains('dark');
+        
+        if (isDark) {
+            // Switch to light mode
+            html.classList.remove('dark');
             localStorage.setItem('color-theme', 'light');
+            updateThemeIcons(false);
             console.log('Switched to light mode');
+        } else {
+            // Switch to dark mode
+            html.classList.add('dark');
+            localStorage.setItem('color-theme', 'dark');
+            updateThemeIcons(true);
+            console.log('Switched to dark mode');
         }
     });
 }
@@ -358,9 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Mobile app initializing...');
     checkFirstTimeUserMobile();
     initializeTheme();
-    
-    // Debug theme elements
-    console.log('Theme toggle checkbox:', themeToggleCheckbox);
     
     // Initialize mobile-specific features
     initializeMobileFeatures();
