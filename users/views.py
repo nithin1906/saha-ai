@@ -250,11 +250,11 @@ def custom_login(request):
                 
                 # Check if this is a mobile service request
                 is_mobile_service = (
-                    'mobile' in next_url or 
+                    (next_url and 'mobile' in next_url) or 
                     '/mobile/' in referer or
                     'saha-ai-mobile.up.railway.app' in referer or
                     request.META.get('HTTP_HOST', '').endswith('mobile.up.railway.app') or
-                    '/mobile/' in next_url
+                    (next_url and '/mobile/' in next_url)
                 )
                 
                 if is_mobile_service:
