@@ -468,7 +468,9 @@ html.dark .chat-bubble-bot {
     background-color: white;
     border-top: 1px solid #e5e7eb;
     padding: 8px 0;
-    z-index: 50;
+    z-index: 1000;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
 }
 
 html.dark .bottom-nav {
