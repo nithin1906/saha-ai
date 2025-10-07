@@ -1025,7 +1025,11 @@ class PortfolioView(View):
                 "AXISBANK": 950.30,
                 "AXIS": 950.30,
                 "SBI": 580.45,
-                "ICICI": 950.30
+                "ICICI": 950.30,
+                "TATAINVEST": 1200.00,
+                "HDFCMID001": 244.15,
+                "GREENPANEL": 85.50,
+                "MSUMI": 95.80
             }
             
             fallback_price = fallback_prices.get(ticker.upper())
@@ -1368,7 +1372,11 @@ class PortfolioHealthView(View):
                 "AXISBANK": 950.30,
                 "AXIS": 950.30,
                 "SBI": 580.45,
-                "ICICI": 950.30
+                "ICICI": 950.30,
+                "TATAINVEST": 1200.00,
+                "HDFCMID001": 244.15,
+                "GREENPANEL": 85.50,
+                "MSUMI": 95.80
             }
             
             fallback_price = fallback_prices.get(ticker.upper())
@@ -2428,7 +2436,7 @@ def _get_stock_price_with_fallback_mobile(ticker):
             "ULTRACEMCO": 8500.25, "TITAN": 3200.80, "BAJFINANCE": 7500.50, "TATAMOTORS": 650.30,
             "TATAPOWER": 280.45, "TATACONSUM": 850.75, "TATAELXSI": 4200.50, "MOTHERSON": 180.25,
             "MOTHERSONSUMI": 95.80, "AXISBANK": 950.30, "AXIS": 950.30, "SBI": 580.45, "ICICI": 950.30,
-            "TATAINVEST": 1200.00, "HDFCMID001": 244.15, "GREENPANEL": 85.50
+            "TATAINVEST": 1200.00, "HDFCMID001": 244.15, "GREENPANEL": 85.50, "MSUMI": 95.80
         }
         
         fallback_price = fallback_prices.get(ticker.upper())

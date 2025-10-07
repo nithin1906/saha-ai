@@ -29,6 +29,6 @@ urlpatterns = [
     path("mobile/about/", advisor_views.mobile_about, name="mobile_about"),
 
     # APIs
-    path("api/", include("advisor.urls")),
+    path("", include("advisor.urls")),
     path("users/", include("users.urls")),  # if you already have login/signup here
 ]
