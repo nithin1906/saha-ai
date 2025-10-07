@@ -297,11 +297,11 @@
                         </div>
                         <div>
                             <p class="text-gray-600 dark:text-gray-400">Current Price</p>
-                            <p class="font-semibold">₹{{ holding.current_price|floatformat:2 }}</p>
+                            <p class="font-semibold">₹{% if holding.current_price %}{{ holding.current_price|floatformat:2 }}{% else %}0.00{% endif %}</p>
                         </div>
                         <div>
                             <p class="text-gray-600 dark:text-gray-400">Purchase Price</p>
-                            <p class="font-semibold">₹{{ holding.avg_price|floatformat:2 }}</p>
+                            <p class="font-semibold">₹{% if holding.average_buy_price %}{{ holding.average_buy_price|floatformat:2 }}{% else %}0.00{% endif %}</p>
                         </div>
                         <div>
                             <p class="text-gray-600 dark:text-gray-400">Gain/Loss</p>
@@ -417,6 +417,20 @@
 <script>
 // Mobile Portfolio JavaScript
 let holdingsData = [];
+
+// Helper function to format prices safely
+function formatPrice(price) {
+    if (price === null || price === undefined || price === '' || price === 'None' || price === 'null') {
+        return '0.00';
+    }
+    
+    const numPrice = parseFloat(price);
+    if (isNaN(numPrice)) {
+        return '0.00';
+    }
+    
+    return numPrice.toFixed(2);
+}
 
 // Theme toggle for mobile portfolio
 const themeToggleMobilePortfolio = document.getElementById('theme-toggle-mobile-portfolio');
@@ -630,10 +644,10 @@ function displayHoldingsMobile(holdings) {
         const assetType = isMutualFund ? 'MF' : 'STK';
         const assetClass = isMutualFund ? 'asset-mf' : 'asset-stock';
         
-        const currentValue = holding.current_value || (holding.quantity * holding.current_price);
-        const totalCost = holding.quantity * holding.average_buy_price;
+        const currentValue = holding.current_value || (holding.quantity * parseFloat(holding.current_price || 0));
+        const totalCost = holding.quantity * parseFloat(holding.average_buy_price || 0);
         const gainLoss = holding.net_profit || (currentValue - totalCost);
-        const gainLossPercent = ((gainLoss / totalCost) * 100).toFixed(2);
+        const gainLossPercent = totalCost > 0 ? ((gainLoss / totalCost) * 100).toFixed(2) : '0.00';
         
         const profitClass = gainLoss >= 0 ? 'profit-positive' : 'profit-negative';
         const profitIcon = gainLoss >= 0 ? '↗' : '↘';
@@ -657,11 +671,11 @@ function displayHoldingsMobile(holdings) {
                     </div>
                     <div>
                         <p class="text-gray-600 dark:text-gray-400">Current Price</p>
-                        <p class="font-semibold">₹${holding.current_price.toFixed(2)}</p>
+                        <p class="font-semibold">₹${formatPrice(holding.current_price)}</p>
                     </div>
                     <div>
                         <p class="text-gray-600 dark:text-gray-400">Purchase Price</p>
-                        <p class="font-semibold">₹${holding.average_buy_price.toFixed(2)}</p>
+                        <p class="font-semibold">₹${formatPrice(holding.average_buy_price)}</p>
                     </div>
                     <div>
                         <p class="text-gray-600 dark:text-gray-400">Gain/Loss</p>
@@ -673,11 +687,11 @@ function displayHoldingsMobile(holdings) {
                     <div class="flex justify-between items-center">
                         <div>
                             <p class="text-xs text-gray-600 dark:text-gray-400">Current Value</p>
-                            <p class="font-bold text-lg">₹${currentValue.toFixed(2)}</p>
+                            <p class="font-bold text-lg">₹${formatPrice(currentValue)}</p>
                         </div>
                         <div class="text-right">
                             <p class="text-xs text-gray-600 dark:text-gray-400">Total Gain/Loss</p>
-                            <p class="font-bold text-lg ${profitClass}">₹${gainLoss.toFixed(2)}</p>
+                            <p class="font-bold text-lg ${profitClass}">₹${formatPrice(gainLoss)}</p>
                         </div>
                     </div>
                 </div>
@@ -744,8 +758,8 @@ function updatePortfolioStatsMobile(holdings) {
     let totalGainLoss = 0;
     
     holdings.forEach(holding => {
-        const currentValue = holding.current_value || (holding.quantity * holding.current_price);
-        const totalCost = holding.quantity * holding.average_buy_price;
+        const currentValue = holding.current_value || (holding.quantity * parseFloat(holding.current_price || 0));
+        const totalCost = holding.quantity * parseFloat(holding.average_buy_price || 0);
         
         totalValue += currentValue;
         totalGainLoss += holding.net_profit || (currentValue - totalCost);
@@ -754,13 +768,13 @@ function updatePortfolioStatsMobile(holdings) {
     // Update total value
     const totalValueEl = document.getElementById('total-value-mobile');
     if (totalValueEl) {
-        totalValueEl.textContent = `₹${totalValue.toFixed(2)}`;
+        totalValueEl.textContent = `₹${formatPrice(totalValue)}`;
     }
     
     // Update total gain/loss
     const totalGainEl = document.getElementById('total-gain-mobile');
     if (totalGainEl) {
-        totalGainEl.textContent = `₹${totalGainLoss.toFixed(2)}`;
+        totalGainEl.textContent = `₹${formatPrice(totalGainLoss)}`;
         totalGainEl.className = `text-lg font-bold ${totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`;
     }
 }
