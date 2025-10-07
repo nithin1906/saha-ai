@@ -53,6 +53,76 @@
             outline: 2px solid #3b82f6;
             outline-offset: 2px;
         }
+        
+        /* Chat message styles */
+        .chat-message {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+        
+        .user-message {
+            justify-content: flex-end;
+        }
+        
+        .bot-message {
+            justify-content: flex-start;
+        }
+        
+        .chat-bubble {
+            max-width: 85%;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            word-wrap: break-word;
+        }
+        
+        /* Typing indicator animation */
+        .typing-dots {
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .typing-dots span {
+            height: 8px;
+            width: 8px;
+            background-color: #6b7280;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        
+        .typing-dots span:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .typing-dots span:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Quick action button styles */
+        .quick-action-btn {
+            transition: all 0.2s ease;
+        }
+        
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .quick-action-btn:active {
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 mobile-container">
@@ -246,8 +316,272 @@
 
 <script src="{% static 'js/mobile-saha.js' %}"></script>
 <script>
-// Mobile-specific JavaScript will go here
-// This will be implemented in the next step
+// Mobile Chat Functions
+let chatHistory = [];
+let isTyping = false;
+
+// Initialize mobile features
+function initializeMobileFeatures() {
+    console.log('Initializing mobile features...');
+    
+    // Set up send button
+    const sendButton = document.getElementById('send-button-mobile');
+    const userInput = document.getElementById('user-input-mobile');
+    
+    if (sendButton && userInput) {
+        sendButton.addEventListener('click', sendMessageMobile);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessageMobile();
+            }
+        });
+    }
+    
+    // Load market data
+    loadMarketDataMobile();
+    
+    // Check connection status
+    checkConnectionStatusMobile();
+}
+
+// Send message function
+async function sendMessageMobile() {
+    const userInput = document.getElementById('user-input-mobile');
+    const sendButton = document.getElementById('send-button-mobile');
+    const message = userInput.value.trim();
+    
+    if (!message || isTyping) return;
+    
+    // Clear input and disable send button
+    userInput.value = '';
+    sendButton.disabled = true;
+    isTyping = true;
+    
+    // Add user message to chat
+    addMessageToChatMobile(message, 'user');
+    
+    // Show typing indicator
+    showTypingIndicatorMobile();
+    
+    try {
+        const response = await fetch('/api/mobile-chat/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCSRFToken(),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ message: message })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Hide typing indicator
+        hideTypingIndicatorMobile();
+        
+        // Add bot response to chat
+        addMessageToChatMobile(data.response || data.message || 'Sorry, I couldn\'t process your request.', 'bot');
+        
+    } catch (error) {
+        console.error('Error sending message:', error);
+        hideTypingIndicatorMobile();
+        addMessageToChatMobile('Sorry, I\'m having trouble connecting. Please try again.', 'bot');
+    } finally {
+        // Re-enable send button
+        sendButton.disabled = false;
+        isTyping = false;
+        userInput.focus();
+    }
+}
+
+// Add message to chat
+function addMessageToChatMobile(message, sender) {
+    const chatWindow = document.getElementById('chat-window-mobile');
+    if (!chatWindow) return;
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${sender === 'user' ? 'user-message' : 'bot-message'} mb-4`;
+    
+    const messageContent = document.createElement('div');
+    messageContent.className = `chat-bubble ${sender === 'user' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700'} p-4 rounded-lg max-w-[85%] ${sender === 'user' ? 'ml-auto' : 'mr-auto'}`;
+    
+    // Format message with line breaks
+    messageContent.innerHTML = message.replace(/\n/g, '<br>');
+    
+    messageDiv.appendChild(messageContent);
+    chatWindow.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    
+    // Store in chat history
+    chatHistory.push({ message, sender, timestamp: new Date() });
+}
+
+// Show typing indicator
+function showTypingIndicatorMobile() {
+    const chatWindow = document.getElementById('chat-window-mobile');
+    if (!chatWindow) return;
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator-mobile';
+    typingDiv.className = 'chat-message bot-message mb-4';
+    
+    const typingContent = document.createElement('div');
+    typingContent.className = 'chat-bubble bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 p-4 rounded-lg max-w-[85%] mr-auto';
+    typingContent.innerHTML = '<div class="flex items-center space-x-2"><div class="typing-dots"><span></span><span></span><span></span></div><span class="text-sm text-gray-500">SAHA-AI is typing...</span></div>';
+    
+    typingDiv.appendChild(typingContent);
+    chatWindow.appendChild(typingDiv);
+    
+    // Scroll to bottom
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+// Hide typing indicator
+function hideTypingIndicatorMobile() {
+    const typingIndicator = document.getElementById('typing-indicator-mobile');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+// Handle quick actions
+function handleQuickAction(action) {
+    const userInput = document.getElementById('user-input-mobile');
+    if (!userInput) return;
+    
+    let message = '';
+    switch (action) {
+        case 'analyze-stock':
+            message = 'I\'d like to analyze a stock. Can you help me?';
+            break;
+        case 'mutual-funds':
+            message = 'Tell me about mutual funds and SIPs';
+            break;
+        case 'portfolio':
+            message = 'Show me my portfolio analysis';
+            break;
+        case 'investment-tips':
+            message = 'Give me some investment tips';
+            break;
+        default:
+            message = action;
+    }
+    
+    userInput.value = message;
+    userInput.focus();
+    sendMessageMobile();
+}
+
+// Load market data
+async function loadMarketDataMobile() {
+    try {
+        const response = await fetch('/api/market-snapshot/', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            updateMarketCardsMobile(data);
+        }
+    } catch (error) {
+        console.error('Error loading market data:', error);
+    }
+}
+
+// Update market cards
+function updateMarketCardsMobile(data) {
+    const marketCards = document.getElementById('market-cards-mobile');
+    if (!marketCards) return;
+    
+    const cards = marketCards.querySelectorAll('.mobile-skeleton');
+    if (cards.length >= 3) {
+        // Update NIFTY card
+        if (data.nifty_price) {
+            cards[0].innerHTML = `
+                <div class="text-center">
+                    <div class="text-xs text-gray-600 dark:text-gray-400">NIFTY 50</div>
+                    <div class="text-sm font-bold text-gray-900 dark:text-gray-100">${data.nifty_price}</div>
+                    <div class="text-xs ${data.nifty_change >= 0 ? 'text-green-600' : 'text-red-600'}">
+                        ${data.nifty_change >= 0 ? '+' : ''}${data.nifty_change} (${data.nifty_change_pct}%)
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update SENSEX card
+        if (data.sensex_price) {
+            cards[1].innerHTML = `
+                <div class="text-center">
+                    <div class="text-xs text-gray-600 dark:text-gray-400">SENSEX</div>
+                    <div class="text-sm font-bold text-gray-900 dark:text-gray-100">${data.sensex_price}</div>
+                    <div class="text-xs ${data.sensex_change >= 0 ? 'text-green-600' : 'text-red-600'}">
+                        ${data.sensex_change >= 0 ? '+' : ''}${data.sensex_change} (${data.sensex_change_pct}%)
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update Bank Nifty card
+        if (data.bank_nifty_price) {
+            cards[2].innerHTML = `
+                <div class="text-center">
+                    <div class="text-xs text-gray-600 dark:text-gray-400">BANK NIFTY</div>
+                    <div class="text-sm font-bold text-gray-900 dark:text-gray-100">${data.bank_nifty_price}</div>
+                    <div class="text-xs ${data.bank_nifty_change >= 0 ? 'text-green-600' : 'text-red-600'}">
+                        ${data.bank_nifty_change >= 0 ? '+' : ''}${data.bank_nifty_change} (${data.bank_nifty_change_pct}%)
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+// Check connection status
+function checkConnectionStatusMobile() {
+    const connectionStatus = document.getElementById('connection-status-mobile');
+    const connectionText = document.getElementById('connection-text-mobile');
+    
+    if (!connectionStatus || !connectionText) return;
+    
+    // Test connection
+    fetch('/api/market-snapshot/', { method: 'HEAD' })
+        .then(response => {
+            if (response.ok) {
+                connectionText.textContent = 'Connected';
+                connectionStatus.className = 'mt-2 text-center text-xs text-green-600';
+            } else {
+                connectionText.textContent = 'Connection issues';
+                connectionStatus.className = 'mt-2 text-center text-xs text-yellow-600';
+            }
+        })
+        .catch(() => {
+            connectionText.textContent = 'Offline';
+            connectionStatus.className = 'mt-2 text-center text-xs text-red-600';
+        });
+}
+
+// Get CSRF token
+function getCSRFToken() {
+    let token = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (token) return token.value;
+    
+    token = document.querySelector('meta[name="csrf-token"]');
+    if (token) return token.getAttribute('content');
+    
+    token = document.cookie.match(/csrftoken=([^;]+)/);
+    if (token) return token[1];
+    
+    return '';
+}
 
 // Beta Testing Functions for Mobile
 function checkFirstTimeUserMobile() {
