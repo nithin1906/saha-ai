@@ -134,8 +134,8 @@
                 <h1 class="text-base font-bold text-gray-900 dark:text-gray-100">SAHA-AI</h1>
             <span class="text-xs text-gray-600 dark:text-gray-400">Mobile</span>
         </div>
-        <!-- Right cluster: theme toggle + small logo at top-right -->
-        <div class="flex items-center space-x-2">
+        <!-- Right cluster: theme toggle only (remove oversized logo) -->
+        <div class="flex items-center">
             <button id="theme-toggle-mobile" class="touch-target p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer">
             <!-- Dark mode icon (shown when in light mode) -->
             <svg id="theme-icon-light" class="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -146,10 +146,6 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
             </svg>
         </button>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
-                <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
-            </svg>
         </div>
     </div>
 </header>
@@ -258,7 +254,7 @@
         </div>
         
         <!-- Quick Suggestions -->
-        <div id="quick-suggestions-mobile" class="mt-4 flex flex-wrap gap-2 justify-center">
+        <div id="quick-suggestions-mobile" class="mt-3 flex flex-wrap gap-2 justify-center pb-2">
             <button onclick="handleQuickAction('analyze-stock')" class="quick-action-btn bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl text-sm font-medium flex items-center space-x-2 shadow-lg transition-all duration-200 transform hover:scale-105">
                 <span class="text-lg">📊</span>
                 <span>Analyze Stock</span>
@@ -285,8 +281,7 @@
 </main>
 
 <!-- Bottom Navigation -->
-<nav class="bottom-nav">
-    <div class="flex justify-around">
+<nav class="bottom-nav flex items-center justify-around px-2">
         <a href="#" class="nav-item active" id="nav-chat">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
@@ -311,7 +306,6 @@
             </svg>
             <span class="text-xs">Profile</span>
         </a>
-    </div>
 </nav>
 
 <script src="{% static 'js/mobile-saha.js' %}"></script>
