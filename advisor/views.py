@@ -768,7 +768,54 @@ def market_snapshot(request):
                 from advisor.data_service import stock_data_service
                 market_data = stock_data_service.get_market_indices()
                 if market_data:
-                    return JsonResponse(market_data)
+                    # Normalize to the flat keys expected by mobile JS
+                    normalized = None
+                    if isinstance(market_data, dict):
+                        indices_data = market_data.get('indices')
+                        if indices_data:
+                            # indices may be list[{name, price,...}] or dict[name] -> {price,...}
+                            if isinstance(indices_data, list):
+                                name_to_item = { (item.get('name') or item.get('index') or item.get('symbol')): item for item in indices_data if isinstance(item, dict) }
+                            elif isinstance(indices_data, dict):
+                                name_to_item = indices_data
+                            else:
+                                name_to_item = {}
+
+                            def first(*names):
+                                for n in names:
+                                    if isinstance(name_to_item, dict) and n in name_to_item:
+                                        return name_to_item[n]
+                                return {}
+
+                            def pick(d, *keys):
+                                if isinstance(d, dict):
+                                    for k in keys:
+                                        if d.get(k) is not None:
+                                            return d.get(k)
+                                return None
+
+                            nifty = first('NIFTY 50','NIFTY50','NIFTY')
+                            sensex = first('SENSEX','BSE SENSEX','BSESENSEX')
+                            banknifty = first('BANK NIFTY','NIFTY BANK','BANKNIFTY')
+
+                            normalized = {
+                                'nifty_price': pick(nifty, 'price','last','ltp','value'),
+                                'nifty_change': pick(nifty, 'change','chg'),
+                                'nifty_change_pct': pick(nifty, 'change_percent','pct','percent_change'),
+                                'sensex_price': pick(sensex, 'price','last','ltp','value'),
+                                'sensex_change': pick(sensex, 'change','chg'),
+                                'sensex_change_pct': pick(sensex, 'change_percent','pct','percent_change'),
+                                'bank_nifty_price': pick(banknifty, 'price','last','ltp','value'),
+                                'bank_nifty_change': pick(banknifty, 'change','chg'),
+                                'bank_nifty_change_pct': pick(banknifty, 'change_percent','pct','percent_change'),
+                            }
+
+                    # If already in expected format, use as-is
+                    if not normalized and isinstance(market_data, dict) and 'nifty_price' in market_data:
+                        normalized = market_data
+
+                    if normalized:
+                        return JsonResponse(normalized)
             except Exception as e:
                 logger.warning(f"Real market data failed: {e}")
             
