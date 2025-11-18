@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        html.dark { color-scheme: dark; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Glassmorphism styles */
+        .glass-pane {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        html.dark .glass-pane {
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        html.dark .glass-card {
+            background: rgba(17, 24, 39, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-button {
+            background: rgba(59, 130, 246, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .glass-button:hover::before {
+            left: 100%;
+        }
+        
+        .glass-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3);
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Standardize ALL buttons to match glass-button style */
+        button:not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button),
+        .action-btn, input[type="submit"], button[type="submit"] {
+            background: rgba(59, 130, 246, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            border-radius: 12px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            padding: 0.625rem 1.25rem !important;
+            color: white !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+        }
+        
+        button:not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button)::before,
+        .action-btn::before, input[type="submit"]::before, button[type="submit"]::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: -100% !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+            transition: left 0.5s !important;
+        }
+        
+        button:not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):hover::before,
+        .action-btn:hover::before, input[type="submit"]:hover::before, button[type="submit"]:hover::before {
+            left: 100% !important;
+        }
+        
+        button:not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):hover,
+        .action-btn:hover, input[type="submit"]:hover, button[type="submit"]:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3) !important;
+            background: rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* Page Transition Animations */
+        @keyframes pageFadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.98); }
+        }
+        
+        @keyframes pageFadeIn {
+            from { opacity: 0; transform: scale(1.02); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        body.page-transitioning {
+            animation: pageFadeOut 0.3s ease-out forwards;
+        }
+        
+        body.page-loaded {
+            animation: pageFadeIn 0.4s ease-out forwards;
+        }
+        
+        /* Modern solid gradient background - Dark mode: Dark blue gradient (left to right) */
+        body {
+            background: linear-gradient(90deg, #2d3a5f 0%, #1a2332 50%, #0f1419 100%) !important;
+            min-height: 100vh;
+        }
+        
+        /* Light mode: Warm beige/off-white gradient (top to bottom) */
+        html:not(.dark) body {
+            background: linear-gradient(180deg, #f5f1e8 0%, #faf8f3 50%, #ffffff 100%) !important;
+        }
+    </style>
+</head>
+<body class="text-gray-800 dark:text-gray-200">
+    <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <nav class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+            <h1 class="text-2xl font-bold">SAHA-AI</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <svg id="theme-toggle-light-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            </button>
+            <a href="{% url 'home' %}" class="glass-button px-5 py-2.5 rounded-xl text-white font-semibold smooth-transition">&larr; Back to Chat</a>
+        </div>
+    </nav>
+</header>
+    <main class="container mx-auto px-6 py-12">
+        <div class="max-w-4xl mx-auto glass-pane p-8">
+            <h2 class="text-4xl font-bold text-center bg-gradient-to-r from-green-500 to-blue-600 bg-clip-text text-transparent">About SAHA-AI</h2>
+            <p class="mt-4 text-lg text-gray-600 dark:text-gray-400 text-center">
+                An AI-powered investment assistant designed to empower retail investors with clear, personalized, and data-driven insights.
+            </p>
+            
+            <!-- Key Features Section -->
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center p-4 glass-card rounded-xl">
+                    <div class="text-3xl mb-2">🤖</div>
+                    <h3 class="font-bold text-blue-800 dark:text-blue-200">AI-Powered Analysis</h3>
+                    <p class="text-sm text-blue-600 dark:text-blue-300 mt-1">Advanced machine learning algorithms provide personalized investment insights</p>
+                </div>
+                <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg border border-green-200 dark:border-green-700">
+                    <div class="text-3xl mb-2">📊</div>
+                    <h3 class="font-bold text-green-800 dark:text-green-200">Real-Time Data</h3>
+                    <p class="text-sm text-green-600 dark:text-green-300 mt-1">Live market data and portfolio tracking with instant updates</p>
+                </div>
+                <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                    <div class="text-3xl mb-2">💡</div>
+                    <h3 class="font-bold text-purple-800 dark:text-purple-200">Smart Recommendations</h3>
+                    <p class="text-sm text-purple-600 dark:text-purple-300 mt-1">Personalized advice based on your portfolio and risk profile</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <h3 class="text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">Project Objective</h3>
+                <p class="mt-4 text-gray-700 dark:text-gray-300">
+                    The primary goal of SAHA-AI is to address the challenges faced by beginner and common investors. We aim to replace opaque, generic financial advice with a transparent, conversational, and deeply personalized experience. By combining machine learning with a user's portfolio context, SAHA-AI serves as an educational co-pilot, helping users understand the 'why' behind every recommendation.
+                </p>
+                
+                <!-- Mission Statement -->
+                <div class="mt-6 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-800/50 dark:to-gray-800/50 p-6 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <h4 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3">Our Mission</h4>
+                    <p class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
+                        We believe that every investor deserves access to sophisticated financial analysis tools that were previously available only to institutional investors. SAHA-AI democratizes investment intelligence by combining cutting-edge artificial intelligence with user-friendly interfaces, making complex market analysis accessible to everyone.
+                    </p>
+                    <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-600">
+                        <p class="text-slate-600 dark:text-slate-400 text-xs italic">
+                            "Empowering retail investors with institutional-grade insights through the power of artificial intelligence."
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- Key Statistics Section -->
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <h3 class="text-2xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent text-center mb-6">Platform Statistics</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">12+</div>
+                        <div class="text-sm text-blue-700 dark:text-blue-300">Data Sources</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">1000+</div>
+                        <div class="text-sm text-green-700 dark:text-green-300">Mutual Funds</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">Real-time</div>
+                        <div class="text-sm text-purple-700 dark:text-purple-300">Market Data</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg border border-orange-200 dark:border-orange-700">
+                        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">24/7</div>
+                        <div class="text-sm text-orange-700 dark:text-orange-300">AI Analysis</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Core Features Section -->
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <h3 class="text-2xl font-bold bg-gradient-to-r from-teal-500 to-cyan-500 bg-clip-text text-transparent text-center mb-6">Core Features</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-4 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/20 dark:to-cyan-900/20 rounded-lg border border-teal-200 dark:border-teal-700">
+                        <div class="flex items-center mb-3">
+                            <div class="text-2xl mr-3">📈</div>
+                            <h4 class="font-bold text-teal-800 dark:text-teal-200">Portfolio Analysis</h4>
+                        </div>
+                        <p class="text-sm text-teal-700 dark:text-teal-300">Comprehensive portfolio health scoring with personalized recommendations and risk assessment.</p>
+                    </div>
+                    <div class="p-4 bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-900/20 dark:to-pink-900/20 rounded-lg border border-rose-200 dark:border-rose-700">
+                        <div class="flex items-center mb-3">
+                            <div class="text-2xl mr-3">🔍</div>
+                            <h4 class="font-bold text-rose-800 dark:text-rose-200">Smart Search</h4>
+                        </div>
+                        <p class="text-sm text-rose-700 dark:text-rose-300">Intelligent search for stocks and mutual funds with relevance scoring and filtering.</p>
+                    </div>
+                    <div class="p-4 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 rounded-lg border border-amber-200 dark:border-amber-700">
+                        <div class="flex items-center mb-3">
+                            <div class="text-2xl mr-3">💬</div>
+                            <h4 class="font-bold text-amber-800 dark:text-amber-200">AI Chat Assistant</h4>
+                        </div>
+                        <p class="text-sm text-amber-700 dark:text-amber-300">Natural language processing for conversational investment advice and market insights.</p>
+                    </div>
+                    <div class="p-4 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 rounded-lg border border-violet-200 dark:border-violet-700">
+                        <div class="flex items-center mb-3">
+                            <div class="text-2xl mr-3">📊</div>
+                            <h4 class="font-bold text-violet-800 dark:text-violet-200">Market Insights</h4>
+                        </div>
+                        <p class="text-sm text-violet-700 dark:text-violet-300">Real-time market indices, stock fundamentals, and comprehensive financial data.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technology Innovation Section -->
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <h3 class="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-teal-500 bg-clip-text text-transparent text-center mb-6">Innovation & Technology</h3>
+                <div class="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-bold text-emerald-800 dark:text-emerald-200 mb-3">🤖 Advanced AI Engine</h4>
+                            <p class="text-sm text-emerald-700 dark:text-emerald-300 mb-3">
+                                Our proprietary machine learning algorithms analyze market patterns, portfolio performance, and user behavior to provide intelligent, personalized investment recommendations.
+                            </p>
+                            <ul class="text-xs text-emerald-600 dark:text-emerald-400 space-y-1">
+                                <li>• Natural Language Processing for conversational AI</li>
+                                <li>• Predictive analytics for market trends</li>
+                                <li>• Risk assessment and portfolio optimization</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-teal-800 dark:text-teal-200 mb-3">⚡ Real-Time Data Pipeline</h4>
+                            <p class="text-sm text-teal-700 dark:text-teal-300 mb-3">
+                                Multi-source data aggregation with 12+ APIs, web scraping, and intelligent fallback mechanisms ensure reliable, up-to-date market information.
+                            </p>
+                            <ul class="text-xs text-teal-600 dark:text-teal-400 space-y-1">
+                                <li>• Live market data from NSE, BSE, Yahoo Finance</li>
+                                <li>• Comprehensive mutual fund database</li>
+                                <li>• Intelligent caching and error handling</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Future Roadmap Section -->
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <h3 class="text-2xl font-bold bg-gradient-to-r from-sky-500 to-blue-500 bg-clip-text text-transparent text-center mb-6">Future Roadmap</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="text-center p-4 bg-gradient-to-br from-sky-50 to-blue-50 dark:from-sky-900/20 dark:to-blue-900/20 rounded-lg border border-sky-200 dark:border-sky-700">
+                        <div class="text-2xl mb-2">🚀</div>
+                        <h4 class="font-bold text-sky-800 dark:text-sky-200 mb-2">Phase 1</h4>
+                        <p class="text-xs text-sky-700 dark:text-sky-300">Enhanced AI models, mobile app, and advanced portfolio analytics</p>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                        <div class="text-2xl mb-2">🌟</div>
+                        <h4 class="font-bold text-blue-800 dark:text-blue-200 mb-2">Phase 2</h4>
+                        <p class="text-xs text-blue-700 dark:text-blue-300">Social trading features, automated rebalancing, and cryptocurrency support</p>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-lg border border-indigo-200 dark:border-indigo-700">
+                        <div class="text-2xl mb-2">🎯</div>
+                        <h4 class="font-bold text-indigo-800 dark:text-indigo-200 mb-2">Phase 3</h4>
+                        <p class="text-xs text-indigo-700 dark:text-indigo-300">Global markets integration, robo-advisory services, and institutional features</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-8">
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-100">Our Team</h3>
+                
+                <!-- Featured Team Member - Nithin N (Above others) -->
+                <div class="mt-6 mb-8 text-center">
+                    <h4 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Nithin N</h4>
+                    <p class="text-xl font-semibold text-blue-700 dark:text-blue-300 mt-2">Lead Developer & Project Architect</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Primary contributor and system designer behind SAHA-AI's core functionality</p>
+                </div>
+                
+                <!-- Other Team Members -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="text-center">
+                        <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Dr. Shiju George</h4>
+                        <p class="text-md text-gray-600 dark:text-gray-400">Project Advisor</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">Strategic guidance and academic oversight</p>
+                    </div>
+                    <div class="text-center">
+                        <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100">Akshit Malik</h4>
+                        <p class="text-md text-gray-600 dark:text-gray-400">Co-Developer & Feature Specialist</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-500 mt-1">Feature development and technical implementation</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer class="mt-12 py-6">
+        <div class="container mx-auto text-center">
+            <p class="text-sm text-gray-500 dark:text-gray-400">&copy; {% now "Y" %} SAHA-AI Project. All Rights Reserved.</p>
+        </div>
+    </footer>
+     <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Initialize theme based on localStorage or system preference
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            if (lightIcon) lightIcon.classList.remove('hidden');
+        } else {
+            if (darkIcon) darkIcon.classList.remove('hidden');
+        }
+
+        // Theme toggle event listener
+        themeToggle && themeToggle.addEventListener('click', () => {
+            darkIcon && darkIcon.classList.toggle('hidden');
+            lightIcon && lightIcon.classList.toggle('hidden');
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        // Page transition on load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('page-loaded');
+        });
+        
+        // Page transition on navigation - Global function
+        window.navigateWithTransition = function(url) {
+            if (window.isNavigating) return;
+            window.isNavigating = true;
+            document.body.classList.remove('page-loaded');
+            document.body.classList.add('page-transitioning');
+            setTimeout(() => {
+                window.location.href = url;
+            }, 300);
+        };
+        
+        // Apply to all navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('a[href*="/"]');
+            navLinks.forEach(link => {
+                if (link.href && !link.href.startsWith('http') && !link.href.includes('#')) {
+                    link.addEventListener('click', function(e) {
+                        if (this.onclick || this.getAttribute('target') === '_blank') return;
+                        e.preventDefault();
+                        const url = this.getAttribute('href');
+                        if (url) navigateWithTransition(url);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

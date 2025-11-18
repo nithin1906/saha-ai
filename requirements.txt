@@ -1,0 +1,37 @@
+# Core Django packages
+Django==5.0.6
+djangorestframework==3.15.1
+django-cors-headers==4.3.1
+
+# Database packages
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# Data processing packages
+numpy==1.26.4
+pandas==2.2.3
+scikit-learn==1.5.2
+joblib==1.4.2
+
+# Web scraping and API packages
+requests==2.26.0
+beautifulsoup4>=4.9.3,<4.13.0
+gnews==0.2.6
+yfinance>=0.1.70,<0.2.0
+
+# NLP packages
+nltk==3.8.1
+
+# LLM/AI packages
+google-generativeai==0.8.3
+
+# Configuration packages
+python-decouple==3.8
+pytz==2023.3
+
+# Production server packages
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# Build tools
+setuptools==69.5.1

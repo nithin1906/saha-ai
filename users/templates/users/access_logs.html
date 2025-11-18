@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Logs - SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(90deg, #2d3a5f 0%, #1a2332 50%, #0f1419 100%);
+            background-attachment: fixed;
+        }
+        .glass-pane {
+            background: rgba(17, 24, 39, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body class="text-gray-100">
+
+<!-- Sidebar Navigation -->
+<div class="fixed left-0 top-0 h-full w-64 glass-pane z-10">
+    <div class="flex items-center justify-center h-20 border-b border-gray-700/50 px-6">
+        <div class="flex items-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+            <div>
+                <h1 class="text-xl font-bold text-gray-100">SAHA-AI</h1>
+                <p class="text-sm text-gray-400">Admin Panel</p>
+            </div>
+        </div>
+    </div>
+    <nav class="mt-4">
+        <a href="{% url 'admin_dashboard' %}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-700/50">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <span class="ml-4">Dashboard</span>
+        </a>
+        <a href="{% url 'manage_users' %}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-700/50">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197m0 0A5.975 5.975 0 0112 13a5.975 5.975 0 013-1.197M15 21a9 9 0 00-9-9" />
+            </svg>
+            <span class="ml-4">Manage Users</span>
+        </a>
+        <a href="{% url 'manage_invites' %}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-700/50">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2v-3a2 2 0 00-2-2H5zM15 11a2 2 0 00-2 2v3a2 2 0 002 2h3a2 2 0 002-2v-3a2 2 0 00-2-2h-3z" />
+            </svg>
+            <span class="ml-4">Manage Invites</span>
+        </a>
+        <a href="{% url 'access_logs' %}" class="flex items-center px-6 py-3 text-gray-200 bg-gray-700/50">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span class="ml-4">Access Logs</span>
+        </a>
+        <a href="{% url 'send_updates' %}" class="flex items-center px-6 py-3 text-gray-400 hover:bg-gray-700/50">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span class="ml-4">Send Updates</span>
+        </a>
+    </nav>
+    <div class="absolute bottom-0 w-full border-t border-gray-700/50">
+        <a href="{% url 'logout' %}" class="flex items-center px-6 py-4 text-red-400 hover:bg-gray-700/50">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            <span class="ml-4">Logout</span>
+        </a>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="ml-64">
+    <!-- Top Bar -->
+    <header class="glass-pane shadow-sm sticky top-0 z-5">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-center items-center relative">
+            <h1 class="text-2xl font-semibold text-white">Access Logs</h1>
+            <a href="{% url 'admin_dashboard' %}" class="text-sm text-blue-400 hover:underline absolute right-0 pr-4 sm:pr-6 lg:pr-8">← Back to Dashboard</a>
+        </div>
+    </header>
+
+    <main class="p-8">
+        <div class="glass-pane overflow-hidden">
+            <table class="min-w-full">
+                <thead class="bg-gray-700/50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Action</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">IP Address</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Time</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700/50">
+                    {% for log in logs %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
+                            {% if log.user %}
+                                {{ log.user.username }}
+                            {% else %}
+                                <span class="text-gray-400 italic">Anonymous</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{{ log.action }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-mono">{{ log.ip_address }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {% if log.success %}
+                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-200 bg-green-600/50">Success</span>
+                            {% else %}
+                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-200 bg-red-600/50">Failed</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{{ log.accessed_at|date:"M d, Y H:i:s" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-400">No access logs found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>
+

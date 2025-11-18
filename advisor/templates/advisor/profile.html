@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Profile - SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        html.dark { color-scheme: dark; }
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Standardized Button Style (Portfolio "Back to Chat" Style) */
+        .glass-button, button:not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button),
+        .action-btn, input[type="submit"], button[type="submit"] {
+            background: rgba(59, 130, 246, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            border-radius: 12px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            padding: 0.625rem 1.25rem !important;
+            color: white !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+        }
+        
+        .glass-button::before, button:not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button)::before,
+        .action-btn::before, input[type="submit"]::before, button[type="submit"]::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: -100% !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+            transition: left 0.5s !important;
+        }
+        
+        .glass-button:hover::before, button:not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):hover::before,
+        .action-btn:hover::before, input[type="submit"]:hover::before, button[type="submit"]:hover::before {
+            left: 100% !important;
+        }
+        
+        .glass-button:hover, button:not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):hover,
+        .action-btn:hover, input[type="submit"]:hover, button[type="submit"]:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3) !important;
+            background: rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        /* Page Transition Animations */
+        @keyframes pageFadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.98); }
+        }
+        
+        @keyframes pageFadeIn {
+            from { opacity: 0; transform: scale(1.02); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        body.page-transitioning {
+            animation: pageFadeOut 0.3s ease-out forwards;
+        }
+        
+        body.page-loaded {
+            animation: pageFadeIn 0.4s ease-out forwards;
+        }
+        
+        /* Modern solid gradient background - Dark mode: Dark blue gradient (left to right) */
+        body {
+            background: linear-gradient(90deg, #2d3a5f 0%, #1a2332 50%, #0f1419 100%) !important;
+            min-height: 100vh;
+        }
+        
+        /* Light mode: Warm beige/off-white gradient (top to bottom) */
+        html:not(.dark) body {
+            background: linear-gradient(180deg, #f5f1e8 0%, #faf8f3 50%, #ffffff 100%) !important;
+        }
+    </style>
+</head>
+<body class="text-gray-800 dark:text-gray-200">
+    <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <nav class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+            <h1 class="text-2xl font-bold">SAHA-AI</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <svg id="theme-toggle-light-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            </button>
+            <a href="{% url 'home' %}" class="glass-button px-5 py-2.5 rounded-xl text-white font-semibold smooth-transition">&larr; Back to Chat</a>
+        </div>
+    </nav>
+</header>
+    <main class="container mx-auto px-6 py-12">
+        <div class="max-w-2xl mx-auto bg-white dark:bg-gray-900 p-8 rounded-lg shadow-lg">
+            <div class="flex flex-col items-center text-center">
+                <div class="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-4xl mb-4">
+                    {% if user.first_name %}{{ user.first_name|first|upper }}{% else %}{{ user.username|first|upper }}{% endif %}
+                </div>
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-gray-100">{% if user.first_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.username }}{% endif %}</h2>
+                <p class="text-md text-gray-500 dark:text-gray-400">@{{ user.username }}</p>
+            </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 mt-8 pt-6">
+                <dl class="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Email address</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ user.email }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Date Joined</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ user.date_joined|date:"F j, Y" }}</dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Holdings</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">{{ user.portfolio.holdings.count }} unique stocks in portfolio</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </main>
+     <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+
+        // Initialize theme based on localStorage or system preference
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+            if (lightIcon) lightIcon.classList.remove('hidden');
+        } else {
+            if (darkIcon) darkIcon.classList.remove('hidden');
+        }
+
+        // Theme toggle event listener
+        themeToggle && themeToggle.addEventListener('click', () => {
+            darkIcon && darkIcon.classList.toggle('hidden');
+            lightIcon && lightIcon.classList.toggle('hidden');
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        // Page transition on load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('page-loaded');
+        });
+        
+        // Page transition on navigation - Global function
+        window.navigateWithTransition = function(url) {
+            if (window.isNavigating) return;
+            window.isNavigating = true;
+            document.body.classList.remove('page-loaded');
+            document.body.classList.add('page-transitioning');
+            setTimeout(() => {
+                window.location.href = url;
+            }, 300);
+        };
+        
+        // Apply to all navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('a[href*="/"]');
+            navLinks.forEach(link => {
+                if (link.href && !link.href.startsWith('http') && !link.href.includes('#')) {
+                    link.addEventListener('click', function(e) {
+                        if (this.onclick || this.getAttribute('target') === '_blank') return;
+                        e.preventDefault();
+                        const url = this.getAttribute('href');
+                        if (url) navigateWithTransition(url);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+

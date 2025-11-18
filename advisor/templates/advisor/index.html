@@ -1,0 +1,3133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SAHA-AI: Your AI Stock & Mutual Fund Assistant</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js (kept in case charts are used elsewhere) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        html.dark { color-scheme: dark; }
+        body { font-family: 'Inter', sans-serif; }
+        #chat-window { scroll-behavior: smooth; }
+        .chat-bubble { opacity: 0; transform: translateY(18px); animation: popIn 0.35s ease-out forwards; box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1); }
+        @keyframes popIn { to { opacity: 1; transform: translateY(0); } }
+
+        /* ========== GLASSMORPHISM STYLES ========== */
+        /* Glass container base */
+        .glass-pane {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        html.dark .glass-pane {
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* ========== STANDARDIZED BUTTON STYLE (Portfolio "Back to Chat" Style) ========== */
+        /* Apply to ALL buttons throughout the project */
+        .glass-button, button:not([type="submit"]):not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):not(#mobile-menu-btn):not(#theme-toggle):not(#theme-toggle-mobile),
+        .action-btn, .choice-btn, input[type="submit"], button[type="submit"] {
+            background: rgba(59, 130, 246, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            border-radius: 12px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            padding: 0.625rem 1.25rem !important;
+            color: white !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .glass-button::before, button:not([type="submit"]):not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):not(#mobile-menu-btn):not(#theme-toggle):not(#theme-toggle-mobile)::before,
+        .action-btn::before, .choice-btn::before, input[type="submit"]::before, button[type="submit"]::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: -100% !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+            transition: left 0.5s !important;
+        }
+        
+        .glass-button:hover::before, button:not([type="submit"]):not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):not(#mobile-menu-btn):not(#theme-toggle):not(#theme-toggle-mobile):hover::before,
+        .action-btn:hover::before, .choice-btn:hover::before, input[type="submit"]:hover::before, button[type="submit"]:hover::before {
+            left: 100% !important;
+        }
+        
+        .glass-button:hover, button:not([type="submit"]):not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):not(#mobile-menu-btn):not(#theme-toggle):not(#theme-toggle-mobile):hover,
+        .action-btn:hover, .choice-btn:hover, input[type="submit"]:hover, button[type="submit"]:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3) !important;
+            background: rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        .glass-button:active, button:not([type="submit"]):not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):not(#mobile-menu-btn):not(#theme-toggle):not(#theme-toggle-mobile):active,
+        .action-btn:active, .choice-btn:active, input[type="submit"]:active, button[type="submit"]:active {
+            transform: translateY(0) !important;
+        }
+        
+        html.dark .glass-button, html.dark button:not([type="submit"]):not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):not(#mobile-menu-btn):not(#theme-toggle):not(#theme-toggle-mobile),
+        html.dark .action-btn, html.dark .choice-btn, html.dark input[type="submit"], html.dark button[type="submit"] {
+            background: rgba(59, 130, 246, 0.15) !important;
+            border: 1px solid rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        /* Light mode: Make buttons darker and more visible */
+        html:not(.dark) .glass-button, html:not(.dark) button:not([type="submit"]):not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):not(#mobile-menu-btn):not(#theme-toggle):not(#theme-toggle-mobile),
+        html:not(.dark) .action-btn, html:not(.dark) .choice-btn, html:not(.dark) input[type="submit"], html:not(.dark) button[type="submit"] {
+            background: rgba(37, 99, 235, 0.6) !important; /* Darker blue for better visibility */
+            border: 1px solid rgba(37, 99, 235, 0.7) !important;
+            color: #ffffff !important; /* Ensure white text */
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important; /* Add text shadow for readability */
+        }
+        
+        html:not(.dark) .glass-button:hover, html:not(.dark) button:not([type="submit"]):not(.theme-toggle):not(.mobile-menu-btn):not(#profile-button):not(#mobile-menu-btn):not(#theme-toggle):not(#theme-toggle-mobile):hover,
+        html:not(.dark) .action-btn:hover, html:not(.dark) .choice-btn:hover, html:not(.dark) input[type="submit"]:hover, html:not(.dark) button[type="submit"]:hover {
+            background: rgba(37, 99, 235, 0.8) !important; /* Even darker on hover */
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.5) !important;
+            transform: translateY(-2px) !important;
+        }
+        
+        /* Page Transition Animations */
+        @keyframes pageFadeOut {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+        }
+        
+        @keyframes pageFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(1.02);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        body.page-transitioning {
+            animation: pageFadeOut 0.3s ease-out forwards;
+        }
+        
+        body.page-loaded {
+            animation: pageFadeIn 0.4s ease-out forwards;
+        }
+        
+        /* Glass input */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .glass-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        html.dark .glass-input {
+            background: rgba(17, 24, 39, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        html.dark .glass-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Light mode input - darker for visibility */
+        html:not(.dark) .glass-input {
+            background: rgba(255, 255, 255, 0.8) !important;
+            border: 1px solid rgba(0, 0, 0, 0.15) !important;
+            color: #111827 !important;
+        }
+        
+        html:not(.dark) .glass-input::placeholder {
+            color: rgba(0, 0, 0, 0.5) !important;
+        }
+        
+        html:not(.dark) .glass-input:focus {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border-color: rgba(37, 99, 235, 0.5) !important;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Glass card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        html.dark .glass-card {
+            background: rgba(17, 24, 39, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Animated gradient background - Dark Blue Theme */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(-45deg, #1e3a8a, #1e40af, #1e3a8a, #1e40af, #1e3a8a);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        /* Modern solid gradient background - Dark mode: Dark blue gradient (left to right) */
+        /* Apply to html to cover entire viewport */
+        html {
+            background: linear-gradient(90deg, #2d3a5f 0%, #1a2332 50%, #0f1419 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            height: 100%;
+        }
+        
+        body {
+            background: linear-gradient(90deg, #2d3a5f 0%, #1a2332 50%, #0f1419 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Light mode: Warm beige/off-white gradient (top to bottom) */
+        html:not(.dark) {
+            background: linear-gradient(180deg, #f5f1e8 0%, #faf8f3 50%, #ffffff 100%);
+            background-attachment: fixed;
+        }
+        
+        html:not(.dark) body {
+            background: linear-gradient(180deg, #f5f1e8 0%, #faf8f3 50%, #ffffff 100%);
+            background-attachment: fixed;
+        }
+        
+        /* Remove animated bubbles */
+        body::before {
+            display: none;
+        }
+        
+        /* Ensure content is above background */
+        .h-screen.flex {
+            position: relative;
+            z-index: 1;
+            background: transparent;
+        }
+        
+        /* Smooth animations for all interactive elements */
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Enhanced Suggestion Chips - Use Standardized Button Style */
+        .suggestion-chip {
+            background: rgba(59, 130, 246, 0.2) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
+            border-radius: 12px !important;
+            padding: 0.625rem 1.25rem !important;
+            color: white !important;
+            font-weight: 600 !important;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .suggestion-chip::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: -100% !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+            transition: left 0.5s !important;
+        }
+        
+        .suggestion-chip:hover::before {
+            left: 100% !important;
+        }
+        
+        .suggestion-chip:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3) !important;
+            background: rgba(59, 130, 246, 0.3) !important;
+        }
+        
+        .suggestion-chip:active {
+            transform: translateY(0) !important;
+        }
+        
+        html.dark .suggestion-chip {
+            background: rgba(59, 130, 246, 0.15) !important;
+            border: 1px solid rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        /* Send button removed - users press Enter to send */
+        
+        /* Button hover effects */
+        button, .action-btn, .choice-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        button:hover, .action-btn:hover, .choice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+        
+        button:active, .action-btn:active, .choice-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Rounded edges for all cards */
+        .rounded-glass {
+            border-radius: 20px;
+        }
+        
+        /* Bubble effect for cards */
+        .bubble-box {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bubble-box::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: bubbleFloat 8s ease-in-out infinite;
+        }
+        
+        @keyframes bubbleFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -20px) scale(1.1); }
+        }
+
+        .sidebar-container:not(.collapsed) .sidebar-logo-collapsed {
+            display: none;
+        }
+        
+        .sidebar-container.collapsed .sidebar-logo-collapsed {
+            display: block;
+        }
+
+        /* Sidebar Collapse/Expand Styles */
+        .sidebar-container {
+            position: relative;
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            max-height: 100vh;
+        }
+        
+        .sidebar-container.collapsed {
+            width: 80px !important;
+            min-width: 80px !important;
+            max-width: 80px !important;
+        }
+        
+        /* Sidebar header - always visible */
+        .sidebar-header {
+            flex-shrink: 0;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Navigation section - always visible */
+        .sidebar-nav {
+            flex-shrink: 0;
+            margin-top: 0.5rem;
+        }
+        
+        /* Portfolio health scrollable section */
+        .sidebar-health {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 0;
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-health::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .sidebar-health::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+        
+        .sidebar-health::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.5);
+            border-radius: 3px;
+        }
+        
+        .sidebar-health::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.7);
+        }
+        
+        html.dark .sidebar-health::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        html.dark .sidebar-health::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.4);
+        }
+        
+        html.dark .sidebar-health::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.6);
+        }
+        
+        /* Main content area adjusts when sidebar is collapsed */
+        main {
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* Chat window background - transparent to show parent background */
+        #chat-window {
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+        
+        /* Input area adjusts with sidebar */
+        .input-area-mobile {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-content {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .sidebar-container.collapsed .sidebar-content {
+            opacity: 0;
+            transform: translateX(-10px);
+            pointer-events: none;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+        }
+        
+        .sidebar-container:not(.collapsed) .sidebar-content {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        
+        /* Sidebar Toggle Button */
+        .sidebar-toggle-btn {
+            position: relative;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+        
+        .sidebar-container.collapsed #sidebar-toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        #sidebar-toggle-icon {
+            transition: transform 0.3s ease;
+            color: white;
+        }
+        
+        html:not(.dark) #sidebar-toggle-icon {
+            color: white !important;
+        }
+        
+        /* Glassy Sidebar Navigation Buttons */
+        .sidebar-nav-btn {
+            background: rgba(59, 130, 246, 0.15) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(59, 130, 246, 0.2) !important;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-nav-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .sidebar-nav-btn:hover::before {
+            left: 100%;
+        }
+        
+        .sidebar-nav-btn:hover {
+            background: rgba(59, 130, 246, 0.25) !important;
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .sidebar-nav-btn:active {
+            transform: translateX(2px);
+        }
+        
+        html:not(.dark) .sidebar-nav-btn {
+            background: rgba(37, 99, 235, 0.5) !important;
+            border: 1px solid rgba(37, 99, 235, 0.6) !important;
+            color: white !important;
+        }
+        
+        html:not(.dark) .sidebar-nav-btn:hover {
+            background: rgba(37, 99, 235, 0.7) !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+        }
+        
+        html:not(.dark) .sidebar-nav-btn svg {
+            color: white !important;
+        }
+        
+        /* Profile button glassy style */
+        #profile-button {
+            background: rgba(59, 130, 246, 0.15) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(59, 130, 246, 0.2) !important;
+        }
+        
+        #profile-button:hover {
+            background: rgba(59, 130, 246, 0.25) !important;
+        }
+        
+        /* Light mode profile button */
+        html:not(.dark) #profile-button {
+            background: rgba(37, 99, 235, 0.4) !important;
+            border: 1px solid rgba(37, 99, 235, 0.5) !important;
+        }
+        
+        html:not(.dark) #profile-button:hover {
+            background: rgba(37, 99, 235, 0.6) !important;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .mobile-sidebar {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 280px;
+                height: 100vh;
+                z-index: 50;
+                transition: left 0.3s ease-in-out;
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+            
+            .mobile-sidebar::-webkit-scrollbar {
+                width: 6px;
+            }
+            
+            .mobile-sidebar::-webkit-scrollbar-track {
+                background: rgba(0, 0, 0, 0.1);
+            }
+            
+            .mobile-sidebar::-webkit-scrollbar-thumb {
+                background: rgba(59, 130, 246, 0.5);
+                border-radius: 3px;
+            }
+            
+            .mobile-sidebar::-webkit-scrollbar-thumb:hover {
+                background: rgba(59, 130, 246, 0.7);
+            }
+            
+            .mobile-sidebar.open {
+                left: 0;
+            }
+            
+            .sidebar-container.collapsed {
+                width: 280px !important;
+                min-width: 280px !important;
+                max-width: 280px !important;
+            }
+            
+            .sidebar-container.collapsed .sidebar-content {
+                opacity: 1;
+                transform: translateX(0);
+                pointer-events: auto;
+                width: auto;
+                height: auto;
+                overflow: visible;
+            }
+            
+            .mobile-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease-in-out;
+        }
+        
+        .mobile-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .mobile-main {
+            width: 100%;
+            margin-left: 0;
+        }
+        
+        .mobile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 30;
+        }
+        
+        html:not(.dark) .mobile-header {
+            background: rgba(255, 255, 255, 0.15);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+            .mobile-menu-btn {
+                padding: 0.5rem;
+                border-radius: 0.75rem;
+                background: #f3f4f6;
+                border: none;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            
+            .mobile-menu-btn:hover {
+                background: #e5e7eb;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            }
+            
+            .mobile-logo {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            .mobile-logo h1 {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #1f2937;
+            }
+            
+            .mobile-logo p {
+                font-size: 0.75rem;
+                color: #6b7280;
+                margin: 0;
+            }
+            
+            .market-cards-mobile {
+                display: flex;
+                flex-direction: column;
+                gap: 0.5rem;
+                padding: 0.75rem;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+            .market-card-mobile {
+                width: 100%;
+                padding: 0.75rem;
+                border-radius: 0.75rem;
+                background: white;
+                border: 1px solid #e5e7eb;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                transition: all 0.2s ease;
+            }
+            .market-card-mobile:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            }
+            .chat-window-mobile {
+                padding: 1rem;
+                height: calc(100vh - 280px);
+                overflow-y: auto;
+                scroll-behavior: smooth;
+            }
+            .chat-window-mobile::-webkit-scrollbar {
+                width: 4px;
+            }
+            .chat-window-mobile::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 2px;
+            }
+            .chat-window-mobile::-webkit-scrollbar-thumb {
+                background: #c1c1c1;
+                border-radius: 2px;
+            }
+            .chat-window-mobile::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+            .input-area-mobile {
+                padding: 0.75rem;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(15, 23, 42, 0.8);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+            }
+            .suggestions-mobile {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.375rem;
+                margin-top: 0.75rem;
+                justify-content: center;
+                max-width: 100%;
+                overflow-x: auto;
+                padding: 0 0.25rem;
+            }
+            .suggestion-chip-mobile {
+                font-size: 0.875rem;
+                padding: 0.625rem 1.25rem !important;
+                border-radius: 12px !important;
+                background: rgba(59, 130, 246, 0.2) !important;
+                backdrop-filter: blur(10px) !important;
+                -webkit-backdrop-filter: blur(10px) !important;
+                border: 1px solid rgba(59, 130, 246, 0.3) !important;
+                color: white !important;
+                font-weight: 600 !important;
+                cursor: pointer;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+                white-space: nowrap;
+                flex-shrink: 0;
+                min-width: fit-content;
+                position: relative !important;
+                overflow: hidden !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            .suggestion-chip-mobile::before {
+                content: '' !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: -100% !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent) !important;
+                transition: left 0.5s !important;
+            }
+            .suggestion-chip-mobile:hover::before {
+                left: 100% !important;
+            }
+            .suggestion-chip-mobile:hover {
+                background: rgba(59, 130, 246, 0.3) !important;
+                transform: translateY(-2px) !important;
+                box-shadow: 0 12px 24px rgba(59, 130, 246, 0.3) !important;
+            }
+            .suggestion-chip-mobile:active {
+                transform: translateY(0) !important;
+            }
+            
+            /* Light mode mobile suggestion chips */
+            html:not(.dark) .suggestion-chip-mobile {
+                background: rgba(37, 99, 235, 0.6) !important;
+                border: 1px solid rgba(37, 99, 235, 0.7) !important;
+                color: white !important;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+            }
+            
+            html:not(.dark) .suggestion-chip-mobile:hover {
+                background: rgba(37, 99, 235, 0.8) !important;
+                box-shadow: 0 12px 24px rgba(37, 99, 235, 0.5) !important;
+            }
+            
+            .input-field-mobile {
+                font-size: 0.9rem;
+                padding: 0.75rem 3rem 0.75rem 1rem;
+                border-radius: 1.5rem;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                width: 100%;
+                box-sizing: border-box;
+                color: white;
+            }
+            .input-field-mobile:focus {
+                outline: none;
+                border-color: rgba(59, 130, 246, 0.5);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+                background: rgba(255, 255, 255, 0.15);
+            }
+            
+            /* Light mode mobile input field */
+            html:not(.dark) .input-field-mobile {
+                background: rgba(255, 255, 255, 0.8) !important;
+                border: 1px solid rgba(0, 0, 0, 0.15) !important;
+                color: #111827 !important;
+            }
+            
+            html:not(.dark) .input-field-mobile::placeholder {
+                color: rgba(0, 0, 0, 0.5) !important;
+            }
+            
+            html:not(.dark) .input-field-mobile:focus {
+                background: rgba(255, 255, 255, 0.95) !important;
+                border-color: rgba(37, 99, 235, 0.5) !important;
+            }
+        }
+
+        /* Bot bubble - Fixed size */
+        .chat-bubble-bot { 
+            background-color: #ffffff; 
+            color: #1f2937; 
+            border: 1px solid #e5e7eb; 
+            max-width: 80%;
+            min-width: 200px;
+            width: fit-content;
+            font-size: 0.95rem; /* Standardized font size */
+            line-height: 1.5;   /* Standardized line height */
+        }
+        html.dark .chat-bubble-bot { 
+            background-color: rgba(17, 24, 39, 0.8); 
+            color: #f3f4f6; 
+            border-color: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        /* User bubble - Fixed size */
+        .chat-bubble-user { 
+            background-image: linear-gradient(90deg,#3b82f6,#1d4ed8); 
+            color: #fff; 
+            max-width: 80%;
+            min-width: 200px;
+            width: fit-content;
+            margin-left: auto;
+            font-size: 0.95rem; /* Standardized font size */
+            line-height: 1.5;   /* Standardized line height */
+        }
+
+        /* Light mode - White animated background (already set above, this is just for text color) */
+        html:not(.dark) body { color: #1f2937; }
+        html:not(.dark) aside { 
+            background: rgba(255, 255, 255, 0.15) !important; 
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border-right: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Ensure all main containers are transparent to show uniform background */
+        main, .h-screen.flex, #main-content, #chat-window {
+            background: transparent !important;
+        }
+        
+        html:not(.dark) main { background: transparent !important; }
+
+        /* Chat area uses solid gradient background defined above */
+        html:not(.dark) .chat-bubble-bot { 
+            background-color: rgba(255, 255, 255, 0.95) !important; 
+            color: #111827 !important; 
+            border: 1px solid #d1d5db !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        }
+        html:not(.dark) .chat-bubble-user { 
+            background-image: linear-gradient(90deg,#2563eb,#1d4ed8) !important; 
+            color: #fff !important;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3) !important;
+        }
+        
+        /* Improve text readability in light mode */
+        html:not(.dark) {
+            color: #1f2937 !important;
+        }
+        
+        html:not(.dark) p, html:not(.dark) span, html:not(.dark) div {
+            color: #1f2937 !important;
+        }
+        
+        html:not(.dark) .text-gray-600, html:not(.dark) .text-gray-500 {
+            color: #4b5563 !important;
+        }
+        
+        html:not(.dark) .text-gray-400 {
+            color: #6b7280 !important;
+        }
+        
+        /* Ensure headings are readable */
+        html:not(.dark) h1, html:not(.dark) h2, html:not(.dark) h3, html:not(.dark) h4, html:not(.dark) h5, html:not(.dark) h6 {
+            color: #111827 !important;
+        }
+
+        /* Disclaimer bubble */
+        html:not(.dark) .chat-bubble-bot.bg-yellow-100 {
+          background-color: #fef9c3 !important;
+          border-color: #fde68a !important;
+          color: #92400e !important;
+        }
+
+        /* Portfolio health card - Already using glass-pane class */
+        #health-donut-chart, #health-donut-chart-mobile {
+            max-width: 100%;
+            max-height: 180px;
+            width: 100%;
+            height: auto;
+        }
+        
+        #portfolio-health-section {
+            flex-shrink: 0;
+            padding: 1rem;
+        }
+        
+        #portfolio-health-section-mobile {
+            flex-shrink: 0;
+            padding: 1rem;
+        }
+        
+        #health-score-center, #health-score-center-mobile {
+            pointer-events: none;
+        }
+
+        /* Market snapshot - Transparent in both modes */
+        html:not(.dark) #market-snapshot { 
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        html:not(.dark) #market-cards div { background-color: #f3f4f6; border: 1px solid #e5e7eb; }
+
+        /* Input area - Transparent */
+        html:not(.dark) .p-4 { background: transparent !important; }
+        html:not(.dark) input { background-color: #ffffff; border-color: #d1d5db; color: #111827; }
+
+        /* Footer */
+        html:not(.dark) footer, 
+        html:not(.dark) .text-center p { color: #6b7280; }
+
+        /* --- Sidebar fixes --- */
+        html:not(.dark) aside {
+          background-color: #ffffff;
+          border-right: 1px solid #e5e7eb;
+        }
+        html:not(.dark) aside a {
+          color: #374151;
+        }
+        html:not(.dark) aside a:hover {
+          background-color: #f3f4f6;
+        }
+        html:not(.dark) aside a span {
+          color: #111827;
+        }
+        html:not(.dark) aside a svg {
+          color: #6b7280;
+        }
+        /* Active link highlight */
+        html:not(.dark) aside a.bg-gray-900,
+        html:not(.dark) aside a[aria-current="page"] {
+          background-color: #e0f2fe !important;
+          color: #0369a1 !important;
+        }
+        html:not(.dark) aside a.bg-gray-900 span {
+          color: #0369a1 !important;
+        }
+        html:not(.dark) aside a.bg-gray-900 svg {
+          color: #0284c7 !important;
+        }
+
+        /* --- Market snapshot fixes --- */
+        html:not(.dark) #market-snapshot {
+          background: rgba(255, 255, 255, 0.15) !important;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        html:not(.dark) #market-cards div {
+          background-color: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        html:not(.dark) #market-cards span {
+          color: #111827 !important;
+        }
+        /* Market data numbers visibility - make text red */
+        html:not(.dark) #market-cards div div {
+          color: #dc2626 !important;
+        }
+        /* Preserve green/red colors for market changes */
+        html:not(.dark) #market-cards .text-emerald-600 {
+          color: #059669 !important;
+        }
+        html:not(.dark) #market-cards .text-red-600 {
+          color: #dc2626 !important;
+        }
+        /* Black container outlines */
+        html:not(.dark) #market-cards .bg-emerald-50 {
+          border-color: #000000 !important;
+          border-width: 2px !important;
+        }
+        html:not(.dark) #market-cards .bg-red-50 {
+          border-color: #000000 !important;
+          border-width: 2px !important;
+        }
+
+        /* --- Username and profile fixes --- */
+        html:not(.dark) aside .text-gray-900 { color: #111827 !important; }
+        html:not(.dark) aside .text-gray-100 { color: #111827 !important; }
+        html:not(.dark) aside .text-gray-600 { color: #374151 !important; }
+        html:not(.dark) aside .text-gray-400 { color: #6b7280 !important; }
+        
+        /* Fix profile button hover effect */
+        html:not(.dark) #profile-button:hover {
+          background-color: #f3f4f6 !important;
+        }
+        html:not(.dark) #profile-button:hover .text-gray-900 {
+          color: #111827 !important;
+        }
+        html:not(.dark) #profile-button:hover .text-gray-100 {
+          color: #111827 !important;
+        }
+        html:not(.dark) #profile-button:hover .text-gray-600 {
+          color: #374151 !important;
+        }
+        html:not(.dark) #profile-button:hover .text-gray-400 {
+          color: #6b7280 !important;
+        }
+        
+        /* --- Logout dropdown fixes --- */
+        html:not(.dark) #profile-dropdown {
+          background-color: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        }
+        html:not(.dark) #profile-dropdown button {
+          color: #374151 !important;
+          background-color: transparent !important;
+        }
+        html:not(.dark) #profile-dropdown button:hover {
+          background-color: #f3f4f6 !important;
+          color: #111827 !important;
+        }
+
+        /* --- Portfolio health score color coding --- */
+        html:not(.dark) #portfolio-health-section .text-green-500 {
+          color: #059669 !important;
+        }
+        html:not(.dark) #portfolio-health-section .text-yellow-500 {
+          color: #d97706 !important;
+        }
+        html:not(.dark) #portfolio-health-section .text-red-500 {
+          color: #dc2626 !important;
+        }
+
+        /* --- Footer fixes --- */
+        html:not(.dark) .text-center.p-2 {
+          background-color: #f9fafb !important;
+          border-top: 1px solid #e5e7eb !important;
+        }
+        html:not(.dark) .text-center.p-2 p {
+          color: #6b7280 !important;
+        }
+
+        /* Additional refinements */
+        html:not(.dark) .sticky { background-color: rgba(255,255,255,0.9); border-bottom: 1px solid #e5e7eb; backdrop-filter: blur(8px); }
+        html:not(.dark) .market-skeleton-card { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.08); }
+        html:not(.dark) .suggestion-chip { 
+            background: rgba(37, 99, 235, 0.4) !important; /* Darker for visibility */
+            border: 1px solid rgba(37, 99, 235, 0.5) !important;
+            color: white !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        html:not(.dark) .suggestion-chip:hover {
+            background: rgba(37, 99, 235, 0.6) !important;
+        }
+        /* Choice buttons use standardized glass-button style */
+        
+        /* Fix suggestion chips spacing */
+        .suggestion-chip {
+          margin: 0.4rem !important;
+        }
+
+        /* Hover states */
+        .action-btn, .suggestion-chip, .holding-item-clickable { cursor: pointer; transition: all 0.15s ease-in-out; }
+        .action-btn:hover, .holding-item-clickable:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.08); }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+        html.dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+
+        /* Typing dots */
+        .typing { display:inline-flex; align-items:center; }
+        .typing .dot { width:6px; height:6px; border-radius:999px; background:#9ca3af; margin:0 2px; opacity:.4; animation: blink 1.4s infinite; }
+        .typing .dot:nth-child(2) { animation-delay:.2s }
+        .typing .dot:nth-child(3) { animation-delay:.4s }
+        @keyframes blink { 0%, 80%, 100% { opacity:.2 } 40% { opacity:1 } }
+
+        /* Fade-in for cards */
+        .fade-in { opacity: 0; transform: translateY(4px); animation: fin 350ms ease-out forwards; }
+        @keyframes fin { to { opacity: 1; transform: translateY(0); } }
+
+        /* Market skeleton loading tiles */
+        .market-skeleton-card {
+            min-width: 180px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(2px);
+            border-radius: 0.5rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 0.75rem;
+            margin: 0.25rem;
+            animation: skeleton-pulse 1.5s ease-in-out infinite;
+        }
+        html.dark .market-skeleton-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        @keyframes skeleton-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        .market-skeleton-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .market-skeleton-line {
+            height: 12px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            animation: skeleton-pulse 1.5s ease-in-out infinite;
+        }
+        html.dark .market-skeleton-line {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .market-skeleton-line.short {
+            width: 60%;
+        }
+        .market-skeleton-line.long {
+            width: 80%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+
+<div class="h-screen flex" style="background: transparent;">
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="mobile-overlay"></div>
+    
+    <!-- Sidebar - Transparent with glass effect -->
+    <aside id="sidebar" class="sidebar-container w-1/3 max-w-sm h-screen flex flex-col p-4 mobile-sidebar transition-all duration-300 ease-in-out overflow-hidden" style="background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-right: 1px solid rgba(255, 255, 255, 0.1);">
+        <!-- Sidebar Header -->
+        <div class="sidebar-header">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-3 sidebar-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900 dark:text-gray-100">SAHA-AI</h1>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Your Finance Analyst</p>
+                    </div>
+                </div>
+                    <button id="sidebar-toggle" class="sidebar-toggle-btn glass-button p-2 rounded-lg transition-all duration-300" title="Toggle Sidebar">
+                    <svg id="sidebar-toggle-icon" class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-4 text-center sidebar-logo-collapsed">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-400 mx-auto" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" /><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" /></svg>
+            </div>
+
+            <!-- Profile -->
+            <div class="relative mt-4 sidebar-content">
+                <div class="flex items-center w-full justify-between">
+                <button id="profile-button" class="sidebar-nav-btn flex-1 flex items-center justify-between p-3 rounded-xl transition-all duration-300">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                            {% if user.first_name %}{{ user.first_name|first|upper }}{% else %}{{ user.username|first|upper }}{% endif %}
+                        </div>
+                        <div class="text-left">
+                            <p class="font-semibold text-sm text-gray-900 dark:text-gray-100">Hi, {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">@{{ user.username }}</p>
+                        </div>
+                    </div>
+
+                </button>
+
+                <!-- Visible logout button for quick sign-out (professional style) -->
+                <form action="{% url 'logout' %}" method="post" class="ml-2">
+                    {% csrf_token %}
+                    <button type="submit" title="Logout" class="glass-button p-2 rounded-lg" style="min-width:44px; display:flex; align-items:center; justify-content:center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h6a1 1 0 110 2H5v10h5a1 1 0 110 2H4a1 1 0 01-1-1V4zm11.707 5.293a1 1 0 010 1.414l-2 2a1 1 0 11-1.414-1.414L12.586 11H8a1 1 0 110-2h4.586l-1.293-1.293a1 1 0 111.414-1.414l2 2z" clip-rule="evenodd" /></svg>
+                    </button>
+                </form>
+                <div id="profile-dropdown" class="hidden absolute left-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-1 z-20 opacity-0 transform scale-95">
+                    <form action="{% url 'logout' %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-600">Logout</button>
+                    </form>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="sidebar-nav space-y-2 sidebar-content">
+            <a href="{% url 'portfolio' %}" class="sidebar-nav-btn flex items-center space-x-3 p-3 rounded-xl transition-all duration-300">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V7c0-1.1.9-2 2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span class="font-medium text-white">My Portfolio</span>
+            </a>
+            <a href="{% url 'profile' %}" class="sidebar-nav-btn flex items-center space-x-3 p-3 rounded-xl transition-all duration-300">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span class="font-medium text-white">My Profile</span>
+            </a>
+            {% if user.is_superuser %}
+            <a href="{% url 'admin_dashboard' %}" class="sidebar-nav-btn flex items-center space-x-3 p-3 rounded-xl transition-all duration-300">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                <span class="font-medium text-white">Admin Dashboard</span>
+            </a>
+            {% endif %}
+            <a href="{% url 'about' %}" class="sidebar-nav-btn flex items-center space-x-3 p-3 rounded-xl transition-all duration-300">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="font-medium text-white">About Us</span>
+            </a>
+        </nav>
+
+        <!-- Portfolio Health (Scrollable) -->
+        <div class="sidebar-health">
+            <div id="portfolio-health-section" class="sidebar-content p-4 rounded-lg glass-pane">
+                <h2 class="font-bold text-lg mb-2 text-gray-900 dark:text-gray-100">Portfolio Health</h2>
+                <div id="health-score-placeholder" class="text-center text-gray-600 dark:text-gray-400">Loading score...</div>
+                <div id="health-score-display" class="hidden">
+                    <div class="relative" style="width: 100%; max-width: 200px; margin: 0 auto;">
+                        <canvas id="health-donut-chart"></canvas>
+                        <div id="health-score-center" class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="health-score-value" class="text-3xl font-bold text-gray-900 dark:text-gray-100">0</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">out of 10</span>
+                        </div>
+                    </div>
+                    <div id="health-details" class="mt-4 space-y-2 text-sm"></div>
+                </div>
+            </div>
+            
+            <!-- Mobile Portfolio Health Section -->
+            <div id="portfolio-health-section-mobile" class="sidebar-content p-4 rounded-lg md:hidden glass-pane">
+                <h2 class="font-bold text-lg mb-2 text-gray-900 dark:text-gray-100">Portfolio Health</h2>
+                <div id="health-score-placeholder-mobile" class="text-center text-gray-600 dark:text-gray-400">Loading score...</div>
+                <div id="health-score-display-mobile" class="hidden">
+                    <div class="relative" style="width: 100%; max-width: 200px; margin: 0 auto;">
+                        <canvas id="health-donut-chart-mobile"></canvas>
+                        <div id="health-score-center-mobile" class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="health-score-value-mobile" class="text-3xl font-bold text-gray-900 dark:text-gray-100">0</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">out of 10</span>
+                        </div>
+                    </div>
+                    <div id="health-details-mobile" class="mt-4 space-y-2 text-sm"></div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Chat main -->
+    <main id="main-content" class="flex-1 flex flex-col mobile-main" style="background: transparent;">
+        <!-- Mobile Header -->
+        <div class="mobile-header md:hidden">
+            <button id="mobile-menu-btn" class="mobile-menu-btn">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+            </button>
+            <div class="mobile-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                    <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                </svg>
+                <div>
+                    <h1>SAHA-AI</h1>
+                    <p>Your Finance Analyst</p>
+                </div>
+            </div>
+            <button id="theme-toggle-mobile" class="mobile-menu-btn">
+                <svg id="theme-toggle-dark-icon-mobile" class="hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+                <svg id="theme-toggle-light-icon-mobile" class="hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Top bar with theme toggle - Transparent -->
+        <div class="sticky top-0 z-10 hidden md:block" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+            <div class="max-w-3xl mx-auto px-3 py-2 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-[11px] tracking-wide uppercase text-gray-600 dark:text-gray-400">Market</span>
+                    <span id="market-status" class="text-[11px] font-semibold text-gray-700 dark:text-gray-300"></span>
+                </div>
+                <button id="theme-toggle" class="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title="Toggle theme">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Market snapshot bar - Transparent -->
+        <div id="market-snapshot" style="background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+            <div class="max-w-3xl mx-auto px-3 py-2 hidden md:block">
+                <div id="market-cards" class="flex items-stretch space-x-2 overflow-x-auto hide-scrollbar">
+                    <!-- Skeleton loading cards -->
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
+                    <div class="market-skeleton-card">
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short"></div>
+                            <div class="market-skeleton-line long"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Market Cards -->
+            <div id="market-cards-mobile" class="market-cards-mobile md:hidden">
+                <!-- Mobile market cards will be populated here -->
+            </div>
+        </div>
+        <div id="chat-window" class="flex-1 p-6 overflow-y-auto w-full max-w-3xl mx-auto chat-window-mobile">
+            <!-- Beta Testing Welcome Message -->
+            <div id="beta-welcome" class="w-full max-w-2xl mx-auto mb-6" style="display: none;">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-6 shadow-lg border border-blue-200 dark:border-blue-700">
+                    <div class="text-center">
+                        <div class="text-4xl mb-3">🚀</div>
+                        <h3 class="text-xl font-bold text-blue-800 dark:text-blue-200 mb-3">Welcome to SAHA-AI Beta Testing!</h3>
+                        <p class="text-blue-700 dark:text-blue-300 mb-4">
+                            You're among the first users to experience our AI-powered investment assistant. This is a testing phase, and we're excited to have you on board!
+                        </p>
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-4">
+                            <p class="text-yellow-800 dark:text-yellow-200 text-sm font-medium">
+                                ⚠️ <strong>Important:</strong> If you encounter any bugs or issues, please report them directly to our development team. Your feedback is invaluable for improving the platform.
+                            </p>
+                        </div>
+                        <p class="text-blue-600 dark:text-blue-400 text-sm mb-4">
+                            By continuing to use SAHA-AI, you consent to participating in this beta testing program and understand that this is a work-in-progress platform.
+                        </p>
+                        <button onclick="acceptBetaTesting()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                            I Understand - Let's Start!
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Regular Welcome Message -->
+            <div id="initial-greeting" class="w-full max-w-md p-3 rounded-xl mb-4 chat-bubble chat-bubble-bot">
+                Hi, I am SAHA-AI, How may I help you today?
+            </div>
+        </div>
+
+        <div id="input-area" class="p-4 glass-pane border-t border-gray-200/30 dark:border-gray-700/30 input-area-mobile backdrop-blur-xl">
+            <div class="w-full max-w-3xl mx-auto">
+                <div class="relative">
+                    <input id="user-input" type="text" class="glass-input w-full p-3 border border-gray-300/30 dark:border-gray-600/30 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/50 input-field-mobile" placeholder="Ask about stocks, mutual funds, or portfolio">
+                </div>
+
+                <div id="quick-suggestions" class="mt-1 text-center suggestions-mobile">
+                    <span class="suggestion-chip suggestion-chip-mobile" id="chip-analyze-stock">Analyze a stock</span>
+                    <span class="suggestion-chip suggestion-chip-mobile" id="chip-analyze-mf">Analyze a mutual fund</span>
+                    <span class="suggestion-chip suggestion-chip-mobile" id="chip-show-portfolio">Show my portfolio</span>
+                </div>
+
+                <div id="suggestions-box" class="mt-3 text-center"></div>
+            </div>
+        </div>
+
+        <div class="text-center p-2 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+            <p class="text-xs text-gray-500 dark:text-gray-500">© 2025 SAHA-AI Project. All Rights Reserved.</p>
+        </div>
+    </main>
+</div>
+
+<!-- server-passed values -->
+{{ user_first_name|json_script:"user-first-name" }}
+{{ csrf_token_value|json_script:"csrf-token" }}
+
+<!-- Page Transition Script -->
+<script>
+    // Page transition on load
+    document.addEventListener('DOMContentLoaded', function() {
+        document.body.classList.add('page-loaded');
+    });
+    
+    // Page transition on navigation
+    function navigateWithTransition(url) {
+        // Prevent multiple navigations
+        if (window.isNavigating) return;
+        window.isNavigating = true;
+        
+        // Add fade out animation
+        document.body.classList.remove('page-loaded');
+        document.body.classList.add('page-transitioning');
+        
+        // Navigate after animation
+        setTimeout(() => {
+            window.location.href = url;
+        }, 300);
+    }
+    
+    // Apply to all navigation links
+    document.addEventListener('DOMContentLoaded', function() {
+        // Find all navigation links
+        const navLinks = document.querySelectorAll('a[href*="/"], a[href*="portfolio"], a[href*="profile"], a[href*="about"], a[href*="home"]');
+        
+        navLinks.forEach(link => {
+            // Skip external links and hash links
+            if (link.href && !link.href.startsWith('http') && !link.href.includes('#')) {
+                link.addEventListener('click', function(e) {
+                    // Skip if it's a form submission or special link
+                    if (this.onclick || this.getAttribute('target') === '_blank') return;
+                    
+                    e.preventDefault();
+                    const url = this.getAttribute('href');
+                    if (url) {
+                        navigateWithTransition(url);
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+<script>
+// Lightweight live-reload: polls backend version and reloads page when it changes
+(function(){
+    let lastVersion = null;
+    async function check(){
+        try{
+            const r = await fetch('/api/dev/version/');
+            const d = await r.json();
+            if(lastVersion === null){ lastVersion = d.version; }
+            else if(d.version !== lastVersion){ location.reload(); }
+        }catch(e){ /* ignore */ }
+    }
+    setInterval(check, 3000);
+    check();
+})();
+</script>
+
+<script>
+// Mobile detection removed - mobile users are now redirected to mobile service
+
+// Security Functions - Inactivity Logout with Modal
+let sessionActive = true;
+let sessionCheckInterval;
+let idleTimer;
+let logoutCountdown;
+
+function forceLogout() {
+    if (!sessionActive) return;
+    
+    sessionActive = false;
+    clearInterval(sessionCheckInterval);
+    
+    // Clear any sensitive data
+    localStorage.removeItem('saha-ai-beta-welcome');
+    
+    // Redirect to login
+    window.location.href = '/users/login/';
+}
+
+function showInactivityModal() {
+    const modal = document.getElementById('inactivity-modal');
+    if (!modal) return;
+
+    const timerSpan = document.getElementById('logout-timer');
+    const stayBtn = document.getElementById('stay-logged-in-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    modal.classList.remove('hidden');
+
+    let seconds = 15;
+    timerSpan.textContent = seconds;
+
+    // Clear any existing countdown
+    if (logoutCountdown) clearInterval(logoutCountdown);
+
+    logoutCountdown = setInterval(() => {
+        seconds--;
+        timerSpan.textContent = seconds;
+        if (seconds <= 0) {
+            clearInterval(logoutCountdown);
+            forceLogout();
+        }
+    }, 1000);
+
+    stayBtn.onclick = () => {
+        clearInterval(logoutCountdown);
+        modal.classList.add('hidden');
+        resetIdleTimer();
+    };
+
+    logoutBtn.onclick = () => {
+        clearInterval(logoutCountdown);
+        forceLogout();
+    };
+}
+
+function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    // Set idle timer to show the modal before actual session expiration
+    idleTimer = setTimeout(showInactivityModal, (4 * 60 * 1000)); // 4 minutes, 1 minute before 5 min timeout
+}
+
+function initializeSessionSecurity() {
+    // Set up session monitoring
+    sessionCheckInterval = setInterval(checkSessionStatus, 30000); // Check every 30 seconds
+    
+    // Detect browser/tab close for immediate logout
+    window.addEventListener('beforeunload', forceLogout);
+    window.addEventListener('unload', forceLogout);
+    
+    // Reset idle timer on user activity
+    ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+        document.addEventListener(event, resetIdleTimer, true);
+    });
+    
+    resetIdleTimer();
+}
+
+function checkSessionStatus() {
+    if (!sessionActive) return;
+    
+    // Check if session is still valid by making a lightweight request
+    fetch('/api/portfolio/health/', {
+        method: 'GET',
+        credentials: 'include'
+    })
+    .then(response => {
+        if (response.status === 401 || response.status === 403) {
+            // Session expired on the server
+            forceLogout();
+        }
+    })
+    .catch(error => {
+        console.log('Session check failed:', error);
+        // Don't logout on network errors, just log
+    });
+}
+
+// Beta Testing Functions
+function checkFirstTimeUser() {
+    const hasSeenBetaWelcome = localStorage.getItem('saha-ai-beta-welcome');
+    if (!hasSeenBetaWelcome) {
+        // Show beta welcome message
+        const betaWelcome = document.getElementById('beta-welcome');
+        const initialGreeting = document.getElementById('initial-greeting');
+        if (betaWelcome && initialGreeting) {
+            betaWelcome.style.display = 'block';
+            initialGreeting.style.display = 'none';
+        }
+    }
+}
+
+function acceptBetaTesting() {
+    // Hide beta welcome and show regular greeting
+    const betaWelcome = document.getElementById('beta-welcome');
+    const initialGreeting = document.getElementById('initial-greeting');
+    
+    if (betaWelcome && initialGreeting) {
+        betaWelcome.style.display = 'none';
+        initialGreeting.style.display = 'block';
+    }
+    
+    // Mark as seen
+    localStorage.setItem('saha-ai-beta-welcome', 'true');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize security features
+    initializeSessionSecurity();
+    
+    // Check for first-time user and show beta welcome
+    checkFirstTimeUser();
+    
+    // DOM refs
+    const chatWindow = document.getElementById('chat-window');
+    const marketCards = document.getElementById('market-cards');
+    const marketStatus = document.getElementById('market-status');
+    const userInput = document.getElementById('user-input');
+    // Send button removed - users can press Enter to send
+    const suggestionsBox = document.getElementById('suggestions-box');
+    const chipAnalyzeStock = document.getElementById('chip-analyze-stock');
+    const chipAnalyzeMF = document.getElementById('chip-analyze-mf');
+    const chipShowPortfolio = document.getElementById('chip-show-portfolio');
+    const profileButton = document.getElementById('profile-button');
+    const profileDropdown = document.getElementById('profile-dropdown');
+    const themeToggle = document.getElementById('theme-toggle');
+    const darkIcon = document.getElementById('theme-toggle-dark-icon');
+    const lightIcon = document.getElementById('theme-toggle-light-icon');
+    const healthScorePlaceholder = document.getElementById('health-score-placeholder');
+    const healthScoreDisplay = document.getElementById('health-score-display');
+    const initialGreetingEl = document.getElementById('initial-greeting');
+    
+    // Mobile elements
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileOverlay = document.getElementById('mobile-overlay');
+    
+    // Initialize main content width based on sidebar state
+    function initializeMainContent() {
+        const mainContent = document.getElementById('main-content');
+        const inputArea = document.getElementById('input-area');
+        
+        if (sidebar) {
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            if (isCollapsed) {
+                if (mainContent) {
+                    mainContent.style.width = 'calc(100% - 80px)';
+                }
+            } else {
+                if (mainContent) {
+                    mainContent.style.width = 'auto';
+                }
+            }
+        }
+    }
+    
+    // Sidebar collapse/expand functionality
+    function toggleSidebar() {
+        if (sidebar) {
+            sidebar.classList.toggle('collapsed');
+            // Save state to localStorage
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+            
+            // Update main content area
+            const mainContent = document.getElementById('main-content');
+            if (mainContent) {
+                if (isCollapsed) {
+                    mainContent.style.width = 'calc(100% - 80px)';
+                } else {
+                    mainContent.style.width = 'auto';
+                }
+            }
+            // After toggling sidebar, re-render portfolio health (Chart.js needs visible container to size correctly)
+            setTimeout(() => {
+                try {
+                    fetchAndDisplayPortfolioHealth();
+                    if (window.healthChart && typeof window.healthChart.resize === 'function') window.healthChart.resize();
+                    if (window.healthChartMobile && typeof window.healthChartMobile.resize === 'function') window.healthChartMobile.resize();
+                } catch (e) {
+                    console.warn('Error refreshing portfolio health after sidebar toggle', e);
+                }
+            }, 220);
+        }
+    }
+    
+    // Load sidebar state from localStorage
+    if (sidebar && localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+    
+    // Initialize main content on load
+    initializeMainContent();
+    
+    // Add event listener for sidebar toggle
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', toggleSidebar);
+    }
+    const themeToggleMobile = document.getElementById('theme-toggle-mobile');
+    const darkIconMobile = document.getElementById('theme-toggle-dark-icon-mobile');
+    const lightIconMobile = document.getElementById('theme-toggle-light-icon-mobile');
+    const marketCardsMobile = document.getElementById('market-cards-mobile');
+
+    // injected data
+    const userFirstNameElement = document.getElementById('user-first-name');
+    const csrfTokenElement = document.getElementById('csrf-token');
+    const userName = userFirstNameElement ? JSON.parse(userFirstNameElement.textContent) : '';
+    const csrfToken = csrfTokenElement ? JSON.parse(csrfTokenElement.textContent) : '';
+
+    // conversation state
+    let conversationState = 'AWAITING_PROMPT';
+    let analysisContext = {}; // { type: 'stock'|'mf', ... }
+    let isFirstInteraction = true;
+    let lastRequestedFlow = null; // 'stock' | 'mf' | null
+
+    // Mobile menu functionality
+    function toggleMobileMenu() {
+        sidebar.classList.toggle('open');
+        mobileOverlay.classList.toggle('open');
+    }
+
+    function closeMobileMenu() {
+        sidebar.classList.remove('open');
+        mobileOverlay.classList.remove('open');
+    }
+
+    // Mobile event listeners
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', toggleMobileMenu);
+    }
+    if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', closeMobileMenu);
+    }
+
+    // Mobile theme toggle
+    if (themeToggleMobile) {
+        themeToggleMobile.addEventListener('click', () => {
+            if (themeToggle) themeToggle.click();
+        });
+    }
+
+    // Close mobile menu when clicking on sidebar links
+    const sidebarLinks = sidebar.querySelectorAll('a');
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        });
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        if (window.innerWidth > 768) {
+            closeMobileMenu();
+        }
+    });
+
+    // small helpers
+    function addMessage(message, sender='bot', opts = {}) {
+        const { isHtml=false, extraClasses='' } = opts;
+        const container = document.createElement('div');
+        const bubbleType = sender === 'user' ? 'chat-bubble-user self-end' : 'chat-bubble-bot self-start';
+        container.className = `w-full max-w-md p-3 rounded-xl mb-4 chat-bubble ${bubbleType} ${extraClasses}`;
+        if (isHtml) container.innerHTML = message;
+        else container.textContent = message;
+        chatWindow.appendChild(container);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+        return container;
+    }
+
+    function setInputState(enabled, placeholder = 'Type here...') {
+        userInput.disabled = !enabled;
+        userInput.placeholder = placeholder;
+        if (enabled) userInput.focus();
+    }
+
+    // portfolio health
+    async function fetchAndDisplayPortfolioHealth() {
+        console.log('fetchAndDisplayPortfolioHealth: Starting...');
+        try {
+            console.log('fetchAndDisplayPortfolioHealth: Fetching /api/portfolio/health/');
+            const r = await fetch('/api/portfolio/health/');
+            console.log('fetchAndDisplayPortfolioHealth: Response status:', r.status);
+            console.log('fetchAndDisplayPortfolioHealth: Response ok:', r.ok);
+            
+            if (!r.ok) {
+                const errorText = await r.text();
+                console.error('fetchAndDisplayPortfolioHealth: Response not ok:', errorText);
+                throw new Error(`health fetch failed: ${r.status} ${errorText}`);
+            }
+            
+            const d = await r.json();
+            console.log('fetchAndDisplayPortfolioHealth: Response data:', d);
+            
+            healthScorePlaceholder.classList.add('hidden');
+            healthScoreDisplay.classList.remove('hidden');
+            
+            // Mobile version
+            const healthScorePlaceholderMobile = document.getElementById('health-score-placeholder-mobile');
+            const healthScoreDisplayMobile = document.getElementById('health-score-display-mobile');
+            if (healthScorePlaceholderMobile && healthScoreDisplayMobile) {
+                healthScorePlaceholderMobile.classList.add('hidden');
+                healthScoreDisplayMobile.classList.remove('hidden');
+            }
+            
+            const getScoreColor = (score) => score >= 7 ? 'text-green-500' : score >= 4 ? 'text-yellow-500' : 'text-red-500';
+            const getChartColor = (score) => {
+                if (score >= 7) return '#10b981'; // green
+                if (score >= 4) return '#f59e0b'; // yellow
+                return '#ef4444'; // red
+            };
+            
+            // Update score value in center
+            const scoreValue = document.getElementById('health-score-value');
+            const scoreValueMobile = document.getElementById('health-score-value-mobile');
+            if (scoreValue) {
+                scoreValue.textContent = d.overall_score.toFixed(1);
+                scoreValue.className = `text-3xl font-bold ${getScoreColor(d.overall_score)}`;
+            }
+            if (scoreValueMobile) {
+                scoreValueMobile.textContent = d.overall_score.toFixed(1);
+                scoreValueMobile.className = `text-3xl font-bold ${getScoreColor(d.overall_score)}`;
+            }
+            
+            // Create donut chart
+            const scorePercentage = (d.overall_score / 10) * 100;
+            const remainingPercentage = 100 - scorePercentage;
+            
+            const chartConfig = {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [scorePercentage, remainingPercentage],
+                        backgroundColor: [
+                            getChartColor(d.overall_score),
+                            'rgba(156, 163, 175, 0.2)' // gray for remaining
+                        ],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    }
+                }
+            };
+            
+            // Destroy existing chart if it exists
+            if (window.healthChart) {
+                window.healthChart.destroy();
+            }
+            if (window.healthChartMobile) {
+                window.healthChartMobile.destroy();
+            }
+            
+            // Create new charts
+            const chartCanvas = document.getElementById('health-donut-chart');
+            if (chartCanvas) {
+                window.healthChart = new Chart(chartCanvas, chartConfig);
+            }
+            
+            const chartCanvasMobile = document.getElementById('health-donut-chart-mobile');
+            if (chartCanvasMobile) {
+                window.healthChartMobile = new Chart(chartCanvasMobile, chartConfig);
+            }
+            
+            // Update details
+            const healthDetails = document.getElementById('health-details');
+            const healthDetailsMobile = document.getElementById('health-details-mobile');
+            const detailsHTML = `
+                <div class="space-y-2">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="font-semibold text-gray-900 dark:text-gray-100">Diversification</p>
+                            <p class="font-bold ${getScoreColor(d.diversification.score)}">${d.diversification.score.toFixed(1)}/10</p>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">${d.diversification.feedback}</p>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="font-semibold text-gray-900 dark:text-gray-100">Risk Level</p>
+                            <p class="font-bold ${getScoreColor(d.risk.score)}">${d.risk.score.toFixed(1)}/10</p>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">${d.risk.feedback}</p>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="font-semibold text-gray-900 dark:text-gray-100">Performance</p>
+                            <p class="font-bold ${getScoreColor(d.performance.score)}">${d.performance.score.toFixed(1)}/10</p>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400">${d.performance.feedback}</p>
+                    </div>
+                </div>
+            `;
+            
+            if (healthDetails) {
+                healthDetails.innerHTML = detailsHTML;
+            }
+            if (healthDetailsMobile) {
+                healthDetailsMobile.innerHTML = detailsHTML;
+            }
+            console.log('fetchAndDisplayPortfolioHealth: Successfully displayed health data');
+        } catch (e) {
+            console.error('fetchAndDisplayPortfolioHealth: Error:', e);
+            healthScorePlaceholder.textContent = 'Could not load score.';
+            const healthScorePlaceholderMobile = document.getElementById('health-score-placeholder-mobile');
+            if (healthScorePlaceholderMobile) {
+                healthScorePlaceholderMobile.textContent = 'Could not load score.';
+            }
+        }
+    }
+
+    // theme toggle
+    if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        if (lightIcon) lightIcon.classList.remove('hidden');
+    } else {
+        if (darkIcon) darkIcon.classList.remove('hidden');
+    }
+    themeToggle && themeToggle.addEventListener('click', () => {
+        darkIcon && darkIcon.classList.toggle('hidden');
+        lightIcon && lightIcon.classList.toggle('hidden');
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+
+    // profile dropdown - position as fixed popup to avoid clipping inside sidebar
+    profileButton && profileButton.addEventListener('click', (e) => {
+        if (!profileDropdown) return;
+        const isHidden = profileDropdown.classList.contains('hidden');
+
+        // If opening, position the dropdown relative to viewport so it's not clipped
+        if (isHidden) {
+            const rect = profileButton.getBoundingClientRect();
+            profileDropdown.style.position = 'fixed';
+            profileDropdown.style.left = `${rect.left}px`;
+            // place below the button with a small offset
+            profileDropdown.style.top = `${rect.bottom + 6}px`;
+            profileDropdown.style.minWidth = `${Math.max(rect.width, 160)}px`;
+            profileDropdown.style.zIndex = 9999;
+            profileDropdown.classList.remove('hidden');
+            // allow opacity class to animate in
+            setTimeout(() => profileDropdown.classList.remove('opacity-0'), 10);
+        } else {
+            // closing
+            profileDropdown.classList.add('opacity-0');
+            setTimeout(() => {
+                profileDropdown.classList.add('hidden');
+                // reset inline position after closing so styles don't persist unexpectedly
+                profileDropdown.style.position = '';
+                profileDropdown.style.left = '';
+                profileDropdown.style.top = '';
+                profileDropdown.style.minWidth = '';
+                profileDropdown.style.zIndex = '';
+            }, 180);
+        }
+        e.stopPropagation();
+    });
+
+    // Close profile dropdown when clicking outside
+    window.addEventListener('click', (e) => {
+        if (!profileDropdown) return;
+        if (profileDropdown.classList.contains('hidden')) return;
+        // if click target isn't inside dropdown or the profile button, close it
+        if (profileButton && !profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+            profileDropdown.classList.add('opacity-0');
+            setTimeout(() => profileDropdown.classList.add('hidden'), 160);
+        }
+    });
+
+    // Start / greeting flow
+    function getGreeting() {
+        const hour = new Date().getHours();
+        const namePart = userName ? `, ${userName}` : '';
+        if (hour < 12) return `Good morning${namePart}!`;
+        if (hour < 18) return `Good afternoon${namePart}!`;
+        return `Good evening${namePart}!`;
+    }
+
+    function startConversation(isInitial=true) {
+        if (isInitial) {
+            isFirstInteraction = true;
+            fetchAndDisplayPortfolioHealth();
+            // Load market snapshot at startup
+            loadMarketSnapshot();
+        }
+        // disclaimer below first greeting
+        if (initialGreetingEl && isFirstInteraction) {
+            const disclaimer = `<p class="text-xs text-gray-900 dark:text-gray-300"><strong>Disclaimer:</strong> This is not financial advice. All investment decisions are your responsibility.</p>`;
+            addMessage(disclaimer, 'bot', { isHtml: true, extraClasses: 'bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700' });
+            isFirstInteraction = false;
+        } else {
+            const followUpMessages = [
+                "What would you like to explore next? I'm here to help with any investment questions you might have.",
+                "Ready for your next financial analysis! What catches your interest - stocks, mutual funds, or portfolio review?",
+                "What's next on your investment journey? I can help you analyze any stock or fund you're curious about.",
+                "How else can I assist you today? Feel free to ask about any company or investment you're considering.",
+                "What financial insights are you looking for? I'm ready to dive deep into any analysis you need.",
+                "Ready to analyze another stock or fund? Just tell me what you're interested in!",
+                "What's your next investment question? I love helping investors make informed decisions.",
+                "What would you like to research next? I can help with detailed analysis of any investment opportunity."
+            ];
+            const randomMessage = followUpMessages[Math.floor(Math.random() * followUpMessages.length)];
+            addMessage(randomMessage, 'bot');
+        }
+        conversationState = 'AWAITING_PROMPT';
+        setInputState(true, 'Type commands like - Analyze a stock or a mutual fund, or Show my portfolio');
+        suggestionsBox.innerHTML = '';
+    }
+
+    // show cancel
+    function showCancelButton() {
+        suggestionsBox.innerHTML = `<div id="cancel-container" class="mt-2"><button id="cancel-btn" class="glass-button text-sm font-semibold py-2 px-4 rounded-xl" style="background: rgba(239, 68, 68, 0.2) !important; border-color: rgba(239, 68, 68, 0.3) !important;">Cancel</button></div>`;
+        const cancelBtn = document.getElementById('cancel-btn');
+        if (cancelBtn) cancelBtn.addEventListener('click', () => {
+            addMessage('Action cancelled.', 'bot');
+            startConversation(false);
+        });
+    }
+
+    // ----- DEPRECATED NLU/GEMINI FUNCTIONS -----
+    // We are no longer using callNLU, callGeminiChat, or handleGeminiConversation
+    // They are replaced by callChatAPI and new logic in handleUserInput
+    
+    // +++++ NEW UNIFIED CHAT API FUNCTION +++++
+    // This one function replaces the old, separate NLU and Gemini calls.
+    // It calls our smart backend and returns the FULL JSON response.
+    async function callChatAPI(text) {
+        try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (csrfToken) headers['X-CSRFToken'] = csrfToken;
+            
+            const res = await fetch('/api/nlp/chat/', { // Hits the NEW, smart endpoint
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ message: text })
+            });
+            
+            if (!res.ok) {
+                console.error('Chat API error', res.status);
+                throw new Error('Chat API failed');
+            }
+            
+            const data = await res.json();
+            console.log('Chat API Response:', data); // Log the full response
+            
+            if (data.success) {
+                return data; // Return the FULL backend response
+            } else {
+                // This handles if success=false
+                const errorMsg = data.error || 'Invalid API response structure';
+                return { 
+                    ai_response: { 
+                        intent: 'general_chat', 
+                        entity: null, 
+                        response: errorMsg 
+                    }, 
+                    has_redirection: false 
+                };
+            }
+        } catch (err) {
+            console.error('Chat API error:', err);
+            // Return a formatted error object
+            return {
+                ai_response: {
+                    intent: 'general_chat',
+                    entity: null,
+                    response: 'I seem to be having trouble connecting. Please try again.'
+                },
+                has_redirection: false
+            };
+        }
+    }
+    // +++++ END OF NEW FUNCTION +++++
+
+    // Format Gemini markdown response into clean HTML
+    function formatGeminiResponse(text) {
+        if (!text) return '';
+        
+        let html = text
+            // Convert **bold** to <strong>
+            .replace(/\*\*([^\*]+)\*\*/g, '<strong>$1</strong>')
+            // Convert *italic* to <em>
+            .replace(/\*([^\*]+)\*/g, '<em>$1</em>')
+            // Convert # headers to <h3>
+            .replace(/^###\s+(.+)$/gm, '<h3 class="font-bold text-base mt-3 mb-2">$1</h3>')
+            .replace(/^##\s+(.+)$/gm, '<h2 class="font-bold text-lg mt-4 mb-2">$1</h2>')
+            .replace(/^#\s+(.+)$/gm, '<h1 class="font-bold text-xl mt-4 mb-2">$1</h1>')
+            // Convert bullet lists: * item or - item
+            .replace(/^\s*[\*\-]\s+(.+)$/gm, (match, item) => {
+                return `<li class="ml-4">${item}</li>`;
+            })
+            // Wrap consecutive <li> in <ul>
+            .replace(/(<li[^>]*>.*?<\/li>)/gs, (match) => {
+                if (!match.includes('<ul')) {
+                    return `<ul class="list-disc my-2">${match}</ul>`;
+                }
+                return match;
+            })
+            // Remove duplicate <ul> wrapping
+            .replace(/<ul[^>]*>(\s*<ul[^>]*>.*?<\/ul>\s*)+<\/ul>/g, (match) => {
+                return match.match(/<ul[^>]*>.*?<\/ul>/s)[0];
+            })
+            // Convert line breaks to <br>
+            .replace(/\n\n/g, '</p><p class="mt-2">')
+            .replace(/\n/g, '<br>')
+            // Wrap in paragraph if not already wrapped
+            .replace(/^(?!<[hp]|<li|<ul)/gm, '<p>')
+            .replace(/(?!>)$/gm, (match, offset, string) => {
+                if (!string.substring(0, offset).includes('<p')) {
+                    return '</p>';
+                }
+                return '';
+            });
+        
+        // Clean up empty tags and extra whitespace
+        html = html
+            .replace(/<p>\s*<\/p>/g, '')
+            .replace(/<p>\s*(<ul>)/g, '$1')
+            .replace(/(<\/ul>)\s*<\/p>/g, '$1')
+            .trim();
+        
+        return html;
+    }
+
+    // ----- Stock flow -----
+    async function findAndConfirmStock(entity) {
+        const thinking = addMessage(`Searching for "${entity}" on NSE & BSE...`, 'bot');
+        try {
+            const [nseR, bseR] = await Promise.all([
+                fetch(`/api/search/NSE/${encodeURIComponent(entity)}/`),
+                fetch(`/api/search/BSE/${encodeURIComponent(entity)}/`)
+            ]);
+            const nse = await nseR.json();
+            const bse = await bseR.json();
+            thinking.remove();
+
+            const all = [
+                ...((nse.stocks || []).map(s => ({ ...s, exchange: 'NSE' }))),
+                ...((bse.stocks || []).map(s => ({ ...s, exchange: 'BSE' })))
+            ];
+            if (all.length === 0) {
+                addMessage(`No stocks found for "${entity}". Try another name.`, 'bot');
+                startConversation(false);
+                return;
+            }
+            // Deduplicate similar company names (LTD vs Limited, etc.)
+            const deduplicated = [];
+            const seenNames = new Set();
+            
+            all.forEach(s => {
+                // Normalize company name for comparison
+                const normalizedName = s.name
+                    .replace(/\b(LTD|LIMITED)\b/gi, '')
+                    .replace(/\b(INC|INCORPORATED)\b/gi, '')
+                    .replace(/\b(CORP|CORPORATION)\b/gi, '')
+                    .replace(/[.,\s]+/g, ' ')
+                    .trim()
+                    .toLowerCase();
+                
+                if (!seenNames.has(normalizedName)) {
+                    seenNames.add(normalizedName);
+                    deduplicated.push(s);
+                }
+            });
+            
+            let html = `<p class="mb-2">I found these — which one did you mean?</p><div id="stock-options" class="space-y-2 max-h-96 overflow-y-auto">`;
+            deduplicated.forEach(s => {
+                html += `<button class="glass-button choice-btn w-full text-left px-4 py-2.5 rounded-xl text-white font-semibold smooth-transition" data-symbol="${s.symbol}" data-name="${s.name}">${s.name} (${s.symbol}) — ${s.exchange}</button>`;
+            });
+            html += `</div>`;
+            const msg = addMessage(html, 'bot', { isHtml: true });
+            msg.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectStock({ symbol: btn.dataset.symbol, name: btn.dataset.name });
+                });
+            });
+            showCancelButton();
+        } catch (err) {
+            thinking.remove();
+            addMessage('Error searching stocks. Try again later.', 'bot');
+            startConversation(false);
+        }
+    }
+
+    function selectStock(stock) {
+        addMessage(stock.name, 'user');
+        suggestionsBox.innerHTML = '';
+        conversationState = 'AWAITING_PRICE';
+        analysisContext = { type: 'stock', ticker: stock.symbol, displayName: stock.name };
+        addMessage(`Great — what is your average buy price for ${stock.name}?`, 'bot');
+        setInputState(true, 'Enter buy price (₹)...');
+        showCancelButton();
+    }
+
+    // ----- Mutual fund flow -----
+    async function findAndConfirmMutualFund(query) {
+        const thinking = addMessage(`Searching mutual funds for "${query}"...`, 'bot');
+        try {
+            const r = await fetch(`/api/search/MF/${encodeURIComponent(query)}/`);
+            const data = await r.json();
+            thinking.remove();
+            const results = (data.funds || []).map(s => ({ name: s.fund_name, scheme_id: s.scheme_id }));
+            if (!results.length) {
+                addMessage(`No mutual funds found for "${query}". Try another name.`, 'bot');
+                startConversation(false);
+                return;
+            }
+            let html = `<p class="mb-2">Which mutual fund did you mean?</p><div id="mf-options" class="space-y-2">`;
+            results.slice(0,8).forEach(mf => {
+                // Simplify fund names for better user experience
+                let displayName = mf.name;
+                
+                // Remove technical suffixes and make names more user-friendly
+                displayName = displayName
+                    .replace(/ - Growth Option - Direct Plan/g, ' Direct Growth')
+                    .replace(/ - Growth Option/g, ' Growth')
+                    .replace(/ - IDCW Option - Direct Plan/g, ' Direct IDCW')
+                    .replace(/ - IDCW Option/g, ' IDCW')
+                    .replace(/ - Direct Plan/g, ' Direct')
+                    .replace(/ - Growth Plan/g, ' Growth')
+                    .replace(/ - IDCW Plan/g, ' IDCW')
+                    .replace(/DIRECT PLAN -Growth/g, 'Direct Growth')
+                    .replace(/DIRECT PLAN - Income Distribution cum Capital Withdrawal Option \(IDCW\)/g, 'Direct IDCW');
+                
+                // Show scheme code in smaller text
+                html += `<button class="glass-button choice-btn w-full text-left px-4 py-2.5 rounded-xl text-white font-semibold smooth-transition" data-scheme="${mf.scheme_id}" data-name="${mf.name}">
+                    <div class="font-medium">${displayName}</div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Scheme Code: ${mf.scheme_id}</div>
+                </button>`;
+            });
+            html += `</div>`;
+            const msg = addMessage(html, 'bot', { isHtml: true });
+            msg.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectMutualFund({ scheme_id: btn.dataset.scheme, name: btn.dataset.name });
+                });
+            });
+            showCancelButton();
+        } catch (err) {
+            thinking.remove();
+            addMessage('Error searching mutual funds. Please try again.', 'bot');
+            startConversation(false);
+        }
+    }
+
+    function selectMutualFund(mf) {
+        addMessage(mf.name, 'user');
+        suggestionsBox.innerHTML = '';
+        conversationState = 'AWAITING_NAV';
+        analysisContext = { type: 'mf', scheme_id: mf.scheme_id, displayName: mf.name };
+        addMessage(`What's your buy NAV per unit for ${mf.name}? If unknown, enter 0 and I'll use current NAV.`, 'bot');
+        setInputState(true, 'Enter buy NAV (or 0)...');
+        showCancelButton();
+    }
+
+    // ----- Analysis step manager (stock & mf) -----
+    async function handleAnalysisStep(message) {
+        if (conversationState === 'AWAITING_PRICE') {
+            const p = parseFloat(message);
+            if (isNaN(p) || p <= 0) {
+                addMessage('Please enter a valid positive price.', 'bot');
+                setInputState(true, 'Enter buy price (₹)...');
+                return;
+            }
+            analysisContext.buyPrice = p;
+            conversationState = 'AWAITING_SHARES';
+            addMessage(`How many shares of ${analysisContext.displayName} do you hold? (Enter 0 if none)`, 'bot');
+            setInputState(true, 'Enter number of shares...');
+        } else if (conversationState === 'AWAITING_SHARES') {
+            const s = parseInt(message);
+            if (isNaN(s) || s < 0) {
+                addMessage('Enter a valid whole number of shares.', 'bot');
+                setInputState(true, 'Enter number of shares...');
+                return;
+            }
+            analysisContext.numShares = s;
+            await analyzeAndDisplayStock(analysisContext.ticker, analysisContext.buyPrice, s);
+            conversationState = 'AWAITING_PROMPT';
+        } else if (conversationState === 'AWAITING_NAV') {
+            const nav = parseFloat(message);
+            if (isNaN(nav) || nav < 0) {
+                addMessage('Please enter a valid NAV (number).', 'bot');
+                setInputState(true, 'Enter buy NAV (or 0)...');
+                return;
+            }
+            analysisContext.buyNAV = nav;
+            conversationState = 'AWAITING_UNITS';
+            addMessage(`How many units of ${analysisContext.displayName} do you hold? (Enter 0 if none)`, 'bot');
+            setInputState(true, 'Enter number of units...');
+        } else if (conversationState === 'AWAITING_UNITS') {
+            const units = parseFloat(message);
+            if (isNaN(units) || units < 0) {
+                addMessage('Enter valid units (can be fractional).', 'bot');
+                setInputState(true, 'Enter number of units...');
+                return;
+            }
+            analysisContext.units = units;
+            await analyzeAndDisplayMF(analysisContext.scheme_id, analysisContext.buyNAV, units);
+            conversationState = 'AWAITING_PROMPT';
+        }
+    }
+
+    // ----- Analysis calls -----
+    async function analyzeAndDisplayStock(ticker, buyPrice, shares) {
+        setInputState(false, 'Analyzing stock...');
+        suggestionsBox.innerHTML = '';
+        const thinking = addMessage(`<div class=\"typing\"><span class=\"dot\"></span><span class=\"dot\"></span><span class=\"dot\"></span></div>`, 'bot', { isHtml: true });
+        try {
+            const r = await fetch(`/api/analyze/${encodeURIComponent(ticker)}/${encodeURIComponent(buyPrice)}/${encodeURIComponent(shares)}/`);
+            const data = await r.json();
+            thinking.remove();
+            
+            // Re-enable input immediately after getting analysis data
+            setInputState(true, 'Type commands like - Analyze a stock or mutual fund, or Show my portfolio');
+            
+            if (r.ok) {
+                // Build chart container and details
+                const chartId = `chart_${Date.now()}`;
+                const html = `<h3 class="font-bold text-lg mb-2">Analysis for ${data.ticker || ticker}</h3>
+                    <p class="mb-1"><strong>Your Position:</strong> ${data.num_shares ?? shares} shares at ₹${(data.your_buy_price ?? buyPrice)}</p>
+                    <p class="mb-2"><strong>Current Price:</strong> ₹${(data.current_market_price ?? 'N/A')}</p>
+                    <hr class="my-2"/>
+                    <p class="mb-1"><strong class="text-blue-700 dark:text-blue-400">Actionable Advice:</strong> <span class="font-bold">${data.personalized_advice}</span></p>
+                        <p class="mb-1">${data.reasoning}</p>
+                        ${data.strategy_description ? `<p class="text-xs text-gray-600 dark:text-gray-400 mb-3">${data.strategy_description}</p>` : ''}
+                    ${Array.isArray(data.fundamentals_notes) && data.fundamentals_notes.length ? `<div class="mb-2 text-xs text-gray-600 dark:text-gray-400"><strong>Fundamentals quick take:</strong> ${data.fundamentals_notes.join(' • ')}</div>` : ''}
+                    <div class="mb-3">
+                        <button id="add-to-portfolio" class="glass-button px-4 py-2.5 rounded-xl text-white text-sm font-semibold smooth-transition">Add to my portfolio</button>
+                        <span id="add-result" class="text-sm ml-2"></span>
+                    </div>
+                    <div class="chart-container bg-white dark:bg-gray-900 p-3 rounded-lg border border-gray-200 dark:border-gray-700 relative" style="height:200px;">
+                        <div id="${chartId}_loader" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500">
+                            <svg class="animate-spin h-4 w-4 mr-2 text-blue-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                            Loading chart...
+                        </div>
+                        <canvas id="${chartId}"></canvas>
+                    </div>`;
+                const msg = addMessage(html, 'bot', { isHtml: true });
+
+                // Bind add-to-portfolio
+                const addBtn = msg.querySelector('#add-to-portfolio');
+                const addRes = msg.querySelector('#add-result');
+                addBtn && addBtn.addEventListener('click', async ()=>{
+                    try{
+                        const res = await fetch('/api/portfolio/', { 
+                            method:'POST', 
+                            headers:{ 
+                                'Content-Type':'application/json',
+                                'X-CSRFToken': csrfToken || ''
+                            }, 
+                            body: JSON.stringify({ 
+                                ticker: ticker, 
+                                quantity: shares, 
+                                buy_price: buyPrice 
+                            }) 
+                        });
+                        const j = await res.json();
+                        if(res.ok){ 
+                            addRes.textContent = 'Added!'; 
+                            addRes.className = 'text-green-600'; 
+                            
+                            // Refresh portfolio health automatically
+                            setTimeout(() => {
+                                fetchAndDisplayPortfolioHealth();
+                            }, 1000);
+                        } else { 
+                            addRes.textContent = j.error || 'Failed to add'; 
+                            addRes.className = 'text-red-600'; 
+                        }
+                    }catch(e){ 
+                        console.error('Add to portfolio error:', e);
+                        addRes.textContent = 'Failed to add'; 
+                        addRes.className = 'text-red-600'; 
+                    }
+                });
+
+                // Fast chart loading with immediate mock data + real data fetch
+                const ctx = msg.querySelector(`#${chartId}`).getContext('2d');
+                
+                // Generate immediate mock data for fast loading
+                const generateMockData = (period = '1Y', currentPrice = data.current_market_price || 100) => {
+                    const days = period === '1D' ? 1 : period === '7D' ? 7 : period === '1M' ? 30 : period === '6M' ? 180 : 365;
+                    const dataPoints = Math.min(days, 100); // Limit data points for performance
+                    const series = [];
+                    const labels = [];
+                    
+                    // Start from a lower price and work up to current price
+                    const startPrice = currentPrice * 0.7; // Start 30% lower
+                    const priceRange = currentPrice - startPrice;
+                    
+                    for (let i = 0; i < dataPoints; i++) {
+                        // Generate realistic price movement ending at current price
+                        const progress = i / (dataPoints - 1); // 0 to 1
+                        const volatility = 0.01; // 1% daily volatility
+                        const random = (Math.random() - 0.5) * volatility;
+                        
+                        // Linear progression with some randomness, ending at current price
+                        let price = startPrice + (priceRange * progress);
+                        if (i === dataPoints - 1) {
+                            // Last point (today) should be exactly current price
+                            price = currentPrice;
+                        } else {
+                            price = price * (1 + random);
+                        }
+                        
+                        series.push(Math.max(price * 0.5, price)); // Ensure positive prices
+                        
+                        // Generate date labels
+                        const date = new Date();
+                        date.setDate(date.getDate() - (dataPoints - 1 - i));
+                        labels.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                    }
+                    return { series, labels };
+                };
+                
+                const mockData = generateMockData('1Y', data.current_market_price);
+                // Create chart immediately with mock data
+                let chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: mockData.labels,
+                        datasets: [{
+                            label: 'Price (₹)',
+                            data: mockData.series,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59,130,246,0.15)',
+                            fill: true,
+                            tension: 0.25,
+                            pointRadius: 2,
+                            pointHoverRadius: 4,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false }
+                        }, 
+                        scales: { 
+                            x: { 
+                                display: true,
+                                grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                                ticks: { color: '#6b7280', maxTicksLimit: 6 }
+                            }, 
+                            y: { 
+                                display: true,
+                                grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                                ticks: { 
+                                    color: '#6b7280',
+                                    callback: function(value) { return '₹' + value.toFixed(0); }
+                                }
+                            } 
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+                
+                // Remove loader immediately
+                const loader = msg.querySelector(`#${chartId}_loader`);
+                if (loader) loader.remove();
+                
+                // Add period toggles with fast mock data switching
+                const controls = document.createElement('div');
+                controls.className = 'flex items-center space-x-2 mt-2';
+                const periods = ['1D','7D','1M','6M','1Y'];
+                periods.forEach(p => {
+                    const b = document.createElement('button');
+                    b.className = 'px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700';
+                    b.textContent = p;
+                    b.addEventListener('click', async ()=>{
+                        // Immediate mock data update for fast response
+                        const mockData = generateMockData(p, data.current_market_price);
+                        chart.data.labels = mockData.labels;
+                        chart.data.datasets[0].data = mockData.series;
+                        chart.update();
+                        
+                        // Try to fetch real data in background (non-blocking)
+                        try{
+                            const r = await fetch(`/api/history/${encodeURIComponent(ticker)}/?period=${encodeURIComponent(p.toLowerCase())}`);
+                            const d2 = await r.json();
+                            // Support both formats: history array or data.prices
+                            const s2 = Array.isArray(d2.history) ? d2.history : (Array.isArray(d2.data?.prices) ? d2.data.prices : []);
+                            const dates2 = Array.isArray(d2.dates) ? d2.dates : (Array.isArray(d2.data?.dates) ? d2.data.dates : []);
+                            
+                            if (s2.length > 0) {
+                                let lbl2 = [];
+                                if (dates2.length === s2.length) {
+                                    // Use actual dates from API
+                                    lbl2 = dates2.map(dateStr => {
+                                        const date = new Date(dateStr);
+                                        return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+                                    });
+                                } else {
+                                    // Generate dates if not provided
+                                const now2 = new Date();
+                                for (let i = s2.length - 1; i >= 0; i--) {
+                                    const date = new Date(now2.getTime() - (s2.length - 1 - i) * 24 * 60 * 60 * 1000);
+                                    lbl2.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                                    }
+                                }
+                                chart.data.labels = lbl2;
+                                chart.data.datasets[0].data = s2;
+                                chart.update();
+                            }
+                        }catch(e){ 
+                            // Keep mock data if real data fails
+                            console.warn('Real data fetch failed, keeping mock data', e);
+                        }
+                    });
+                    controls.appendChild(b);
+                });
+                msg.appendChild(controls);
+                
+                // Try to fetch real data in background and update if available
+                setTimeout(async () => {
+                    try {
+                        const hr = await fetch(`/api/history/${encodeURIComponent(ticker)}/?period=1y`);
+                        const hdata = await hr.json();
+                        // Support both formats: history array or data.prices
+                        const series = Array.isArray(hdata.history) ? hdata.history : (Array.isArray(hdata.data?.prices) ? hdata.data.prices : []);
+                        const dates = Array.isArray(hdata.dates) ? hdata.dates : (Array.isArray(hdata.data?.dates) ? hdata.data.dates : []);
+                        
+                        if (series.length > 0) {
+                            let labels = [];
+                            if (dates.length === series.length) {
+                                // Use actual dates from API
+                                labels = dates.map(dateStr => {
+                                    const date = new Date(dateStr);
+                                    return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+                                });
+                            } else {
+                                // Generate dates if not provided
+                            const now = new Date();
+                            for (let i = series.length - 1; i >= 0; i--) {
+                                const date = new Date(now.getTime() - (series.length - 1 - i) * 24 * 60 * 60 * 1000);
+                                labels.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                                }
+                            }
+                            chart.data.labels = labels;
+                            chart.data.datasets[0].data = series;
+                            chart.update();
+                        }
+                    } catch (e) {
+                        console.warn('Background real data fetch failed, keeping mock data', e);
+                    }
+                }, 500); // Small delay to let mock data show first
+            } else {
+                addMessage(data.error || 'Error analyzing stock.', 'bot');
+            }
+        } catch (err) {
+            thinking.remove();
+            console.error(err);
+            addMessage('Error analyzing stock. Try again later.', 'bot');
+            // Re-enable input on error
+            setInputState(true, 'Type commands like - Analyze a stock or mutual fund, or Show my portfolio');
+        }
+    }
+
+    // ----- Market snapshot -----
+    let snapshotTimer = null;
+    async function loadMarketSnapshot(){
+        try{
+            const r = await fetch('/api/market/snapshot/');
+            const d = await r.json();
+            const arr = Array.isArray(d.indices) ? d.indices : [];
+            const marketStatusData = d.market_status || {};
+            
+            // Update market status display with backend data
+            if (marketStatusData.message) {
+                const statusColor = marketStatusData.status === 'open' ? 'text-green-600' : 
+                                  marketStatusData.status === 'closed' ? 'text-red-600' : 'text-gray-600';
+                marketStatus.innerHTML = `<span class="${statusColor}">${marketStatusData.message}</span>`;
+            } else {
+                // Fallback to frontend calculation
+                const now = new Date();
+                const day = now.getUTCDay();
+                const istMinutes = now.getUTCHours()*60 + now.getUTCMinutes() + 330; // UTC+5:30
+                const istHour = Math.floor(istMinutes/60) % 24;
+                const istMin = istMinutes % 60;
+                const mins = istHour*60 + istMin;
+                const open = 9*60 + 15, close = 15*60 + 30;
+                const isWeekday = day >= 1 && day <= 5;
+                const live = isWeekday && mins >= open && mins <= close;
+                marketStatus.textContent = live ? 'LIVE' : 'Last close';
+            }
+            
+            marketCards.innerHTML = '';
+            if (marketCardsMobile) marketCardsMobile.innerHTML = '';
+            
+            if(arr.length === 0){
+                // Show loading state with animated skeleton cards
+                marketCards.innerHTML = '';
+                for(let i = 0; i < 4; i++) {
+                    const loadingCard = document.createElement('div');
+                    loadingCard.className = 'market-skeleton-card animate-pulse';
+                    loadingCard.innerHTML = `
+                        <div class="market-skeleton-content">
+                            <div class="market-skeleton-line short bg-gray-300 dark:bg-gray-600"></div>
+                            <div class="market-skeleton-line long bg-gray-300 dark:bg-gray-600"></div>
+                        </div>
+                    `;
+                    marketCards.appendChild(loadingCard);
+                }
+                
+                // Show loading message
+                const loadingMessage = document.createElement('div');
+                loadingMessage.className = 'text-center text-gray-500 dark:text-gray-400 text-sm mt-2';
+                loadingMessage.innerHTML = '🔄 Loading market data...';
+                marketCards.appendChild(loadingMessage);
+                
+                // Retry loading after 5 seconds
+                setTimeout(() => {
+                    loadMarketSnapshot();
+                }, 5000);
+            } else {
+                arr.forEach(x => {
+                    const up = (x.change || 0) >= 0;
+                    const color = up ? 'text-emerald-600' : 'text-red-600';
+                    const bgSoft = up ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-red-50 dark:bg-red-900/20';
+                    
+                    // Desktop card
+                    const card = document.createElement('div');
+                    card.className = `min-w-[180px] rounded-md border border-gray-200 dark:border-gray-700 px-2 py-1.5 ${bgSoft} fade-in`;
+                    card.innerHTML = `
+                        <div class="flex items-baseline justify-between">
+                            <span class="text-[12px] font-semibold text-gray-700 dark:text-gray-200">${x.name}</span>
+                            <span class="text-[11px] ${color}">${(x.change >= 0 ? '+' : '') + (x.change || 0)} (${(x.change_percent >= 0 ? '+' : '') + (x.change_percent || 0)}%)</span>
+                        </div>
+                        <div class="text-[13px] font-semibold text-gray-800 dark:text-gray-100">${x.price || x.value || 'N/A'}</div>
+                    `;
+                    marketCards.appendChild(card);
+                    
+                    // Mobile card
+                    if (marketCardsMobile) {
+                        const mobileCard = document.createElement('div');
+                        mobileCard.className = `market-card-mobile ${bgSoft} fade-in`;
+                        mobileCard.innerHTML = `
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-700 dark:text-gray-200">${x.name}</div>
+                                    <div class="text-lg font-bold text-gray-800 dark:text-gray-100">${x.price || x.value || 'N/A'}</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm ${color}">${(x.change >= 0 ? '+' : '') + (x.change || 0)}</div>
+                                    <div class="text-xs ${color}">${(x.change_percent >= 0 ? '+' : '') + (x.change_percent || 0)}%</div>
+                                </div>
+                            </div>
+                        `;
+                    marketCardsMobile.appendChild(mobileCard);
+                    }
+                });
+            }
+        }catch(e){
+            // Show error state with loading animation
+            marketCards.innerHTML = '';
+            if (marketCardsMobile) marketCardsMobile.innerHTML = '';
+            
+            // Show loading cards with retry
+            for(let i = 0; i < 4; i++) {
+                const errorCard = document.createElement('div');
+                errorCard.className = 'market-skeleton-card animate-pulse';
+                errorCard.innerHTML = `
+                    <div class="market-skeleton-content">
+                        <div class="market-skeleton-line short bg-gray-300 dark:bg-gray-600"></div>
+                        <div class="market-skeleton-line long bg-gray-300 dark:bg-gray-600"></div>
+                    </div>
+                `;
+                marketCards.appendChild(errorCard);
+                
+                // Mobile error card
+                if (marketCardsMobile) {
+                    const mobileErrorCard = document.createElement('div');
+                    mobileErrorCard.className = 'market-card-mobile animate-pulse';
+                    mobileErrorCard.innerHTML = `
+                        <div class="text-center text-gray-500 dark:text-gray-400">
+                            <div class="text-sm">🔄 Loading...</div>
+                        </div>
+                    `;
+                    marketCardsMobile.appendChild(mobileErrorCard);
+                }
+            }
+            
+            // Show retry message
+            const retryMessage = document.createElement('div');
+            retryMessage.className = 'text-center text-gray-500 dark:text-gray-400 text-sm mt-2';
+            retryMessage.innerHTML = '⚠️ Market data unavailable. Retrying...';
+            marketCards.appendChild(retryMessage);
+                
+                // Retry after 3 seconds
+                setTimeout(() => {
+                    loadMarketSnapshot();
+                }, 3000);
+        }
+    }
+
+    function startSnapshotTimer(){
+        stopSnapshotTimer();
+        snapshotTimer = setInterval(() => { if (!document.hidden) loadMarketSnapshot(); }, 60000);
+    }
+    function stopSnapshotTimer(){ if (snapshotTimer) { clearInterval(snapshotTimer); snapshotTimer = null; } }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { loadMarketSnapshot(); startSnapshotTimer(); } });
+    setTimeout(startSnapshotTimer, 2000);
+
+    async function analyzeAndDisplayMF(scheme_id, buyNAV, units) {
+        setInputState(false, 'Analyzing mutual fund...');
+        suggestionsBox.innerHTML = '';
+        const thinking = addMessage(`<div class=\"typing\"><span class=\"dot\"></span><span class=\"dot\"></span><span class=\"dot\"></span></div>`, 'bot', { isHtml: true });
+        try {
+            const r = await fetch(`/api/analyze_mf/${encodeURIComponent(scheme_id)}/${encodeURIComponent(buyNAV)}/${encodeURIComponent(units)}/`);
+            console.log('Raw response:', r);
+            console.log('Response status:', r.status);
+            console.log('Response ok:', r.ok);
+            
+            const data = await r.json();
+            console.log('Parsed data:', data);
+            thinking.remove();
+            
+            console.log('MF Analysis Response:', { status: r.status, ok: r.ok, data });
+            
+            // Re-enable input immediately after getting analysis data
+            setInputState(true, 'Type commands like - Analyze a stock or mutual fund, or Show my portfolio');
+            
+            if (r.ok && !data.error) {
+                console.log('Rendering MF analysis with data:', data);
+                
+                // Generate unique chart ID
+                const chartId = `mf_chart_${Date.now()}`;
+                
+                const html = `<h3 class="font-bold text-lg mb-2">Analysis for ${data.scheme_name || scheme_id}</h3>
+                    <p class="mb-1"><strong>Your Position:</strong> ${data.num_units || units} units at ₹${data.your_buy_nav || buyNAV}</p>
+                    <p class="mb-2"><strong>Current NAV:</strong> ₹${data.current_nav || 'N/A'}</p>
+                    <hr class="my-2"/>
+                    <p class="mb-1"><strong class="text-blue-700 dark:text-blue-400">Actionable Advice:</strong> <span class="font-bold">${data.personalized_advice || 'No advice available'}</span></p>
+                    <p class="mb-1">${data.reasoning || 'No reasoning provided'}</p>
+                    ${data.strategy_description ? `<p class="text-xs text-gray-600 dark:text-gray-400 mb-3">${data.strategy_description}</p>` : ''}
+                    ${data.pnl_total !== undefined ? `<p class="mb-2"><strong>P&L:</strong> ₹${data.pnl_total}</p>` : ''}
+                    <div class="mt-4">
+                        <canvas id="mf_${chartId}" width="400" height="200"></canvas>
+                        <div id="mf_${chartId}_loader" class="flex items-center justify-center h-48 bg-gray-100 dark:bg-gray-800 rounded">
+                            <div class="text-gray-500">Loading chart...</div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex items-center space-x-2">
+                        <button class="action-btn px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="addToPortfolio('${scheme_id}', '${data.scheme_name || scheme_id}', '${data.current_nav}', '${units}')">Add to Portfolio</button>
+                        <span id="add-result-${scheme_id}" class="text-sm"></span>
+                    </div>`;
+                console.log('Generated HTML:', html);
+                const msg = addMessage(html, 'bot', { isHtml: true });
+                
+                // Handle add to portfolio functionality
+                window.addToPortfolio = async (schemeId, fundName, currentNav, units) => {
+                    const addRes = document.getElementById(`add-result-${schemeId}`);
+                    addRes.textContent = 'Adding...';
+                    addRes.className = 'text-blue-600';
+                    try {
+                        const res = await fetch('/api/portfolio/', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ticker: schemeId,
+                                quantity: parseFloat(units) || 0,
+                                buy_price: currentNav
+                            })
+                        });
+                        const j = await res.json();
+                        if(res.ok){ 
+                            addRes.textContent = 'Added!'; 
+                            addRes.className = 'text-green-600'; 
+                            
+                            // Refresh portfolio health automatically
+                            setTimeout(() => {
+                                fetchAndDisplayPortfolioHealth();
+                            }, 1000);
+                        }
+                        else { addRes.textContent = j.error || 'Failed to add'; addRes.className = 'text-red-600'; }
+                    }catch(e){ addRes.textContent = 'Failed to add'; addRes.className = 'text-red-600'; }
+                };
+                // Fast MF chart loading with immediate mock data + real data fetch
+                const c = msg.querySelector(`#mf_${chartId}`).getContext('2d');
+                
+                // Generate immediate mock NAV data for fast loading
+                const generateMockNAVData = (period = '1Y', currentNAV = data.current_nav || 100) => {
+                    const days = period === '1D' ? 1 : period === '7D' ? 7 : period === '1M' ? 30 : period === '6M' ? 180 : 365;
+                    const dataPoints = Math.min(days, 100); // Limit data points for performance
+                    const series = [];
+                    const labels = [];
+                    
+                    // Start from a lower NAV and work up to current NAV
+                    const startNAV = currentNAV * 0.8; // Start 20% lower (less volatile than stocks)
+                    const navRange = currentNAV - startNAV;
+                    
+                    for (let i = 0; i < dataPoints; i++) {
+                        // Generate realistic NAV movement ending at current NAV
+                        const progress = i / (dataPoints - 1); // 0 to 1
+                        const volatility = 0.005; // 0.5% daily volatility (lower than stocks)
+                        const random = (Math.random() - 0.5) * volatility;
+                        
+                        // Linear progression with some randomness, ending at current NAV
+                        let nav = startNAV + (navRange * progress);
+                        if (i === dataPoints - 1) {
+                            // Last point (today) should be exactly current NAV
+                            nav = currentNAV;
+                        } else {
+                            nav = nav * (1 + random);
+                        }
+                        
+                        series.push(Math.max(nav * 0.7, nav)); // Ensure positive NAV
+                        
+                        // Generate date labels
+                        const date = new Date();
+                        date.setDate(date.getDate() - (dataPoints - 1 - i));
+                        labels.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                    }
+                    return { series, labels };
+                };
+                
+                const mockNAVData = generateMockNAVData('1Y', data.current_nav);
+                // Create MF chart immediately with mock data
+                let mfChart = new Chart(c, { 
+                    type:'line', 
+                    data:{ 
+                        labels: mockNAVData.labels, 
+                        datasets:[{ 
+                            label:'NAV (₹)', 
+                            data: mockNAVData.series, 
+                            borderColor:'#10b981', 
+                            backgroundColor:'rgba(16,185,129,0.15)', 
+                            fill:true, 
+                            tension:0.25, 
+                            pointRadius:2, 
+                            pointHoverRadius:4, 
+                            borderWidth:2 
+                        }]
+                    }, 
+                    options:{ 
+                        responsive:true, 
+                        maintainAspectRatio:false, 
+                        plugins:{ 
+                            legend:{ display:false } 
+                        }, 
+                        scales:{ 
+                            x:{ 
+                                grid:{ color:'rgba(156,163,175,0.1)' }, 
+                                ticks:{ color:'#6b7280', maxTicksLimit:6 } 
+                            }, 
+                            y:{ 
+                                grid:{ color:'rgba(156,163,175,0.1)' }, 
+                                ticks:{ color:'#6b7280', callback:(v)=>'₹'+Number(v).toFixed(0) } 
+                            } 
+                        }, 
+                        interaction:{ intersect:false, mode:'index' } 
+                    } 
+                });
+                
+                // Remove loader immediately
+                const ldr = msg.querySelector(`#mf_${chartId}_loader`);
+                if (ldr) ldr.remove();
+
+                // Add period toggles with fast mock data switching
+                const controls = document.createElement('div');
+                controls.className = 'flex items-center space-x-2 mt-2';
+                ['1D','7D','1M','6M','1Y'].forEach(p => {
+                    const b = document.createElement('button');
+                    b.className = 'px-2 py-1 text-xs rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700';
+                    b.textContent = p;
+                    b.addEventListener('click', async ()=>{
+                        // Immediate mock data update for fast response
+                        const mockNAVData = generateMockNAVData(p, data.current_nav);
+                        mfChart.data.labels = mockNAVData.labels;
+                        mfChart.data.datasets[0].data = mockNAVData.series;
+                        mfChart.update();
+                        
+                        // Try to fetch real data in background (non-blocking)
+                        try{
+                            const r2 = await fetch(`/api/history_mf/${encodeURIComponent(scheme_id)}/?period=${encodeURIComponent(p.toLowerCase())}`);
+                            const d2 = await r2.json();
+                            const s2 = Array.isArray(d2.history) ? d2.history : [];
+                            if (s2.length > 0) {
+                                const lbl2 = [];
+                                const now2 = new Date();
+                                for (let i = s2.length - 1; i >= 0; i--) {
+                                    const date = new Date(now2.getTime() - (s2.length - 1 - i) * 24 * 60 * 60 * 1000);
+                                    lbl2.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                                }
+                                mfChart.data.labels = lbl2;
+                                mfChart.data.datasets[0].data = s2;
+                                mfChart.update();
+                            }
+                        }catch(e){ 
+                            // Keep mock data if real data fails
+                            console.warn('Real MF data fetch failed, keeping mock data', e);
+                        }
+                    });
+                    controls.appendChild(b);
+                });
+                msg.appendChild(controls);
+                
+                // Try to fetch real MF data in background and update if available
+                setTimeout(async () => {
+                    try {
+                        const r2 = await fetch(`/api/history_mf/${encodeURIComponent(scheme_id)}/?period=1y`);
+                        const init = await r2.json();
+                        const series = Array.isArray(init.history) ? init.history : [];
+                        
+                        if (series.length > 0) {
+                            const labels = [];
+                            const now = new Date();
+                            for (let i = series.length - 1; i >= 0; i--) {
+                                const date = new Date(now.getTime() - (series.length - 1 - i) * 24 * 60 * 60 * 1000);
+                                labels.push(date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }));
+                            }
+                            mfChart.data.labels = labels;
+                            mfChart.data.datasets[0].data = series;
+                            mfChart.update();
+                        }
+                    } catch(e) { 
+                        console.warn('Background real MF data fetch failed, keeping mock data', e);
+                    }
+                }, 500); // Small delay to let mock data show first
+
+            } else {
+                // Handle specific error cases
+                if (data.error === 'FUND_NOT_FOUND') {
+                    addMessage(`Fund not found: ${data.reasoning}`, 'bot');
+                    addMessage('Try searching with a different name or check the exact fund name. You can also try searching by scheme code.', 'bot');
+                } else {
+                    addMessage(data.error || 'Error analyzing mutual fund.', 'bot');
+                }
+            }
+        } catch (err) {
+            thinking.remove();
+            console.error('MF Analysis Error:', err);
+            console.error('Error details:', {
+                message: err.message,
+                stack: err.stack,
+                name: err.name
+            });
+            addMessage('Error analyzing mutual fund. Try again later.', 'bot');
+            // Re-enable input on error
+            setInputState(true, 'Type commands like - Analyze a stock or mutual fund, or Show my portfolio');
+        }
+    }
+
+    // ----- Top-level input handler -----
+    async function handleUserInput() {
+        const text = userInput.value.trim();
+        if (!text) return;
+        addMessage(text, 'user');
+        userInput.value = '';
+        setInputState(false, 'Thinking...');
+        suggestionsBox.innerHTML = '';
+
+        // If we're mid-analysis (expecting buy price, shares, etc.)
+        if (conversationState === 'AWAITING_PRICE' || conversationState === 'AWAITING_SHARES' || conversationState === 'AWAITING_NAV' || conversationState === 'AWAITING_UNITS') {
+            setTimeout(() => handleAnalysisStep(text), 200); // small delay to show user bubble
+            return;
+        }
+
+        // If a specific flow was requested, bypass NLU
+        if (lastRequestedFlow === 'mf') {
+            conversationState = 'SEARCHING_MF';
+            await findAndConfirmMutualFund(text);
+            lastRequestedFlow = null;
+            return;
+        } else if (lastRequestedFlow === 'stock') {
+            conversationState = 'SEARCHING_STOCK';
+            await findAndConfirmStock(text);
+            lastRequestedFlow = null;
+            return;
+        }
+
+        // --- CORRECTED LOGIC ---
+        // Send to the *single* chat API and let it route
+        const thinking = addMessage(
+            `<div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>`,
+            'bot',
+            { isHtml: true }
+        );
+        
+        try {
+            // Call our new unified API function
+            const data = await callChatAPI(text); // data is the *full* response from /api/nlp/chat/
+            thinking.remove(); // Remove "..."
+
+            // The backend response has two formats:
+            // 1. REDIRECT: { ai_response: "String...", has_redirection: true, redirection_target: "..." }
+            // 2. CHAT:     { ai_response: { intent: "...", entity: "...", response: "..." }, has_redirection: false }
+
+            // Path 1: Backend wants to redirect (e.g., "analyze stock")
+            if (data.has_redirection && data.redirection_target) {
+                if (data.redirection_type === 'stock') {
+                    conversationState = 'SEARCHING_STOCK';
+                    await findAndConfirmStock(data.redirection_target);
+                } else if (data.redirection_type === 'mutual_fund') {
+                    conversationState = 'SEARCHING_MF';
+                    await findAndConfirmMutualFund(data.redirection_target);
+                }
+            
+            // Path 2: Backend gave a Gemini response (general chat, or prompt for name)
+            } else if (data.ai_response && typeof data.ai_response === 'object') {
+                // data.ai_response is the Gemini JSON object {intent, entity, response}
+                const intent = data.ai_response.intent;
+                const ai_message = data.ai_response.response;
+
+                if (intent === 'request_stock_name') {
+                    addMessage(ai_message, 'bot'); // "Sure, which stock?"
+                    setInputState(true, 'Type stock name or symbol...');
+                    lastRequestedFlow = 'stock';
+                } else if (intent === 'request_mutual_fund_name') {
+                    addMessage(ai_message, 'bot'); // "Sure, which fund?"
+                    setInputState(true, 'Type mutual fund name or scheme id...');
+                    lastRequestedFlow = 'mf';
+                } else {
+                    // All other general chat ("hello", "what is p/e", etc.)
+                    const formattedResponse = formatGeminiResponse(ai_message);
+                    addMessage(formattedResponse, 'bot', { isHtml: true });
+                    setInputState(true, 'Ask another question or start a new analysis.');
+                }
+            
+            // Path 3: Fallback (if response is a string but not a redirection)
+            } else {
+                const message = data.ai_response || "Sorry, I didn't understand that.";
+                addMessage(message, 'bot');
+                startConversation(false);
+            }
+
+        } catch (err) {
+            thinking.remove();
+            console.error('Input handler error:', err);
+            addMessage('Error connecting to services. Please try again.', 'bot');
+            setInputState(true, 'Try again...');
+            conversationState = 'AWAITING_PROMPT';
+        }
+        // --- END OF CORRECTED LOGIC ---
+    }
+
+    // ----- Quick chip bindings -----
+    chipAnalyzeStock && chipAnalyzeStock.addEventListener('click', () => {
+        addMessage('Analyze a stock', 'user');
+        addMessage('Sure — type the stock name or symbol you want me to analyze (e.g., "reliance").', 'bot');
+        setInputState(true, 'Type stock name or symbol...');
+        lastRequestedFlow = 'stock';
+    });
+    chipAnalyzeMF && chipAnalyzeMF.addEventListener('click', () => {
+        addMessage('Analyze a mutual fund', 'user');
+        addMessage('Sure — type the mutual fund name or scheme id (e.g., "HDFC Top 100").', 'bot');
+        setInputState(true, 'Type mutual fund name or scheme id...');
+        lastRequestedFlow = 'mf';
+    });
+    chipShowPortfolio && chipShowPortfolio.addEventListener('click', () => {
+        addMessage('Show my portfolio', 'user');
+        window.location.href = "{% url 'portfolio' %}";
+    });
+
+    // Enter key to send message
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleUserInput();
+    });
+
+    // Ensure initial greeting exists (if not, create)
+    if (!document.getElementById('initial-greeting')) {
+        const greetingDiv = document.createElement('div');
+        greetingDiv.id = 'initial-greeting';
+        greetingDiv.className = "w-full max-w-md p-3 rounded-xl mb-4 chat-bubble chat-bubble-bot";
+        greetingDiv.textContent = "Hi, I am SAHA-AI, How may I help you today?";
+        chatWindow.prepend(greetingDiv);
+    }
+
+    // kick off
+    startConversation(true);
+});
+</script>
+<!-- Inactivity Modal -->
+<div id="inactivity-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 hidden">
+    <div class="glass-pane p-8 rounded-2xl shadow-2xl max-w-md w-full text-center border-2 border-blue-500/50">
+        <div class="text-6xl mb-4">⏳</div>
+        <h2 class="text-2xl font-bold text-white mb-3">Are you still there?</h2>
+        <p class="text-gray-300 mb-6">For your security, you will be logged out due to inactivity.</p>
+        <div class="mb-6">
+            <p class="text-gray-400">Logging out in <span id="logout-timer" class="font-bold text-white text-lg">15</span> seconds...</p>
+        </div>
+        <div class="flex justify-center gap-4">
+            <button id="stay-logged-in-btn" class="glass-button flex-1">Keep me signed in</button>
+            <button id="logout-btn" class="glass-button flex-1" style="background: rgba(239, 68, 68, 0.2) !important; border-color: rgba(239, 68, 68, 0.3) !important;">Logout Now</button>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

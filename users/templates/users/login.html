@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SAHA-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 25%, #2563eb 50%, #3b82f6 75%, #1e3a8a 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Animated background bubbles */
+        body::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3CradialGradient id='a'%3E%3Cstop offset='0' stop-color='%23fff' stop-opacity='0.1'/%3E%3Cstop offset='1' stop-color='%23fff' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='40' fill='url(%23a)'/%3E%3C/svg%3E") repeat;
+            animation: float 20s ease-in-out infinite;
+            opacity: 0.3;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        /* Glassmorphism container */
+        .glass-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border-radius: 24px;
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Glass input fields */
+        .glass-input {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .glass-input:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* Glass button */
+        .glass-button {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.8), rgba(139, 92, 246, 0.8));
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glass-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .glass-button:hover::before {
+            left: 100%;
+        }
+        
+        .glass-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(99, 102, 241, 0.4);
+        }
+        
+        .glass-button:active {
+            transform: translateY(0);
+        }
+        
+        /* Page Transition Animations */
+        @keyframes pageFadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.98); }
+        }
+        
+        @keyframes pageFadeIn {
+            from { opacity: 0; transform: scale(1.02); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        body.page-transitioning {
+            animation: pageFadeOut 0.3s ease-out forwards;
+        }
+        
+        body.page-loaded {
+            animation: pageFadeIn 0.4s ease-out forwards;
+        }
+        
+        /* Error message glass */
+        .glass-error {
+            background: rgba(239, 68, 68, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        /* Link hover effect */
+        .glass-link {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .glass-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.8);
+            transition: width 0.3s ease;
+        }
+        
+        .glass-link:hover::after {
+            width: 100%;
+        }
+        
+        /* Logo animation */
+        .logo-bounce {
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="glass-container w-full max-w-md p-8 space-y-6">
+        <div class="text-center">
+            <div class="logo-bounce inline-block mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white mx-auto" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z" />
+                    <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
+                </svg>
+            </div>
+            <h2 class="text-3xl font-bold text-white drop-shadow-lg">Welcome Back!</h2>
+            <p class="mt-2 text-sm text-white/80">Log in to continue to SAHA-AI</p>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="glass-error p-4 text-white">
+                    <p class="font-medium">{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="glass-error p-4 text-white">
+                {% for error in form.non_field_errors %}
+                    <p class="font-medium">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form class="space-y-6" method="post">
+            {% csrf_token %}
+            
+            <div>
+                <label for="username" class="block text-sm font-medium text-white/90 mb-2">Username</label>
+                <input type="text" name="username" id="username" 
+                       class="glass-input w-full px-4 py-3 text-white placeholder-white/60 focus:outline-none"
+                       placeholder="Enter your username"
+                       required>
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-white/90 mb-2">Password</label>
+                <input type="password" name="password" id="password"
+                       class="glass-input w-full px-4 py-3 text-white placeholder-white/60 focus:outline-none"
+                       placeholder="Enter your password"
+                       required>
+            </div>
+
+            <button type="submit" class="glass-button w-full px-4 py-3 font-semibold text-white focus:outline-none relative">
+                <span class="relative z-10">Login</span>
+            </button>
+        </form>
+        
+        <p class="text-sm text-center text-white/80">
+            Don't have an account? 
+            <a href="{% url 'register' %}" class="glass-link font-medium text-white inline-block">Sign up</a>
+        </p>
+    </div>
+    
+    <script>
+        // Page transition on load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.classList.add('page-loaded');
+        });
+        
+        // Page transition on navigation - Global function
+        window.navigateWithTransition = function(url) {
+            if (window.isNavigating) return;
+            window.isNavigating = true;
+            document.body.classList.remove('page-loaded');
+            document.body.classList.add('page-transitioning');
+            setTimeout(() => {
+                window.location.href = url;
+            }, 300);
+        };
+        
+        // Apply to all navigation links
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('a[href*="/"]');
+            navLinks.forEach(link => {
+                if (link.href && !link.href.startsWith('http') && !link.href.includes('#')) {
+                    link.addEventListener('click', function(e) {
+                        if (this.onclick || this.getAttribute('target') === '_blank') return;
+                        e.preventDefault();
+                        const url = this.getAttribute('href');
+                        if (url) navigateWithTransition(url);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

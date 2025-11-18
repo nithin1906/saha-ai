@@ -1,0 +1,475 @@
+<!-- 
+  SAHA-AI Chat Widget
+  Add this to your dashboard to enable conversational AI
+  
+  Include in your HTML:
+  <script src="{% static 'js/chat-widget.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'css/chat-widget.css' %}">
+  <div id="saha-chat-widget"></div>
+  
+  Then call: initializeChatWidget()
+-->
+
+<style>
+/* SAHA-AI Chat Widget Styles */
+
+.chat-widget-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    height: 600px;
+    border-radius: 12px;
+    box-shadow: 0 5px 40px rgba(0, 0, 0, 0.16);
+    display: flex;
+    flex-direction: column;
+    background: white;
+    z-index: 999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.chat-close-btn {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.chat-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.chat-message {
+    display: flex;
+    gap: 10px;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-message.user {
+    justify-content: flex-end;
+}
+
+.chat-message.assistant {
+    justify-content: flex-start;
+}
+
+.message-bubble {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 12px;
+    word-wrap: break-word;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.message-bubble.user-msg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.message-bubble.assistant-msg {
+    background: white;
+    color: #333;
+    border: 1px solid #e0e0e0;
+    border-bottom-left-radius: 4px;
+}
+
+.message-bubble.loading {
+    background: white;
+    color: #999;
+    border: 1px solid #e0e0e0;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.loading-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #999;
+    animation: bounce 1.4s infinite;
+}
+
+.loading-dot:nth-child(1) { animation-delay: 0s; }
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-10px); }
+}
+
+.chat-input-area {
+    padding: 16px;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    gap: 8px;
+}
+
+.chat-input {
+    flex: 1;
+    border: 1px solid #e0e0e0;
+    border-radius: 24px;
+    padding: 10px 16px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.chat-input:focus {
+    border-color: #667eea;
+}
+
+.chat-send-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: transform 0.2s;
+}
+
+.chat-send-btn:hover {
+    transform: scale(1.05);
+}
+
+.chat-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chat-toggle-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 24px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    z-index: 998;
+}
+
+.chat-toggle-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+    .chat-widget-container {
+        width: 100%;
+        height: 100%;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+    }
+}
+</style>
+
+<script>
+// SAHA-AI Chat Widget JavaScript
+
+class SAHAChatWidget {
+    constructor(containerId = 'saha-chat-widget') {
+        this.containerId = containerId;
+        this.isOpen = false;
+        this.messages = [];
+        this.isLoading = false;
+        this.init();
+    }
+
+    init() {
+        this.createToggleButton();
+        this.createChatWidget();
+        this.attachEventListeners();
+    }
+
+    createToggleButton() {
+        const btn = document.createElement('button');
+        btn.className = 'chat-toggle-btn';
+        btn.innerHTML = '💬';
+        btn.id = 'chat-toggle-btn';
+        btn.addEventListener('click', () => this.toggleChat());
+        
+        const container = document.getElementById(this.containerId);
+        if (container) {
+            container.appendChild(btn);
+        }
+    }
+
+    createChatWidget() {
+        const widget = document.createElement('div');
+        widget.className = 'chat-widget-container';
+        widget.id = 'chat-widget';
+        widget.style.display = 'none';
+
+        widget.innerHTML = `
+            <div class="chat-header">
+                <div>
+                    <h3>💡 SAHA-AI Advisor</h3>
+                    <small style="opacity: 0.9; font-size: 12px;">Powered by Gemini</small>
+                </div>
+                <button class="chat-close-btn">×</button>
+            </div>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="chat-input-area">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="chat-input"
+                    placeholder="Ask about stocks, portfolios, markets..."
+                    autocomplete="off"
+                />
+                <button class="chat-send-btn" id="chat-send-btn">➤</button>
+            </div>
+        `;
+
+        const container = document.getElementById(this.containerId);
+        if (container) {
+            container.appendChild(widget);
+        }
+    }
+
+    attachEventListeners() {
+        const closeBtn = document.querySelector('.chat-close-btn');
+        const sendBtn = document.getElementById('chat-send-btn');
+        const input = document.getElementById('chat-input');
+
+        closeBtn?.addEventListener('click', () => this.toggleChat());
+        sendBtn?.addEventListener('click', () => this.sendMessage());
+        input?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !this.isLoading) {
+                this.sendMessage();
+            }
+        });
+    }
+
+    toggleChat() {
+        this.isOpen = !this.isOpen;
+        const widget = document.getElementById('chat-widget');
+        const toggleBtn = document.getElementById('chat-toggle-btn');
+        
+        if (this.isOpen) {
+            widget.style.display = 'flex';
+            toggleBtn.style.display = 'none';
+            document.getElementById('chat-input')?.focus();
+        } else {
+            widget.style.display = 'none';
+            toggleBtn.style.display = 'flex';
+        }
+    }
+
+    async sendMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+
+        if (!message || this.isLoading) return;
+
+        // Add user message
+        this.addMessage(message, 'user');
+        input.value = '';
+        this.isLoading = true;
+
+        // Show loading indicator
+        this.addMessage('', 'loading');
+
+        try {
+            const response = await fetch('/api/nlp/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    message: message,
+                    include_context: true,
+                }),
+            });
+
+            const data = await response.json();
+
+            // Remove loading message
+            const messages = document.getElementById('chat-messages');
+            const lastMsg = messages.lastElementChild;
+            if (lastMsg?.querySelector('.loading-dot')) {
+                lastMsg.remove();
+            }
+
+            if (data.success) {
+                if (data.has_redirection) {
+                    console.log(`Redirection requested: Type - ${data.redirection_type}, Target - ${data.redirection_target}`);
+                    this.addMessage(data.ai_response, 'assistant'); // Display AI's initial response
+                    // In a real application, you would trigger a UI change or navigation here.
+                    // For example:
+                    // if (data.redirection_type === 'stock') {
+                    //     window.location.href = `/stocks/${data.redirection_target}`;
+                    // } else if (data.redirection_type === 'mutual_fund') {
+                    //     window.location.href = `/mutual-funds/${data.redirection_target}`;
+                    // }
+                } else {
+                    this.addMessage(data.ai_response, 'assistant');
+                }
+            } else {
+                this.addMessage('Error: ' + (data.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Chat error:', error);
+            this.addMessage('Error connecting to AI. Please try again.', 'error');
+        } finally {
+            this.isLoading = false;
+        }
+    }
+
+    addMessage(text, role) {
+        const messagesDiv = document.getElementById('chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${role}`;
+
+        if (role === 'loading') {
+            messageDiv.innerHTML = `
+                <div class="message-bubble loading">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+            `;
+        } else {
+            const bubble = document.createElement('div');
+            bubble.className = `message-bubble ${role === 'user' ? 'user-msg' : 'assistant-msg'}`;
+            
+            // Simple markdown-like formatting
+            bubble.textContent = text;
+            
+            messageDiv.appendChild(bubble);
+        }
+
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize SAHA Chat Widget
+    window.sahaChatWidget = new SAHAChatWidget('saha-chat-widget');
+    
+    // Add initial greeting message
+    const messagesDiv = document.getElementById('chat-messages');
+    if (messagesDiv) {
+        const greeting = document.createElement('div');
+        greeting.className = 'chat-message assistant';
+        greeting.innerHTML = `
+            <div class="message-bubble assistant-msg">
+                <strong>Welcome to SAHA-AI! 👋</strong><br/>
+                I'm your financial advisor. Ask me about stocks, portfolio strategies, market trends, or any financial questions. How can I help you today?
+            </div>
+        `;
+        messagesDiv.appendChild(greeting);
+    }
+});
+</script>
+
+<!-- 
+  USAGE:
+  
+  1. Add to your base template or relevant page:
+  
+  <div id="saha-chat-widget"></div>
+  
+  Include the styles and script above in a <style> and <script> tag
+  or in separate CSS/JS files
+  
+  2. That's it! The chat widget will appear as a floating button
+     in the bottom-right corner and opens a chat interface when clicked
+  
+  3. The widget will automatically:
+     - Send messages to /api/nlp/chat/
+     - Maintain conversation history
+     - Show loading indicators
+     - Handle errors gracefully
+     - Work on mobile devices
+  
+  4. Users can:
+     - Type questions about stocks
+     - Ask portfolio advice
+     - Get market insights
+     - Have multi-turn conversations
+     - Toggle chat open/close
+-->
