@@ -309,8 +309,6 @@ Planned improvements include:
 # Author
 
 Nithin N
-Computer Science (AI & ML)
-Christ Deemed to be University
 
 ---
 
